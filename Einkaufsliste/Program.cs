@@ -9,6 +9,8 @@ using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.Mail;
 
+try
+{
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 1_048_576); // 1 MB
@@ -1811,3 +1813,10 @@ app.MapDelete("/api/favoriten/{id:int}", async (int id, HttpContext ctx) =>
 }).RequireAuthorization();
 
 app.Run();
+}
+catch (Exception ex)
+{
+    var logPath = Path.Combine(AppContext.BaseDirectory, "startup-error.txt");
+    File.WriteAllText(logPath, $"{DateTime.UtcNow}\n{ex}");
+    throw;
+}
