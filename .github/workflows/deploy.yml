@@ -46,6 +46,23 @@ jobs:
               }
             }' > ./publish/appsettings.Production.json
 
+      - name: Create app_offline.htm
+        run: |
+          mkdir -p ./app_offline
+          echo '<html><body><h1>Update in progress...</h1></body></html>' > ./app_offline/app_offline.htm
+
+      - name: Upload app_offline.htm to stop IIS
+        uses: sebastianpopp/ftp-action@v2.0.0
+        with:
+          host: ${{ secrets.FTP_HOST }}
+          user: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          localDir: ./app_offline/
+          remoteDir: /subdomains/einkaufsliste/httpdocs/
+
+      - name: Wait for IIS to release files
+        run: sleep 5
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
