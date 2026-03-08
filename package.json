@@ -1,0 +1,15 @@
+{
+  "name": "einkaufsliste",
+  "version": "1.0.0",
+  "description": "Einkaufsliste Backend (Node.js)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21",
+    "mssql": "^11",
+    "express-session": "^1.18",
+    "nodemailer": "^6.9"
+  }
+}
