@@ -29,7 +29,7 @@ jobs:
       - name: Prepare publish directory
         run: |
           mkdir -p ./publish/public ./publish/logs ./publish/iisnode
-          cp server.js package.json package-lock.json web.config ./publish/
+          cp server.js package.json package-lock.json web.config node-wrapper.cmd ./publish/
           cp -r node_modules ./publish/
           cp -r public/* ./publish/public/
           cp node-portable/node.exe ./publish/
