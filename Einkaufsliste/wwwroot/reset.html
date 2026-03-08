@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>Passwort zurücksetzen – Einkaufsliste</title>
+    <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="login-screen" style="position:relative">
+    <div class="login-card">
+
+        <!-- Step 1: E-Mail eingeben (kein Token in URL) -->
+        <div id="requestView">
+            <div class="login-header">
+                <i class="bi bi-key" style="font-size:2.5rem;color:var(--green-600)"></i>
+                <h1 style="font-size:1.5rem;margin-top:0.5rem">Passwort vergessen</h1>
+                <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Gib deine E-Mail-Adresse ein</p>
+            </div>
+            <form onsubmit="requestReset(event)">
+                <div style="display:flex;flex-direction:column;gap:0.75rem">
+                    <div>
+                        <label for="resetEmail">E-Mail</label>
+                        <input type="email" id="resetEmail" required placeholder="name@beispiel.ch">
+                    </div>
+                    <div id="requestError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                    <div id="requestSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem" id="requestBtn">
+                        <i class="bi bi-envelope"></i> Link senden
+                    </button>
+                    <a href="index.html" class="btn btn-secondary" style="width:100%;padding:0.7rem;font-size:0.95rem;text-decoration:none;text-align:center">
+                        <i class="bi bi-arrow-left"></i> Zurück zum Login
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Step 2: Neues Passwort setzen (Token in URL) -->
+        <div id="resetView" style="display:none">
+            <div class="login-header">
+                <i class="bi bi-key" style="font-size:2.5rem;color:var(--green-600)"></i>
+                <h1 style="font-size:1.5rem;margin-top:0.5rem">Neues Passwort</h1>
+                <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Wähle ein neues Passwort</p>
+            </div>
+            <form onsubmit="submitReset(event)">
+                <div style="display:flex;flex-direction:column;gap:0.75rem">
+                    <div>
+                        <label for="newPass">Neues Passwort</label>
+                        <input type="password" id="newPass" required autocomplete="new-password" placeholder="Mindestens 4 Zeichen">
+                    </div>
+                    <div>
+                        <label for="newPassConfirm">Passwort bestätigen</label>
+                        <input type="password" id="newPassConfirm" required autocomplete="new-password" placeholder="Passwort wiederholen">
+                    </div>
+                    <div id="resetError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                    <div id="resetSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem" id="resetBtn">
+                        <i class="bi bi-check-lg"></i> Passwort speichern
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const token = new URLSearchParams(location.search).get('token');
+if (token) {
+    document.getElementById('requestView').style.display = 'none';
+    document.getElementById('resetView').style.display = '';
+}
+
+async function requestReset(e) {
+    e.preventDefault();
+    const email = document.getElementById('resetEmail').value.trim();
+    const errEl = document.getElementById('requestError');
+    const successEl = document.getElementById('requestSuccess');
+    const btn = document.getElementById('requestBtn');
+    errEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Wird gesendet…';
+
+    const res = await fetch('/api/auth/reset-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+    const data = await res.json().catch(() => null);
+
+    if (res.ok) {
+        successEl.innerHTML = '<i class="bi bi-envelope-check"></i> ' + (data?.message || 'E-Mail gesendet.');
+        successEl.style.display = '';
+        btn.style.display = 'none';
+    } else {
+        errEl.textContent = data?.error || 'Fehler beim Senden.';
+        errEl.style.display = '';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-envelope"></i> Link senden';
+    }
+}
+
+async function submitReset(e) {
+    e.preventDefault();
+    const pass = document.getElementById('newPass').value;
+    const confirm = document.getElementById('newPassConfirm').value;
+    const errEl = document.getElementById('resetError');
+    const successEl = document.getElementById('resetSuccess');
+    const btn = document.getElementById('resetBtn');
+    errEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    if (pass !== confirm) {
+        errEl.textContent = 'Passwörter stimmen nicht überein.';
+        errEl.style.display = '';
+        return;
+    }
+    if (pass.length < 4) {
+        errEl.textContent = 'Passwort muss mindestens 4 Zeichen haben.';
+        errEl.style.display = '';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Wird gespeichert…';
+
+    const res = await fetch('/api/auth/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, passwort: pass })
+    });
+    const data = await res.json().catch(() => null);
+
+    if (res.ok) {
+        successEl.innerHTML = '<i class="bi bi-check-circle"></i> ' + (data?.message || 'Passwort zurückgesetzt.') +
+            ' <a href="index.html" style="color:var(--green-600);text-decoration:underline">Zum Login</a>';
+        successEl.style.display = '';
+        btn.style.display = 'none';
+    } else {
+        errEl.textContent = data?.error || 'Fehler beim Zurücksetzen.';
+        errEl.style.display = '';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Passwort speichern';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('input[type="password"]').forEach(input => {
+        if (input.parentElement.classList.contains('pw-wrap')) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'pw-wrap';
+        wrap.style.cssText = 'position:relative;display:flex;align-items:center';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+        input.style.paddingRight = '2.2rem';
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.tabIndex = -1;
+        btn.style.cssText = 'position:absolute;right:0.5rem;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1rem;padding:0.2rem;display:flex;align-items:center';
+        btn.innerHTML = '<i class="bi bi-eye"></i>';
+        btn.onclick = function() { const h = input.type==='password'; input.type=h?'text':'password'; btn.innerHTML=h?'<i class="bi bi-eye-slash"></i>':'<i class="bi bi-eye"></i>'; };
+        wrap.appendChild(btn);
+    });
+});
+</script>
+
+</body>
+</html>

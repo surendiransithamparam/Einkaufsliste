@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>Wochenplan</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="app.css">
+    <link rel="stylesheet" href="wochenplan.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-left"></div>
+    <div class="navbar-center">
+        <a href="index.html" class="nav-tab" title="Einkaufsliste">
+            <i class="bi bi-cart3"></i>
+            <span>Einkauf</span>
+        </a>
+        <a href="wochenplan.html" class="nav-tab active" title="Wochenplan">
+            <i class="bi bi-calendar-week"></i>
+            <span>Woche</span>
+        </a>
+        <a href="rezepte.html" class="nav-tab" title="Rezepte">
+            <i class="bi bi-book"></i>
+            <span>Rezepte</span>
+        </a>
+    </div>
+    <div class="navbar-right">
+        <div class="nav-dropdown" id="navDropdown">
+            <button class="btn-nav btn-nav-icon" onclick="toggleNavDropdown(event)" title="Menü">
+                <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <div class="nav-dropdown-menu" id="navDropdownMenu">
+                <button onclick="openGerichteModal();closeNavDropdown()">
+                    <i class="bi bi-book"></i> Eigene Gerichte
+                </button>
+                <button onclick="openHaushalt();closeNavDropdown()" id="haushaltBtn" style="display:none">
+                    <i class="bi bi-people"></i> Haushalt
+                </button>
+                <button onclick="openProfil();closeNavDropdown()" id="profilBtn" style="display:none">
+                    <i class="bi bi-person"></i> Profil
+                </button>
+                <button onclick="logout();closeNavDropdown()" id="logoutBtn" style="display:none">
+                    <i class="bi bi-box-arrow-left"></i> Abmelden
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div id="appContent" class="app-content hidden">
+<div class="container">
+    <!-- Week Navigation -->
+    <div class="week-nav">
+        <button class="btn btn-secondary btn-icon" onclick="changeWeek(-1)"><i class="bi bi-chevron-left"></i></button>
+        <span class="week-label" id="weekLabel"></span>
+        <button class="btn btn-secondary btn-icon" onclick="changeWeek(1)"><i class="bi bi-chevron-right"></i></button>
+        <button class="btn btn-secondary btn-sm" onclick="goToday()" style="margin-left:0.5rem">Heute</button>
+    </div>
+
+    <!-- Plan Grid -->
+    <div class="plan-grid" id="planGrid"></div>
+</div>
+</div>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="bi bi-calendar-week" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <h1 style="font-size:1.5rem;margin-top:0.5rem">Wochenplan</h1>
+            <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Anmelden</p>
+        </div>
+        <form onsubmit="submitAuth(event)">
+            <div style="display:flex;flex-direction:column;gap:0.75rem">
+                <div>
+                    <label for="authUser">Benutzername</label>
+                    <input type="text" id="authUser" required autocomplete="username" placeholder="Benutzername">
+                </div>
+                <div>
+                    <label for="authPass">Passwort</label>
+                    <input type="password" id="authPass" required autocomplete="current-password" placeholder="Passwort">
+                </div>
+                <div id="authError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                <div id="authSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem">
+                    <i class="bi bi-box-arrow-in-right"></i> Anmelden
+                </button>
+                <a href="register.html" class="btn btn-secondary" style="width:100%;padding:0.7rem;font-size:0.95rem;text-decoration:none;text-align:center">
+                    <i class="bi bi-person-plus"></i> Registrieren
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Rezept-Zutaten -->
+<div class="modal-overlay" id="dishSearchOverlay" onclick="if(event.target===this)closeDishSearch()">
+    <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+            <h2 id="dishSearchTitle"><i class="bi bi-cart-plus"></i> Zutaten</h2>
+            <button class="modal-close" onclick="closeDishSearch()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body" id="dishSearchBody">
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Profil -->
+<div class="modal-overlay" id="profilOverlay" onclick="if(event.target===this)closeProfil()">
+    <div class="modal" style="max-width:420px">
+        <div class="modal-header">
+            <h2><i class="bi bi-person"></i> Profil</h2>
+            <button class="modal-close" onclick="closeProfil()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom:0.75rem">
+                <label>Benutzername</label>
+                <input type="text" id="profilUser" disabled style="background:var(--gray-100);color:var(--gray-500)">
+            </div>
+            <div style="margin-bottom:1rem">
+                <label for="profilEmail">E-Mail</label>
+                <input type="email" id="profilEmail" placeholder="name@beispiel.ch">
+            </div>
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="closeProfil()">Abbrechen</button>
+                <button class="btn btn-primary" onclick="saveProfil()"><i class="bi bi-check-lg"></i> Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Eigene Gerichte verwalten -->
+<div class="modal-overlay" id="gerichteOverlay" onclick="if(event.target===this)closeGerichteModal()">
+    <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+            <h2><i class="bi bi-book"></i> Eigene Gerichte</h2>
+            <button class="modal-close" onclick="closeGerichteModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body" id="gerichteBody">
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Gericht bearbeiten -->
+<div class="modal-overlay" id="gerichtEditOverlay" onclick="if(event.target===this)closeGerichtEdit()">
+    <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+            <h2 id="gerichtEditTitle"><i class="bi bi-book"></i> Neues Gericht</h2>
+            <button class="modal-close" onclick="closeGerichtEdit()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="gerichtEditId">
+            <div style="margin-bottom:0.75rem">
+                <label for="gerichtEditName">Name</label>
+                <input type="text" id="gerichtEditName" placeholder="z. B. Spaghetti Bolognese">
+            </div>
+            <div style="margin-bottom:0.5rem">
+                <label>Zutaten</label>
+                <div id="gerichtZutatenList"></div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addGerichtZutat()" style="margin-top:0.4rem">
+                    <i class="bi bi-plus"></i> Weitere Zutat
+                </button>
+            </div>
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1rem">
+                <button class="btn btn-secondary" onclick="closeGerichtEdit()">Abbrechen</button>
+                <button class="btn btn-primary" onclick="saveGericht()"><i class="bi bi-check-lg"></i> Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toasts"></div>
+
+<script src="shared.js"></script>
+<script src="wochenplan.js"></script>
+</body>
+</html>

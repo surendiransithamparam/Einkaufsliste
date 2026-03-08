@@ -1,0 +1,318 @@
+// -- Shared utilities across all pages --
+
+let currentUser = null;
+
+function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// -- Auth --
+async function checkAuth(onSuccess) {
+    try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) { currentUser = await res.json(); onSuccess(); return; }
+    } catch (e) {}
+    showLogin();
+}
+
+function showLogin() {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('appContent').classList.add('hidden');
+}
+
+function showAppBase() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appContent').classList.remove('hidden');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const profilBtn = document.getElementById('profilBtn');
+    const haushaltBtn = document.getElementById('haushaltBtn');
+    if (logoutBtn) logoutBtn.style.display = '';
+    if (profilBtn) profilBtn.style.display = '';
+    if (haushaltBtn) haushaltBtn.style.display = '';
+    ensureHaushaltModal();
+}
+
+async function submitAuth(e) {
+    e.preventDefault();
+    const user = document.getElementById('authUser').value.trim();
+    const pass = document.getElementById('authPass').value;
+    const errEl = document.getElementById('authError');
+    const successEl = document.getElementById('authSuccess');
+    errEl.style.display = 'none';
+    if (successEl) successEl.style.display = 'none';
+    const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ benutzername: user, passwort: pass })
+    });
+    if (res.ok) { currentUser = await res.json(); showApp(); }
+    else if (res.status === 403) {
+        const data = await res.json().catch(() => null);
+        errEl.innerHTML = (data?.error || 'Konto nicht aktiviert.') +
+            ` <a href="#" onclick="resendActivation('${user.replace(/'/g, "\\'")}');return false" style="color:var(--green-600);text-decoration:underline">Aktivierungsmail erneut senden</a>`;
+        errEl.style.display = '';
+    }
+    else { errEl.innerHTML = 'Benutzername oder Passwort falsch. <a href="reset.html" style="color:var(--green-600);text-decoration:underline">Passwort vergessen?</a>'; errEl.style.display = ''; }
+}
+
+async function resendActivation(username) {
+    const errEl = document.getElementById('authError');
+    const successEl = document.getElementById('authSuccess');
+    errEl.style.display = 'none';
+    const res = await fetch('/api/auth/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ benutzername: username })
+    });
+    const data = await res.json().catch(() => null);
+    if (res.ok) {
+        successEl.textContent = data?.message || 'Aktivierungsmail gesendet.';
+        successEl.style.display = '';
+    } else {
+        errEl.textContent = data?.error || 'Fehler beim Senden.';
+        errEl.style.display = '';
+    }
+}
+
+let _onLogout = null;
+async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    currentUser = null;
+    if (_onLogout) _onLogout();
+    showLogin();
+}
+
+// -- Toast --
+function toast(msg) {
+    const el = document.createElement('div');
+    el.className = 'toast success';
+    el.textContent = msg;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+}
+
+// -- Profil --
+function openProfil() {
+    document.getElementById('profilUser').value = currentUser?.benutzername || '';
+    document.getElementById('profilEmail').value = currentUser?.email || '';
+    document.getElementById('profilOverlay').classList.add('active');
+}
+
+function closeProfil() {
+    document.getElementById('profilOverlay').classList.remove('active');
+}
+
+async function saveProfil() {
+    const email = document.getElementById('profilEmail').value.trim();
+    const res = await fetch('/api/auth/profil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+    if (res.ok) {
+        currentUser.email = email;
+        toast('Profil gespeichert');
+        closeProfil();
+    }
+}
+
+// -- Haushalt --
+function ensureHaushaltModal() {
+    if (document.getElementById('haushaltOverlay')) return;
+    const div = document.createElement('div');
+    div.innerHTML = `<div class="modal-overlay" id="haushaltOverlay" onclick="if(event.target===this)closeHaushalt()">
+        <div class="modal" style="max-width:420px">
+            <div class="modal-header">
+                <h2><i class="bi bi-people"></i> Haushalt</h2>
+                <button class="modal-close" onclick="closeHaushalt()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-body" id="haushaltBody"></div>
+        </div>
+    </div>`;
+    document.body.appendChild(div.firstElementChild);
+}
+
+async function openHaushalt() {
+    ensureHaushaltModal();
+    const body = document.getElementById('haushaltBody');
+    body.innerHTML = '<p style="color:var(--gray-400);text-align:center">Laden...</p>';
+    document.getElementById('haushaltOverlay').classList.add('active');
+
+    const meRes = await fetch('/api/auth/me');
+    if (meRes.ok) currentUser = await meRes.json();
+
+    if (currentUser.haushalt) {
+        const membersRes = await fetch('/api/haushalt/mitglieder');
+        const members = membersRes.ok ? await membersRes.json() : [];
+        const isErsteller = currentUser.haushalt.isErsteller;
+        body.innerHTML = `
+            <div style="margin-bottom:1rem">
+                <div style="font-weight:700;font-size:1rem;margin-bottom:0.25rem">${esc(currentUser.haushalt.name)}</div>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">
+                    <span style="font-size:0.8rem;color:var(--gray-500)">Einladungscode:</span>
+                    <code style="background:var(--gray-100);padding:0.25rem 0.6rem;border-radius:6px;font-weight:700;font-size:1rem;letter-spacing:0.1em">${esc(currentUser.haushalt.code)}</code>
+                    <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('${currentUser.haushalt.code}');toast('Code kopiert')" title="Kopieren">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="shareHaushaltCode()" title="Teilen">
+                        <i class="bi bi-share"></i>
+                    </button>
+                </div>
+            </div>
+            <div style="margin-bottom:1rem">
+                <div style="font-size:0.8rem;font-weight:600;color:var(--gray-500);margin-bottom:0.4rem">Mitglieder</div>
+                ${members.map(m => {
+                    const rolleLabel = m.isErsteller ? 'Admin' : m.rolle === 'schreibend' ? 'Bearbeiten' : 'Nur lesen';
+                    const rolleColor = m.isErsteller ? 'var(--green-600)' : m.rolle === 'lesend' ? 'var(--gray-400)' : 'var(--blue-500, #3b82f6)';
+                    const rolleIcon = m.isErsteller ? 'bi-shield-fill-check' : m.rolle === 'lesend' ? 'bi-eye' : 'bi-pencil-fill';
+                    let rolleHtml = '<span style="font-size:0.7rem;color:' + rolleColor + ';font-weight:600;display:flex;align-items:center;gap:0.2rem"><i class="bi ' + rolleIcon + '"></i> ' + rolleLabel + '</span>';
+                    if (isErsteller && !m.isErsteller) {
+                        rolleHtml = '<select onchange="changeRolle(' + m.id + ',this.value)" style="font-size:0.75rem;padding:0.15rem 0.3rem;border-radius:4px;border:1px solid var(--gray-200)">' +
+                            '<option value="schreibend"' + (m.rolle === 'schreibend' ? ' selected' : '') + '>Bearbeiten</option>' +
+                            '<option value="lesend"' + (m.rolle === 'lesend' ? ' selected' : '') + '>Nur lesen</option>' +
+                            '</select>';
+                    }
+                    return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;font-size:0.9rem;justify-content:space-between">' +
+                        '<div style="display:flex;align-items:center;gap:0.4rem"><i class="bi bi-person-fill" style="color:var(--green-600)"></i> ' + esc(m.benutzername) + '</div>' +
+                        rolleHtml + '</div>';
+                }).join('')}
+            </div>
+            ${currentUser.haushalt.rolle === 'lesend' ? '<div style="background:var(--gray-100);border-radius:8px;padding:0.6rem 0.75rem;margin-bottom:1rem;font-size:0.8rem;color:var(--gray-500)"><i class="bi bi-eye"></i> Du hast nur Leserechte. Wende dich an den Haushalt-Admin, um Schreibrechte zu erhalten.</div>' : ''}
+            <button class="btn btn-danger" style="width:100%" onclick="leaveHaushalt()">
+                <i class="bi bi-box-arrow-right"></i> Haushalt verlassen
+            </button>`;
+    } else {
+        body.innerHTML = `
+            <p style="color:var(--gray-500);font-size:0.85rem;margin-bottom:1.25rem">
+                Erstelle einen Haushalt oder tritt einem bei, um die Einkaufsliste zu teilen.
+            </p>
+            <div style="margin-bottom:1.25rem">
+                <label>Neuen Haushalt erstellen</label>
+                <div style="display:flex;gap:0.5rem">
+                    <input type="text" id="haushaltName" placeholder="Name (z.B. Familie M\u00FCller)">
+                    <button class="btn btn-primary" onclick="createHaushalt()" style="white-space:nowrap">Erstellen</button>
+                </div>
+            </div>
+            <div style="border-top:1px solid var(--gray-200);padding-top:1.25rem">
+                <label>Haushalt beitreten</label>
+                <div style="display:flex;gap:0.5rem">
+                    <input type="text" id="haushaltCode" placeholder="Einladungscode" style="text-transform:uppercase;letter-spacing:0.1em">
+                    <button class="btn btn-primary" onclick="joinHaushalt()" style="white-space:nowrap">Beitreten</button>
+                </div>
+            </div>
+            <div id="haushaltError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-top:0.75rem"></div>`;
+    }
+}
+
+function closeHaushalt() { document.getElementById('haushaltOverlay').classList.remove('active'); }
+
+async function shareHaushaltCode() {
+    const code = currentUser?.haushalt?.code;
+    const name = currentUser?.haushalt?.name || 'Haushalt';
+    if (!code) return;
+    const text = 'Tritt meinem Haushalt \"' + name + '\" bei! Einladungscode: ' + code;
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: 'Haushalt beitreten', text });
+        } catch (e) { /* user cancelled */ }
+    } else {
+        navigator.clipboard.writeText(text);
+        toast('Einladungstext kopiert');
+    }
+}
+
+async function createHaushalt() {
+    const name = document.getElementById('haushaltName').value.trim();
+    const errEl = document.getElementById('haushaltError');
+    if (!name) { errEl.textContent = 'Bitte einen Namen eingeben.'; errEl.style.display = ''; return; }
+    const res = await fetch('/api/haushalt', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+    });
+    if (res.ok) {
+        toast('Haushalt erstellt!');
+        openHaushalt();
+        if (typeof loadItems === 'function') loadItems();
+    } else {
+        const data = await res.json().catch(() => null);
+        errEl.textContent = data?.error || 'Fehler beim Erstellen.';
+        errEl.style.display = '';
+    }
+}
+
+async function joinHaushalt() {
+    const code = document.getElementById('haushaltCode').value.trim();
+    const errEl = document.getElementById('haushaltError');
+    if (!code) { errEl.textContent = 'Bitte einen Code eingeben.'; errEl.style.display = ''; return; }
+    const res = await fetch('/api/haushalt/join', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+    });
+    if (res.ok) {
+        const data = await res.json();
+        toast(`Haushalt "${data.name}" beigetreten!`);
+        openHaushalt();
+        if (typeof loadItems === 'function') loadItems();
+    } else {
+        const data = await res.json().catch(() => null);
+        errEl.textContent = data?.error || 'Code nicht gefunden.';
+        errEl.style.display = '';
+    }
+}
+
+async function changeRolle(userId, rolle) {
+    const res = await fetch('/api/haushalt/rolle', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, rolle })
+    });
+    if (res.ok) {
+        toast('Rolle ge\u00E4ndert: ' + (rolle === 'lesend' ? 'Nur lesen' : 'Bearbeiten'));
+    } else {
+        toast('Fehler beim \u00C4ndern der Rolle');
+        openHaushalt();
+    }
+}
+
+async function leaveHaushalt() {
+    await fetch('/api/haushalt/leave', { method: 'POST' });
+    toast('Haushalt verlassen');
+    closeHaushalt();
+    if (typeof loadItems === 'function') loadItems();
+}
+
+// -- Nav Dropdown --
+function toggleNavDropdown(e) {
+    e.stopPropagation();
+    document.getElementById('navDropdownMenu').classList.toggle('open');
+}
+
+function closeNavDropdown() {
+    document.getElementById('navDropdownMenu').classList.remove('open');
+}
+
+document.addEventListener('click', () => closeNavDropdown());
+
+// -- Password toggle --
+function initPasswordToggles() {
+    document.querySelectorAll('input[type="password"]').forEach(input => {
+        if (input.parentElement.classList.contains('pw-wrap')) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'pw-wrap';
+        wrap.style.cssText = 'position:relative;display:flex;align-items:center';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+        input.style.paddingRight = '2.2rem';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.tabIndex = -1;
+        btn.className = 'pw-toggle';
+        btn.style.cssText = 'position:absolute;right:0.5rem;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1rem;padding:0.2rem;display:flex;align-items:center';
+        btn.innerHTML = '<i class="bi bi-eye"></i>';
+        btn.onclick = function() {
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.innerHTML = isHidden ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+        };
+        wrap.appendChild(btn);
+    });
+}
+document.addEventListener('DOMContentLoaded', initPasswordToggles);

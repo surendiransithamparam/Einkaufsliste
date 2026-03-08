@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>Admin – Einkaufsliste</title>
+    <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="app.css">
+    <style>
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .admin-table th, .admin-table td { padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid var(--gray-200); }
+        .admin-table th { font-size: 0.7rem; text-transform: uppercase; color: var(--gray-500); font-weight: 600; background: var(--gray-50); position: sticky; top: 0; }
+        .admin-table tr:hover td { background: var(--gray-50); }
+        .badge { display: inline-block; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+        .badge-green { background: rgba(34,197,94,0.1); color: #16a34a; }
+        .badge-red { background: rgba(239,68,68,0.1); color: #dc2626; }
+        .badge-blue { background: rgba(59,130,246,0.1); color: #2563eb; }
+        .admin-actions { display: flex; gap: 0.25rem; }
+        .admin-actions button { background: none; border: none; cursor: pointer; padding: 0.25rem; font-size: 0.85rem; color: var(--gray-400); transition: color 0.15s; }
+        .admin-actions button:hover { color: var(--gray-700); }
+        .admin-actions button.danger:hover { color: var(--red-500); }
+        .table-wrap { overflow-x: auto; background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--shadow); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-left"></div>
+    <div class="navbar-brand">
+        <i class="bi bi-shield-lock"></i>
+        <span>Admin</span>
+    </div>
+    <div class="navbar-right">
+        <div class="nav-dropdown" id="navDropdown">
+            <button class="btn-nav btn-nav-icon" onclick="toggleNavDropdown(event)" title="Menü">
+                <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <div class="nav-dropdown-menu" id="navDropdownMenu">
+                <button onclick="logout();closeNavDropdown()" id="logoutBtn" style="display:none">
+                    <i class="bi bi-box-arrow-left"></i> Abmelden
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div id="appContent" class="app-content hidden">
+<div class="container">
+    <h2 style="font-size:1.1rem;margin-bottom:1rem;color:var(--gray-700)"><i class="bi bi-people"></i> Benutzer</h2>
+    <div class="table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Benutzer</th>
+                    <th>E-Mail</th>
+                    <th>Status</th>
+                    <th>Rolle</th>
+                    <th>Haushalt</th>
+                    <th>Erstellt</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+        </table>
+    </div>
+
+    <h2 style="font-size:1.1rem;margin:1.5rem 0 1rem;color:var(--gray-700)"><i class="bi bi-house-door"></i> Haushalte</h2>
+    <div class="table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>Ersteller</th>
+                    <th>Mitglieder</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="haushaltTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- Mitglieder Detail (eingeblendet) -->
+    <div id="haushaltDetail" style="display:none;margin-top:1rem">
+        <div class="table-wrap" style="padding:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+                <h3 id="haushaltDetailTitle" style="font-size:0.95rem;color:var(--gray-700);margin:0"></h3>
+                <button class="btn btn-secondary btn-sm" onclick="closeHaushaltDetail()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Benutzer</th><th>Rolle</th><th></th></tr>
+                </thead>
+                <tbody id="haushaltMembersBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Modal: Passwort zurücksetzen -->
+<div class="modal-overlay" id="resetPwOverlay" onclick="if(event.target===this)closeResetPw()">
+    <div class="modal" style="max-width:400px">
+        <div class="modal-header">
+            <h2>Passwort ändern</h2>
+            <button class="modal-close" onclick="closeResetPw()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:0.75rem">Neues Passwort für <strong id="resetPwUser"></strong></p>
+            <input type="password" id="resetPwInput" placeholder="Neues Passwort" style="margin-bottom:0.75rem">
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="closeResetPw()">Abbrechen</button>
+                <button class="btn btn-primary" onclick="saveResetPw()"><i class="bi bi-check-lg"></i> Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="bi bi-shield-lock" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <h1 style="font-size:1.5rem;margin-top:0.5rem">Admin</h1>
+        </div>
+        <form onsubmit="submitAuth(event)">
+            <div style="display:flex;flex-direction:column;gap:0.75rem">
+                <div>
+                    <label for="authUser">Benutzername</label>
+                    <input type="text" id="authUser" required autocomplete="username" placeholder="Benutzername">
+                </div>
+                <div>
+                    <label for="authPass">Passwort</label>
+                    <input type="password" id="authPass" required autocomplete="current-password" placeholder="Passwort">
+                </div>
+                <div id="authError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem">
+                    <i class="bi bi-box-arrow-in-right"></i> Anmelden
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+let currentUser = null;
+let users = [];
+
+async function checkAuth() {
+    try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+            currentUser = await res.json();
+            if (!currentUser.isAdmin) { location.href = 'index.html'; return; }
+            showApp();
+            return;
+        }
+    } catch (e) {}
+    showLogin();
+}
+
+function showApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appContent').classList.remove('hidden');
+    document.getElementById('logoutBtn').style.display = '';
+    loadUsers();
+    loadHaushalte();
+}
+
+function showLogin() {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('appContent').classList.add('hidden');
+}
+
+async function submitAuth(e) {
+    e.preventDefault();
+    const user = document.getElementById('authUser').value.trim();
+    const pass = document.getElementById('authPass').value;
+    const errEl = document.getElementById('authError');
+    errEl.style.display = 'none';
+    const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ benutzername: user, passwort: pass })
+    });
+    if (res.ok) {
+        currentUser = await res.json();
+        // Check admin via /me
+        const meRes = await fetch('/api/auth/me');
+        if (meRes.ok) {
+            currentUser = await meRes.json();
+            if (!currentUser.isAdmin) {
+                errEl.textContent = 'Kein Admin-Zugang.';
+                errEl.style.display = '';
+                await fetch('/api/auth/logout', { method: 'POST' });
+                return;
+            }
+            showApp();
+        }
+    } else if (res.status === 403) {
+        errEl.textContent = 'Konto nicht aktiviert.';
+        errEl.style.display = '';
+    } else {
+        errEl.textContent = 'Benutzername oder Passwort falsch.';
+        errEl.style.display = '';
+    }
+}
+
+async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    currentUser = null;
+    showLogin();
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+async function loadUsers() {
+    const res = await fetch('/api/admin/benutzer');
+    if (!res.ok) return;
+    users = await res.json();
+    renderUsers();
+}
+
+function renderUsers() {
+    const tbody = document.getElementById('userTableBody');
+    tbody.innerHTML = users.map(u => `<tr>
+        <td>${u.id}</td>
+        <td><strong>${esc(u.benutzername)}</strong></td>
+        <td style="font-size:0.75rem">${esc(u.email)}</td>
+        <td>${u.emailBestaetigt
+            ? '<span class="badge badge-green">Aktiv</span>'
+            : '<span class="badge badge-red">Inaktiv</span>'}</td>
+        <td>${u.isAdmin ? '<span class="badge badge-blue">Admin</span>' : 'User'}</td>
+        <td style="font-size:0.75rem">${esc(u.haushalt)}</td>
+        <td style="font-size:0.75rem;white-space:nowrap">${u.erstelltAm}</td>
+        <td>
+            <div class="admin-actions">
+                ${!u.emailBestaetigt ? `<button onclick="toggleActivation(${u.id},true)" title="Aktivieren"><i class="bi bi-check-circle"></i></button>` : `<button onclick="toggleActivation(${u.id},false)" title="Deaktivieren"><i class="bi bi-x-circle"></i></button>`}
+                <button onclick="openResetPw(${u.id},'${esc(u.benutzername).replace(/'/g,"\\'")}')" title="Passwort ändern"><i class="bi bi-key"></i></button>
+                ${!u.isAdmin ? `<button onclick="toggleAdmin(${u.id},true)" title="Zum Admin machen"><i class="bi bi-shield-plus"></i></button>` : `<button onclick="toggleAdmin(${u.id},false)" title="Admin entfernen"><i class="bi bi-shield-minus"></i></button>`}
+                <button class="danger" onclick="deleteUser(${u.id},'${esc(u.benutzername).replace(/'/g,"\\'")}')" title="Löschen"><i class="bi bi-trash"></i></button>
+            </div>
+        </td>
+    </tr>`).join('');
+}
+
+async function toggleActivation(id, val) {
+    await fetch(`/api/admin/benutzer/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailBestaetigt: val })
+    });
+    toast(val ? 'Benutzer aktiviert' : 'Benutzer deaktiviert');
+    loadUsers();
+}
+
+async function toggleAdmin(id, val) {
+    await fetch(`/api/admin/benutzer/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isAdmin: val })
+    });
+    toast(val ? 'Admin-Rolle gesetzt' : 'Admin-Rolle entfernt');
+    loadUsers();
+}
+
+let resetPwId = null;
+function openResetPw(id, name) {
+    resetPwId = id;
+    document.getElementById('resetPwUser').textContent = name;
+    document.getElementById('resetPwInput').value = '';
+    document.getElementById('resetPwOverlay').classList.add('active');
+    setTimeout(() => document.getElementById('resetPwInput').focus(), 200);
+}
+function closeResetPw() {
+    document.getElementById('resetPwOverlay').classList.remove('active');
+    resetPwId = null;
+}
+async function saveResetPw() {
+    const pw = document.getElementById('resetPwInput').value;
+    if (pw.length < 4) { toast('Mindestens 4 Zeichen'); return; }
+    await fetch(`/api/admin/benutzer/${resetPwId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passwort: pw })
+    });
+    toast('Passwort geändert');
+    closeResetPw();
+}
+
+async function deleteUser(id, name) {
+    if (!confirm(`Benutzer "${name}" wirklich löschen?`)) return;
+    const res = await fetch(`/api/admin/benutzer/${id}`, { method: 'DELETE' });
+    if (res.ok) { toast('Benutzer gelöscht'); loadUsers(); }
+    else { const d = await res.json().catch(()=>null); toast(d?.error || 'Fehler'); }
+}
+
+function toast(msg) {
+    const el = document.createElement('div');
+    el.className = 'toast success';
+    el.textContent = msg;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+}
+
+// -- Haushalte --
+let haushalte = [];
+let detailHaushaltId = null;
+
+async function loadHaushalte() {
+    const res = await fetch('/api/admin/haushalte');
+    if (!res.ok) return;
+    haushalte = await res.json();
+    renderHaushalte();
+}
+
+function renderHaushalte() {
+    const tbody = document.getElementById('haushaltTableBody');
+    tbody.innerHTML = haushalte.map(h => `<tr>
+        <td>${h.id}</td>
+        <td><strong>${esc(h.name)}</strong></td>
+        <td><code style="font-size:0.75rem;letter-spacing:0.05em">${esc(h.code)}</code></td>
+        <td style="font-size:0.75rem">${esc(h.erstelltVon)}</td>
+        <td>${h.mitglieder}</td>
+        <td>
+            <div class="admin-actions">
+                <button onclick="openHaushaltDetail(${h.id},'${esc(h.name).replace(/'/g,"\\'")}')" title="Mitglieder anzeigen"><i class="bi bi-people"></i></button>
+                <button onclick="renameHaushalt(${h.id},'${esc(h.name).replace(/'/g,"\\'")}')" title="Umbenennen"><i class="bi bi-pencil"></i></button>
+                <button class="danger" onclick="deleteHaushalt(${h.id},'${esc(h.name).replace(/'/g,"\\'")}')" title="Löschen"><i class="bi bi-trash"></i></button>
+            </div>
+        </td>
+    </tr>`).join('');
+}
+
+async function openHaushaltDetail(id, name) {
+    detailHaushaltId = id;
+    document.getElementById('haushaltDetailTitle').innerHTML = '<i class="bi bi-house-door"></i> ' + esc(name) + ' — Mitglieder';
+    document.getElementById('haushaltDetail').style.display = '';
+    const res = await fetch('/api/admin/haushalte/' + id + '/mitglieder');
+    if (!res.ok) return;
+    const members = await res.json();
+    const tbody = document.getElementById('haushaltMembersBody');
+    tbody.innerHTML = members.map(m => {
+        const rolleLabel = m.isErsteller ? 'Admin (Ersteller)' : m.rolle;
+        return '<tr>' +
+            '<td><i class="bi bi-person-fill" style="color:var(--green-600)"></i> ' + esc(m.benutzername) + '</td>' +
+            '<td>' + (m.isErsteller
+                ? '<span class="badge badge-blue">Admin</span>'
+                : '<select onchange="changeHaushaltRolle(' + id + ',' + m.id + ',this.value)" style="font-size:0.75rem;padding:0.15rem 0.3rem;border-radius:4px;border:1px solid var(--gray-200)">' +
+                    '<option value="schreibend"' + (m.rolle === 'schreibend' ? ' selected' : '') + '>Bearbeiten</option>' +
+                    '<option value="lesend"' + (m.rolle === 'lesend' ? ' selected' : '') + '>Nur lesen</option>' +
+                    '<option value="admin"' + (m.rolle === 'admin' ? ' selected' : '') + '>Admin</option>' +
+                  '</select>') +
+            '</td>' +
+            '<td><div class="admin-actions">' +
+                '<button class="danger" onclick="removeMember(' + id + ',' + m.id + ',\'' + esc(m.benutzername).replace(/'/g,"\\'") + '\')" title="Entfernen"><i class="bi bi-person-x"></i></button>' +
+            '</div></td></tr>';
+    }).join('');
+}
+
+function closeHaushaltDetail() {
+    document.getElementById('haushaltDetail').style.display = 'none';
+    detailHaushaltId = null;
+}
+
+async function changeHaushaltRolle(hid, uid, rolle) {
+    await fetch('/api/admin/haushalte/' + hid + '/mitglieder/' + uid, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rolle })
+    });
+    toast('Rolle geändert');
+}
+
+async function removeMember(hid, uid, name) {
+    if (!confirm('\"' + name + '\" aus dem Haushalt entfernen?')) return;
+    await fetch('/api/admin/haushalte/' + hid + '/mitglieder/' + uid, { method: 'DELETE' });
+    toast('Mitglied entfernt');
+    openHaushaltDetail(hid, document.getElementById('haushaltDetailTitle').textContent.split('—')[0].trim());
+    loadHaushalte();
+}
+
+async function renameHaushalt(id, currentName) {
+    const newName = prompt('Neuer Name:', currentName);
+    if (!newName || newName.trim() === currentName) return;
+    await fetch('/api/admin/haushalte/' + id, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim() })
+    });
+    toast('Haushalt umbenannt');
+    loadHaushalte();
+}
+
+async function deleteHaushalt(id, name) {
+    if (!confirm('Haushalt \"' + name + '\" wirklich löschen? Alle Mitglieder werden entfernt.')) return;
+    await fetch('/api/admin/haushalte/' + id, { method: 'DELETE' });
+    toast('Haushalt gelöscht');
+    closeHaushaltDetail();
+    loadHaushalte();
+}
+
+function toggleNavDropdown(e) { e.stopPropagation(); document.getElementById('navDropdownMenu').classList.toggle('open'); }
+function closeNavDropdown() { document.getElementById('navDropdownMenu').classList.remove('open'); }
+document.addEventListener('click', () => closeNavDropdown());
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeResetPw(); closeHaushaltDetail(); } });
+
+checkAuth();
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('input[type="password"]').forEach(input => {
+        if (input.parentElement.classList.contains('pw-wrap')) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'pw-wrap';
+        wrap.style.cssText = 'position:relative;display:flex;align-items:center';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+        input.style.paddingRight = '2.2rem';
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.tabIndex = -1;
+        btn.style.cssText = 'position:absolute;right:0.5rem;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1rem;padding:0.2rem;display:flex;align-items:center';
+        btn.innerHTML = '<i class="bi bi-eye"></i>';
+        btn.onclick = function() { const h = input.type==='password'; input.type=h?'text':'password'; btn.innerHTML=h?'<i class="bi bi-eye-slash"></i>':'<i class="bi bi-eye"></i>'; };
+        wrap.appendChild(btn);
+    });
+});
+</script>
+
+</body>
+</html>

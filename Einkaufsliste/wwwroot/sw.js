@@ -1,0 +1,47 @@
+const CACHE_NAME = 'einkaufsliste-v3';
+const ASSETS = [
+    './',
+    './einkaufsliste.html',
+    './app.css',
+    './app.js',
+    './manifest.json',
+    './icons/icon-192.svg',
+    './icons/icon-512.svg',
+    'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
+];
+
+// Install: cache all assets
+self.addEventListener('install', e => {
+    e.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(ASSETS))
+            .then(() => self.skipWaiting())
+    );
+});
+
+// Activate: clean up old caches
+self.addEventListener('activate', e => {
+    e.waitUntil(
+        caches.keys()
+            .then(keys => Promise.all(
+                keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+            ))
+            .then(() => self.clients.claim())
+    );
+});
+
+// Fetch: network first, fallback to cache
+self.addEventListener('fetch', e => {
+    e.respondWith(
+        fetch(e.request)
+            .then(response => {
+                // Cache successful responses
+                if (response.ok) {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+                }
+                return response;
+            })
+            .catch(() => caches.match(e.request))
+    );
+});

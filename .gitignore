@@ -1,0 +1,12 @@
+## Build
+bin/
+obj/
+
+## IDE
+.idea/
+.vs/
+*.user
+*.suo
+
+## User-specific
+appsettings.Development.json

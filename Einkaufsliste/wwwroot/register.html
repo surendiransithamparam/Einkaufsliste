@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>Registrieren – Einkaufsliste</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="login-screen" style="position:relative">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="bi bi-person-plus" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <h1 style="font-size:1.5rem;margin-top:0.5rem">Registrieren</h1>
+            <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Neues Konto erstellen</p>
+        </div>
+        <form onsubmit="submitRegister(event)">
+            <div style="display:flex;flex-direction:column;gap:0.75rem">
+                <div>
+                    <label for="regUser">Benutzername</label>
+                    <input type="text" id="regUser" required autocomplete="username" placeholder="Benutzername">
+                </div>
+                <div>
+                    <label for="regEmail">E-Mail</label>
+                    <input type="email" id="regEmail" required autocomplete="email" placeholder="name@beispiel.ch">
+                </div>
+                <div>
+                    <label for="regPass">Passwort</label>
+                    <input type="password" id="regPass" required autocomplete="new-password" placeholder="Mindestens 4 Zeichen">
+                </div>
+                <div id="regError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                <div id="regSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem" id="regBtn">
+                    <i class="bi bi-person-plus"></i> Konto erstellen
+                </button>
+                <a href="index.html" class="btn btn-secondary" style="width:100%;padding:0.7rem;font-size:0.95rem;text-decoration:none;text-align:center">
+                    <i class="bi bi-arrow-left"></i> Zurück zum Login
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+async function submitRegister(e) {
+    e.preventDefault();
+    const user = document.getElementById('regUser').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const pass = document.getElementById('regPass').value;
+    const errEl = document.getElementById('regError');
+    const successEl = document.getElementById('regSuccess');
+    const btn = document.getElementById('regBtn');
+    errEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    if (!user || !email || !pass) {
+        errEl.textContent = 'Bitte alle Felder ausfüllen.';
+        errEl.style.display = '';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Wird erstellt…';
+
+    const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ benutzername: user, passwort: pass, email })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (res.ok) {
+        if (data?.aktivierung) {
+            successEl.innerHTML = '<i class="bi bi-envelope-check"></i> ' + (data.message || 'Bitte bestätige deine E-Mail-Adresse.');
+            successEl.style.display = '';
+            btn.style.display = 'none';
+        } else if (data?.mailFehler) {
+            errEl.textContent = data.message;
+            errEl.style.display = '';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-person-plus"></i> Konto erstellen';
+        }
+    } else {
+        errEl.textContent = data?.error || 'Registrierung fehlgeschlagen.';
+        errEl.style.display = '';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-person-plus"></i> Konto erstellen';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('input[type="password"]').forEach(input => {
+        if (input.parentElement.classList.contains('pw-wrap')) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'pw-wrap';
+        wrap.style.cssText = 'position:relative;display:flex;align-items:center';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+        input.style.paddingRight = '2.2rem';
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.tabIndex = -1;
+        btn.style.cssText = 'position:absolute;right:0.5rem;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1rem;padding:0.2rem;display:flex;align-items:center';
+        btn.innerHTML = '<i class="bi bi-eye"></i>';
+        btn.onclick = function() { const h = input.type==='password'; input.type=h?'text':'password'; btn.innerHTML=h?'<i class="bi bi-eye-slash"></i>':'<i class="bi bi-eye"></i>'; };
+        wrap.appendChild(btn);
+    });
+});
+</script>
+
+</body>
+</html>
