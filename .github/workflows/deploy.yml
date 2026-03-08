@@ -12,16 +12,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          dotnet-version: '8.0.x'
+          node-version: '20'
 
-      - name: Publish
-        run: dotnet publish Einkaufsliste/Einkaufsliste.csproj -c Release -o ./publish
+      - name: Install dependencies
+        run: npm ci --production
 
-      - name: Create logs directory
-        run: mkdir -p ./publish/logs
+      - name: Download portable Node.js for Windows x86
+        run: |
+          curl -L -o node.zip https://nodejs.org/dist/v20.18.3/node-v20.18.3-win-x86.zip
+          unzip -q node.zip
+          mv node-v20.18.3-win-x86 node-portable
+
+      - name: Prepare publish directory
+        run: |
+          mkdir -p ./publish/public ./publish/logs
+          cp server.js package.json package-lock.json web.config ./publish/
+          cp -r node_modules ./publish/
+          cp -r public/* ./publish/public/
+          cp node-portable/node.exe ./publish/
 
       - name: Generate Production Config
         env:
@@ -30,6 +41,7 @@ jobs:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PW: ${{ secrets.SMTP_PASSWORD }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
         run: |
           jq -n \
             --arg db "$DB_CONN" \
@@ -37,18 +49,20 @@ jobs:
             --arg smtpHost "$SMTP_HOST" \
             --arg smtpUser "$SMTP_USER" \
             --arg smtpPw "$SMTP_PW" \
+            --arg sessionSecret "$SESSION_SECRET" \
             '{
-              ConnectionStrings: { Default: $db },
-              AdminPassword: $admin,
-              Smtp: {
-                Host: $smtpHost,
-                Port: 587,
-                User: $smtpUser,
-                Password: $smtpPw,
-                From: $smtpUser,
-                FromName: "Einkaufsliste"
+              connectionString: $db,
+              adminPassword: $admin,
+              sessionSecret: $sessionSecret,
+              smtp: {
+                host: $smtpHost,
+                port: 587,
+                user: $smtpUser,
+                password: $smtpPw,
+                from: $smtpUser,
+                fromName: "Einkaufsliste"
               }
-            }' > ./publish/appsettings.Production.json
+            }' > ./publish/config.json
 
       - name: Create app_offline.htm
         run: |

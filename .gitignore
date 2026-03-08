@@ -1,6 +1,5 @@
-## Build
-bin/
-obj/
+## Dependencies
+node_modules/
 
 ## IDE
 .idea/
@@ -8,5 +7,8 @@ obj/
 *.user
 *.suo
 
-## User-specific
-appsettings.Development.json
+## Config (secrets)
+config.json
+
+## Build artifacts
+test-publish/
