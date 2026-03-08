@@ -19,6 +19,33 @@ jobs:
       - name: Publish
         run: dotnet publish Einkaufsliste/Einkaufsliste.csproj -c Release -o ./publish
 
+      - name: Generate Production Config
+        env:
+          DB_CONN: ${{ secrets.DB_CONNECTION_STRING }}
+          ADMIN_PW: ${{ secrets.ADMIN_PASSWORD }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PW: ${{ secrets.SMTP_PASSWORD }}
+        run: |
+          jq -n \
+            --arg db "$DB_CONN" \
+            --arg admin "$ADMIN_PW" \
+            --arg smtpHost "$SMTP_HOST" \
+            --arg smtpUser "$SMTP_USER" \
+            --arg smtpPw "$SMTP_PW" \
+            '{
+              ConnectionStrings: { Default: $db },
+              AdminPassword: $admin,
+              Smtp: {
+                Host: $smtpHost,
+                Port: 587,
+                User: $smtpUser,
+                Password: $smtpPw,
+                From: $smtpUser,
+                FromName: "Einkaufsliste"
+              }
+            }' > ./publish/appsettings.Production.json
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
