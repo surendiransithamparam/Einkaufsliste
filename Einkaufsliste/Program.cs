@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -10,6 +11,7 @@ using System.Net.Mail;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 1_048_576); // 1 MB
 
 var connStr = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("ConnectionStrings:Default ist nicht konfiguriert. Bitte in appsettings.json, Umgebungsvariablen oder User Secrets setzen.");
@@ -20,6 +22,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         o.Cookie.Name = "einkauf_auth";
         o.Cookie.HttpOnly = true;
         o.Cookie.SameSite = SameSiteMode.Strict;
+        o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         o.ExpireTimeSpan = TimeSpan.FromDays(30);
         o.SlidingExpiration = true;
         o.Events.OnRedirectToLogin = ctx =>
@@ -37,6 +40,21 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// --- Rate Limiting ---
+
+var _rateLimitStore = new ConcurrentDictionary<string, (int count, DateTime window)>();
+
+bool IsRateLimited(HttpContext ctx, string prefix, int maxRequests = 10, int windowSeconds = 60)
+{
+    var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    var key = $"{prefix}:{ip}";
+    var now = DateTime.UtcNow;
+    var entry = _rateLimitStore.AddOrUpdate(key,
+        _ => (1, now.AddSeconds(windowSeconds)),
+        (_, existing) => existing.window < now ? (1, now.AddSeconds(windowSeconds)) : (existing.count + 1, existing.window));
+    return entry.count > maxRequests;
+}
+
 // --- Helpers ---
 
 int? GetUserId(HttpContext ctx) =>
@@ -45,8 +63,10 @@ int? GetUserId(HttpContext ctx) =>
 string GenerateCode()
 {
     const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    var bytes = RandomNumberGenerator.GetBytes(6);
-    return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
+    var result = new char[6];
+    for (var i = 0; i < 6; i++)
+        result[i] = chars[RandomNumberGenerator.GetInt32(chars.Length)];
+    return new string(result);
 }
 
 async Task<int?> GetHaushaltId(int userId, SqlConnection conn)
@@ -123,7 +143,7 @@ bool VerifyPassword(string password, string stored)
 
     var adminPassword = builder.Configuration["AdminPassword"] ?? "";
     using var checkCmd = new SqlCommand("SELECT COUNT(*) FROM Benutzer WHERE Benutzername='Admin'", conn);
-    if ((int)checkCmd.ExecuteScalar()! == 0 && adminPassword.Length >= 4)
+    if ((int)checkCmd.ExecuteScalar()! == 0 && adminPassword.Length >= 8)
     {
         using var cmd = new SqlCommand(
             "INSERT INTO Benutzer (Benutzername, PasswordHash, EmailBestaetigt, IsAdmin) VALUES ('Admin', @hash, 1, 1)", conn);
@@ -175,6 +195,9 @@ Einkaufsliste";
 
 app.MapPost("/api/auth/register", async (HttpContext ctx) =>
 {
+    if (IsRateLimited(ctx, "register", 5, 300))
+        return Results.Json(new { error = "Zu viele Versuche. Bitte warte einige Minuten." }, statusCode: 429);
+
     var doc = await JsonDocument.ParseAsync(ctx.Request.Body);
     var root = doc.RootElement;
     var username = root.GetProperty("benutzername").GetString()?.Trim() ?? "";
@@ -182,7 +205,7 @@ app.MapPost("/api/auth/register", async (HttpContext ctx) =>
     var email = root.TryGetProperty("email", out var em) ? em.GetString()?.Trim() ?? "" : "";
 
     if (username.Length < 2) return Results.BadRequest(new { error = "Benutzername muss mindestens 2 Zeichen haben." });
-    if (password.Length < 4) return Results.BadRequest(new { error = "Passwort muss mindestens 4 Zeichen haben." });
+    if (password.Length < 8) return Results.BadRequest(new { error = "Passwort muss mindestens 8 Zeichen haben." });
     if (email.Length < 5 || !email.Contains('@')) return Results.BadRequest(new { error = "Bitte eine gültige E-Mail-Adresse eingeben." });
 
     await using var conn = new SqlConnection(connStr);
@@ -218,6 +241,9 @@ app.MapPost("/api/auth/register", async (HttpContext ctx) =>
 
 app.MapPost("/api/auth/login", async (HttpContext ctx) =>
 {
+    if (IsRateLimited(ctx, "login", 10, 60))
+        return Results.Json(new { error = "Zu viele Anmeldeversuche. Bitte warte eine Minute." }, statusCode: 429);
+
     var doc = await JsonDocument.ParseAsync(ctx.Request.Body);
     var root = doc.RootElement;
     var username = root.GetProperty("benutzername").GetString()?.Trim() ?? "";
@@ -305,6 +331,9 @@ app.MapPost("/api/auth/resend", async (HttpContext ctx) =>
 
 app.MapPost("/api/auth/reset-request", async (HttpContext ctx) =>
 {
+    if (IsRateLimited(ctx, "reset", 5, 300))
+        return Results.Json(new { error = "Zu viele Versuche. Bitte warte einige Minuten." }, statusCode: 429);
+
     var doc = await JsonDocument.ParseAsync(ctx.Request.Body);
     var email = doc.RootElement.GetProperty("email").GetString()?.Trim() ?? "";
     if (email.Length < 5 || !email.Contains('@'))
@@ -382,7 +411,7 @@ app.MapPost("/api/auth/reset", async (HttpContext ctx) =>
     var token = root.GetProperty("token").GetString()?.Trim() ?? "";
     var password = root.GetProperty("passwort").GetString() ?? "";
 
-    if (password.Length < 4) return Results.BadRequest(new { error = "Passwort muss mindestens 4 Zeichen haben." });
+    if (password.Length < 8) return Results.BadRequest(new { error = "Passwort muss mindestens 8 Zeichen haben." });
 
     await using var conn = new SqlConnection(connStr);
     await conn.OpenAsync();
@@ -547,6 +576,18 @@ app.MapPost("/api/haushalt/leave", async (HttpContext ctx) =>
         var remaining = (int)await countCmd.ExecuteScalarAsync()!;
         if (remaining == 0)
         {
+            await using var delWp = new SqlCommand("DELETE FROM Wochenplan WHERE HaushaltId=@hid", conn);
+            delWp.Parameters.AddWithValue("@hid", hid.Value);
+            await delWp.ExecuteNonQueryAsync();
+
+            await using var delGz = new SqlCommand("DELETE FROM GerichtZutat WHERE GerichtId IN (SELECT Id FROM Gericht WHERE HaushaltId=@hid)", conn);
+            delGz.Parameters.AddWithValue("@hid", hid.Value);
+            await delGz.ExecuteNonQueryAsync();
+
+            await using var delG = new SqlCommand("DELETE FROM Gericht WHERE HaushaltId=@hid", conn);
+            delG.Parameters.AddWithValue("@hid", hid.Value);
+            await delG.ExecuteNonQueryAsync();
+
             await using var delArticles = new SqlCommand("UPDATE Artikel SET HaushaltId=NULL WHERE HaushaltId=@hid", conn);
             delArticles.Parameters.AddWithValue("@hid", hid.Value);
             await delArticles.ExecuteNonQueryAsync();
@@ -643,7 +684,7 @@ app.MapGet("/api/laden", async () =>
         laden.Add(new { id = reader.GetInt32(0), name = reader.GetString(1) });
     }
     return Results.Ok(laden);
-});
+}).RequireAuthorization();
 
 // --- Artikel Endpoints (all require auth, filtered by user) ---
 
@@ -893,7 +934,7 @@ app.MapPut("/api/admin/benutzer/{id:int}", async (int id, HttpContext ctx) =>
         cmd.Parameters.AddWithValue("@id", id);
         await cmd.ExecuteNonQueryAsync();
     }
-    if (root.TryGetProperty("passwort", out var pw) && pw.GetString() is string newPw && newPw.Length >= 4)
+    if (root.TryGetProperty("passwort", out var pw) && pw.GetString() is string newPw && newPw.Length >= 8)
     {
         await using var cmd = new SqlCommand("UPDATE Benutzer SET PasswordHash=@hash WHERE Id=@id", conn);
         cmd.Parameters.AddWithValue("@hash", HashPassword(newPw));
@@ -1033,6 +1074,15 @@ app.MapDelete("/api/admin/haushalte/{hid:int}/mitglieder/{uid:int}", async (int 
     countCmd.Parameters.AddWithValue("@hid2", hid);
     if ((int)await countCmd.ExecuteScalarAsync()! == 0)
     {
+        await using var delWp = new SqlCommand("DELETE FROM Wochenplan WHERE HaushaltId=@h", conn);
+        delWp.Parameters.AddWithValue("@h", hid);
+        await delWp.ExecuteNonQueryAsync();
+        await using var delGz = new SqlCommand("DELETE FROM GerichtZutat WHERE GerichtId IN (SELECT Id FROM Gericht WHERE HaushaltId=@h)", conn);
+        delGz.Parameters.AddWithValue("@h", hid);
+        await delGz.ExecuteNonQueryAsync();
+        await using var delG = new SqlCommand("DELETE FROM Gericht WHERE HaushaltId=@h", conn);
+        delG.Parameters.AddWithValue("@h", hid);
+        await delG.ExecuteNonQueryAsync();
         await using var delA = new SqlCommand("UPDATE Artikel SET HaushaltId=NULL WHERE HaushaltId=@h", conn);
         delA.Parameters.AddWithValue("@h", hid);
         await delA.ExecuteNonQueryAsync();
@@ -1059,10 +1109,26 @@ app.MapDelete("/api/admin/haushalte/{id:int}", async (int id, HttpContext ctx) =
     removeMembers.Parameters.AddWithValue("@hid", id);
     await removeMembers.ExecuteNonQueryAsync();
 
-    // Detach articles
+    // Delete related data
+    await using var delWp = new SqlCommand("DELETE FROM Wochenplan WHERE HaushaltId=@hid", conn);
+    delWp.Parameters.AddWithValue("@hid", id);
+    await delWp.ExecuteNonQueryAsync();
+
+    await using var delGz = new SqlCommand("DELETE FROM GerichtZutat WHERE GerichtId IN (SELECT Id FROM Gericht WHERE HaushaltId=@hid)", conn);
+    delGz.Parameters.AddWithValue("@hid", id);
+    await delGz.ExecuteNonQueryAsync();
+
+    await using var delG = new SqlCommand("DELETE FROM Gericht WHERE HaushaltId=@hid", conn);
+    delG.Parameters.AddWithValue("@hid", id);
+    await delG.ExecuteNonQueryAsync();
+
     await using var detachArticles = new SqlCommand("UPDATE Artikel SET HaushaltId=NULL WHERE HaushaltId=@hid", conn);
     detachArticles.Parameters.AddWithValue("@hid", id);
     await detachArticles.ExecuteNonQueryAsync();
+
+    await using var delFav = new SqlCommand("DELETE FROM Favorit WHERE HaushaltId=@hid", conn);
+    delFav.Parameters.AddWithValue("@hid", id);
+    await delFav.ExecuteNonQueryAsync();
 
     // Delete household
     await using var cmd = new SqlCommand("DELETE FROM Haushalt WHERE Id=@id", conn);
@@ -1222,6 +1288,21 @@ app.MapDelete("/api/gerichte/{id:int}", async (int id, HttpContext ctx) =>
 
 // --- Rezept Endpoints ---
 
+var allowedRecipeHosts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+{
+    "www.bettybossi.ch", "bettybossi.ch",
+    "migusto.migros.ch",
+    "fooby.ch", "www.fooby.ch",
+    "www.chefkoch.de", "chefkoch.de",
+    "www.swissmilk.ch", "swissmilk.ch",
+    "www.gutekueche.ch", "gutekueche.ch",
+    "www.vegrecipesofindia.com", "vegrecipesofindia.com",
+    "www.indianhealthyrecipes.com", "indianhealthyrecipes.com",
+    "cookwithpranji.com", "www.cookwithpranji.com",
+    "www.padhuskitchen.com", "padhuskitchen.com",
+    "hebbarskitchen.com", "www.hebbarskitchen.com"
+};
+
 app.MapGet("/api/rezept/suche", async (string q, IHttpClientFactory httpFactory) =>
 {
     var client = httpFactory.CreateClient();
@@ -1270,7 +1351,7 @@ app.MapGet("/api/rezept/suche", async (string q, IHttpClientFactory httpFactory)
     });
     await Task.WhenAll(tasks);
     return Results.Ok(allResults);
-});
+}).RequireAuthorization();
 
 List<object> ParseBettyBossi(string html)
 {
@@ -1553,6 +1634,11 @@ List<object> ParseGenericRecipeLinks(string html, string baseUrl, string sourceN
 
 app.MapGet("/api/rezept/zutaten", async (string url, IHttpClientFactory httpFactory) =>
 {
+    if (!Uri.TryCreate(url, UriKind.Absolute, out var parsedUrl)
+        || (parsedUrl.Scheme != "https" && parsedUrl.Scheme != "http")
+        || !allowedRecipeHosts.Contains(parsedUrl.Host))
+        return Results.BadRequest(new { error = "URL nicht erlaubt." });
+
     var client = httpFactory.CreateClient();
     client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
     var html = await client.GetStringAsync(url);
@@ -1593,7 +1679,7 @@ app.MapGet("/api/rezept/zutaten", async (string url, IHttpClientFactory httpFact
     }
 
     return Results.Ok(zutaten);
-});
+}).RequireAuthorization();
 
 void ParseZutat(string text, List<object> list)
 {

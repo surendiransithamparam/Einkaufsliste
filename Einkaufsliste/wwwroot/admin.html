@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#2563eb">
     <title>Admin – Einkaufsliste</title>
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
     <link rel="stylesheet" href="app.css">
     <style>
         .admin-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
@@ -281,7 +281,7 @@ function closeResetPw() {
 }
 async function saveResetPw() {
     const pw = document.getElementById('resetPwInput').value;
-    if (pw.length < 4) { toast('Mindestens 4 Zeichen'); return; }
+    if (pw.length < 8) { toast('Mindestens 8 Zeichen'); return; }
     await fetch(`/api/admin/benutzer/${resetPwId}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passwort: pw })

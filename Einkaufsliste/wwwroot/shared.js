@@ -47,8 +47,8 @@ async function submitAuth(e) {
     if (res.ok) { currentUser = await res.json(); showApp(); }
     else if (res.status === 403) {
         const data = await res.json().catch(() => null);
-        errEl.innerHTML = (data?.error || 'Konto nicht aktiviert.') +
-            ` <a href="#" onclick="resendActivation('${user.replace(/'/g, "\\'")}');return false" style="color:var(--green-600);text-decoration:underline">Aktivierungsmail erneut senden</a>`;
+        errEl.innerHTML = esc(data?.error || 'Konto nicht aktiviert.') +
+            ` <a href="#" onclick="resendActivation('${esc(user).replace(/'/g, "&#39;")}');return false" style="color:var(--green-600);text-decoration:underline">Aktivierungsmail erneut senden</a>`;
         errEl.style.display = '';
     }
     else { errEl.innerHTML = 'Benutzername oder Passwort falsch. <a href="reset.html" style="color:var(--green-600);text-decoration:underline">Passwort vergessen?</a>'; errEl.style.display = ''; }
