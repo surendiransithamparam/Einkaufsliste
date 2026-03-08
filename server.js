@@ -1792,16 +1792,19 @@ async function startup() {
       }
     }
 
-    const port = process.env.PORT || 3000;
-    app.listen(port, () => {
-      console.log(`Server listening on port ${port}`);
-    });
+    console.log('Database initialized successfully');
   } catch (err) {
-    const logPath = path.join(__dirname, 'startup-error.txt');
-    fs.writeFileSync(logPath, `${new Date().toISOString()}\n${err.stack || err}`);
     console.error('Startup error:', err);
-    throw err;
+    try {
+      const logPath = path.join(__dirname, 'startup-error.txt');
+      fs.writeFileSync(logPath, `${new Date().toISOString()}\n${err.stack || err}`);
+    } catch { /* ignore write errors */ }
   }
 }
 
-startup();
+// Start server immediately, then initialize DB in background
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+  startup();
+});
