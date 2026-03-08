@@ -576,6 +576,18 @@ app.MapPost("/api/haushalt/leave", async (HttpContext ctx) =>
         var remaining = (int)await countCmd.ExecuteScalarAsync()!;
         if (remaining == 0)
         {
+            await using var delWp = new SqlCommand("DELETE FROM Wochenplan WHERE HaushaltId=@hid", conn);
+            delWp.Parameters.AddWithValue("@hid", hid.Value);
+            await delWp.ExecuteNonQueryAsync();
+
+            await using var delGz = new SqlCommand("DELETE FROM GerichtZutat WHERE GerichtId IN (SELECT Id FROM Gericht WHERE HaushaltId=@hid)", conn);
+            delGz.Parameters.AddWithValue("@hid", hid.Value);
+            await delGz.ExecuteNonQueryAsync();
+
+            await using var delG = new SqlCommand("DELETE FROM Gericht WHERE HaushaltId=@hid", conn);
+            delG.Parameters.AddWithValue("@hid", hid.Value);
+            await delG.ExecuteNonQueryAsync();
+
             await using var delArticles = new SqlCommand("UPDATE Artikel SET HaushaltId=NULL WHERE HaushaltId=@hid", conn);
             delArticles.Parameters.AddWithValue("@hid", hid.Value);
             await delArticles.ExecuteNonQueryAsync();
@@ -1062,6 +1074,15 @@ app.MapDelete("/api/admin/haushalte/{hid:int}/mitglieder/{uid:int}", async (int 
     countCmd.Parameters.AddWithValue("@hid2", hid);
     if ((int)await countCmd.ExecuteScalarAsync()! == 0)
     {
+        await using var delWp = new SqlCommand("DELETE FROM Wochenplan WHERE HaushaltId=@h", conn);
+        delWp.Parameters.AddWithValue("@h", hid);
+        await delWp.ExecuteNonQueryAsync();
+        await using var delGz = new SqlCommand("DELETE FROM GerichtZutat WHERE GerichtId IN (SELECT Id FROM Gericht WHERE HaushaltId=@h)", conn);
+        delGz.Parameters.AddWithValue("@h", hid);
+        await delGz.ExecuteNonQueryAsync();
+        await using var delG = new SqlCommand("DELETE FROM Gericht WHERE HaushaltId=@h", conn);
+        delG.Parameters.AddWithValue("@h", hid);
+        await delG.ExecuteNonQueryAsync();
         await using var delA = new SqlCommand("UPDATE Artikel SET HaushaltId=NULL WHERE HaushaltId=@h", conn);
         delA.Parameters.AddWithValue("@h", hid);
         await delA.ExecuteNonQueryAsync();
@@ -1088,10 +1109,26 @@ app.MapDelete("/api/admin/haushalte/{id:int}", async (int id, HttpContext ctx) =
     removeMembers.Parameters.AddWithValue("@hid", id);
     await removeMembers.ExecuteNonQueryAsync();
 
-    // Detach articles
+    // Delete related data
+    await using var delWp = new SqlCommand("DELETE FROM Wochenplan WHERE HaushaltId=@hid", conn);
+    delWp.Parameters.AddWithValue("@hid", id);
+    await delWp.ExecuteNonQueryAsync();
+
+    await using var delGz = new SqlCommand("DELETE FROM GerichtZutat WHERE GerichtId IN (SELECT Id FROM Gericht WHERE HaushaltId=@hid)", conn);
+    delGz.Parameters.AddWithValue("@hid", id);
+    await delGz.ExecuteNonQueryAsync();
+
+    await using var delG = new SqlCommand("DELETE FROM Gericht WHERE HaushaltId=@hid", conn);
+    delG.Parameters.AddWithValue("@hid", id);
+    await delG.ExecuteNonQueryAsync();
+
     await using var detachArticles = new SqlCommand("UPDATE Artikel SET HaushaltId=NULL WHERE HaushaltId=@hid", conn);
     detachArticles.Parameters.AddWithValue("@hid", id);
     await detachArticles.ExecuteNonQueryAsync();
+
+    await using var delFav = new SqlCommand("DELETE FROM Favorit WHERE HaushaltId=@hid", conn);
+    delFav.Parameters.AddWithValue("@hid", id);
+    await delFav.ExecuteNonQueryAsync();
 
     // Delete household
     await using var cmd = new SqlCommand("DELETE FROM Haushalt WHERE Id=@id", conn);
