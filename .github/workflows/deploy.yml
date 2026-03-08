@@ -18,7 +18,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm ci --production
+        run: npm ci --omit=dev
 
       - name: Download portable Node.js for Windows x86
         run: |
@@ -33,6 +33,9 @@ jobs:
           cp -r node_modules ./publish/
           cp -r public/* ./publish/public/
           cp node-portable/node.exe ./publish/
+          echo "Files in publish:"
+          find ./publish -maxdepth 2 -type d | head -30
+          echo "Total files: $(find ./publish -type f | wc -l)"
 
       - name: Generate Production Config
         env:
@@ -64,36 +67,28 @@ jobs:
               }
             }' > ./publish/config.json
 
-      - name: Create app_offline.htm
+      - name: Upload app_offline.htm
         run: |
-          mkdir -p ./app_offline
-          echo '<html><body><h1>Update in progress...</h1></body></html>' > ./app_offline/app_offline.htm
-
-      - name: Upload app_offline.htm to stop IIS
-        uses: sebastianpopp/ftp-action@v2.0.0
-        with:
-          host: ${{ secrets.FTP_HOST }}
-          user: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          localDir: ./app_offline/
-          remoteDir: /subdomains/einkaufsliste/httpdocs/
+          curl -s -T - -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_HOST }}/subdomains/einkaufsliste/httpdocs/app_offline.htm" \
+            <<< '<html><body><h1>Update in progress...</h1></body></html>'
 
       - name: Wait for IIS to release files
         run: sleep 5
 
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./publish/
-          server-dir: /subdomains/einkaufsliste/httpdocs/
-          dangerous-clean-slate: true
+      - name: Deploy via FTP (lftp mirror)
+        run: |
+          sudo apt-get install -y -qq lftp > /dev/null 2>&1
+          lftp -c "
+            set ftp:ssl-allow no;
+            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+            mirror --reverse --delete --verbose \
+              ./publish/ /subdomains/einkaufsliste/httpdocs/;
+            bye
+          "
 
       - name: Remove app_offline.htm to restart IIS
         run: |
-          curl -s --ftp-create-dirs \
-            -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
-            "ftp://${{ secrets.FTP_HOST }}/subdomains/einkaufsliste/httpdocs/" \
-            -Q "DELE /subdomains/einkaufsliste/httpdocs/app_offline.htm"
+          curl -s -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_HOST }}" \
+            -Q "DELE /subdomains/einkaufsliste/httpdocs/app_offline.htm" || true
