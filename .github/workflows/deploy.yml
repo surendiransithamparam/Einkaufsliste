@@ -20,6 +20,10 @@ jobs:
       - name: Install dependencies
         run: npm ci --omit=dev
 
+      - name: Bundle with esbuild
+        run: |
+          npx esbuild server.js --bundle --platform=node --outfile=dist/server.js --minify
+
       - name: Download portable Node.js for Windows x86
         run: |
           curl -L -o node.zip https://nodejs.org/dist/v20.18.3/node-v20.18.3-win-x86.zip
@@ -28,14 +32,13 @@ jobs:
 
       - name: Prepare publish directory
         run: |
-          mkdir -p ./publish/public ./publish/logs ./publish/iisnode
-          cp server.js package.json package-lock.json web.config node-wrapper.cmd ./publish/
-          cp -r node_modules ./publish/
+          mkdir -p ./publish/public ./publish/iisnode
+          cp dist/server.js ./publish/
+          cp web.config node-wrapper.cmd ./publish/
           cp -r public/* ./publish/public/
           cp node-portable/node.exe ./publish/
-          echo "Files in publish:"
-          find ./publish -maxdepth 2 -type d | head -30
           echo "Total files: $(find ./publish -type f | wc -l)"
+          echo "Total size: $(du -sh ./publish | cut -f1)"
 
       - name: Generate Production Config
         env:
