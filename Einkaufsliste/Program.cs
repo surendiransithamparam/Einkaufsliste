@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
 
 var connStr = builder.Configuration.GetConnectionString("Default")
-    ?? "Server=localhost;Database=Einkaufsliste;User Id=pmi;Password=wsvdqtnfhsnv;TrustServerCertificate=true";
+    ?? throw new InvalidOperationException("ConnectionStrings:Default ist nicht konfiguriert. Bitte in appsettings.json, Umgebungsvariablen oder User Secrets setzen.");
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
@@ -121,14 +121,15 @@ bool VerifyPassword(string password, string stored)
         ALTER TABLE Haushalt ADD ErstelltVon INT NULL", conn);
     erstelltVonCol.ExecuteNonQuery();
 
+    var adminPassword = builder.Configuration["AdminPassword"] ?? "";
     using var checkCmd = new SqlCommand("SELECT COUNT(*) FROM Benutzer WHERE Benutzername='Admin'", conn);
-    if ((int)checkCmd.ExecuteScalar()! == 0)
+    if ((int)checkCmd.ExecuteScalar()! == 0 && adminPassword.Length >= 4)
     {
         using var cmd = new SqlCommand(
             "INSERT INTO Benutzer (Benutzername, PasswordHash, EmailBestaetigt, IsAdmin) VALUES ('Admin', @hash, 1, 1)", conn);
-        cmd.Parameters.AddWithValue("@hash", HashPassword("Admin123!"));
+        cmd.Parameters.AddWithValue("@hash", HashPassword(adminPassword));
         cmd.ExecuteNonQuery();
-        app.Logger.LogInformation("Admin-Benutzer erstellt (Passwort: Admin123!)");
+        app.Logger.LogInformation("Admin-Benutzer erstellt");
     }
 }
 
