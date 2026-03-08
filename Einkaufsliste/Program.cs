@@ -13,8 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 1_048_576); // 1 MB
 
-var connStr = builder.Configuration.GetConnectionString("Default")
-    ?? throw new InvalidOperationException("ConnectionStrings:Default ist nicht konfiguriert. Bitte in appsettings.json, Umgebungsvariablen oder User Secrets setzen.");
+var connStr = builder.Configuration.GetConnectionString("Default") ?? "";
+var dbConfigured = !string.IsNullOrEmpty(connStr);
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
@@ -39,6 +39,21 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Health-Check Endpoint (ohne Auth, ohne DB)
+app.MapGet("/api/health", () =>
+{
+    var info = new
+    {
+        status = "ok",
+        dbConfigured,
+        environment = app.Environment.EnvironmentName,
+        runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
+        os = System.Runtime.InteropServices.RuntimeInformation.OSDescription,
+        arch = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString()
+    };
+    return Results.Ok(info);
+});
 
 // --- Rate Limiting ---
 
