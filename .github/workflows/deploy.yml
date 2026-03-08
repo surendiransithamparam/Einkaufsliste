@@ -89,6 +89,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./publish/
           server-dir: /subdomains/einkaufsliste/httpdocs/
+          dangerous-clean-slate: true
 
       - name: Remove app_offline.htm to restart IIS
         run: |
