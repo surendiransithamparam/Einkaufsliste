@@ -1756,7 +1756,95 @@ async function startup() {
   try {
     const db = await getPool();
 
-    // Ensure Favorit table exists
+    // Ensure all base tables exist
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Benutzer')
+      CREATE TABLE Benutzer (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          Benutzername NVARCHAR(200) NOT NULL UNIQUE,
+          PasswordHash NVARCHAR(500) NOT NULL,
+          Email NVARCHAR(300) NULL,
+          EmailBestaetigt BIT NOT NULL DEFAULT 0,
+          AktivierungsToken NVARCHAR(200) NULL,
+          ResetToken NVARCHAR(200) NULL,
+          ResetTokenExpiry DATETIME2 NULL,
+          IsAdmin BIT NOT NULL DEFAULT 0,
+          HaushaltId INT NULL,
+          HaushaltRolle NVARCHAR(20) NOT NULL DEFAULT 'schreibend',
+          ErstelltAm DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+      )`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Haushalt')
+      CREATE TABLE Haushalt (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          Name NVARCHAR(200) NOT NULL,
+          Code NVARCHAR(20) NOT NULL UNIQUE,
+          ErstelltVon INT NULL,
+          ErstelltAm DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+      )`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Laden')
+      CREATE TABLE Laden (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          Name NVARCHAR(200) NOT NULL,
+          Sortierung INT NOT NULL DEFAULT 0
+      )`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Artikel')
+      CREATE TABLE Artikel (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          Artikel NVARCHAR(300) NOT NULL,
+          Menge DECIMAL(18,2) NOT NULL DEFAULT 1,
+          Einheit NVARCHAR(50) NOT NULL DEFAULT 'Stück',
+          Laden NVARCHAR(200) NULL,
+          Datum DATETIME2 NULL,
+          Gekauft BIT NOT NULL DEFAULT 0,
+          BenutzerId INT NOT NULL,
+          HaushaltId INT NULL,
+          ErstelltAm DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+          FOREIGN KEY (BenutzerId) REFERENCES Benutzer(Id)
+      )`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Gericht')
+      CREATE TABLE Gericht (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          Name NVARCHAR(300) NOT NULL,
+          BenutzerId INT NOT NULL,
+          HaushaltId INT NULL,
+          ErstelltAm DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+          FOREIGN KEY (BenutzerId) REFERENCES Benutzer(Id)
+      )`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='GerichtZutat')
+      CREATE TABLE GerichtZutat (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          GerichtId INT NOT NULL,
+          Artikel NVARCHAR(300) NOT NULL,
+          Menge DECIMAL(18,2) NOT NULL DEFAULT 1,
+          Einheit NVARCHAR(50) NOT NULL DEFAULT 'Stück',
+          FOREIGN KEY (GerichtId) REFERENCES Gericht(Id)
+      )`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Wochenplan')
+      CREATE TABLE Wochenplan (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          Woche DATETIME2 NOT NULL,
+          Tag INT NOT NULL,
+          Mahlzeit NVARCHAR(100) NOT NULL,
+          Rezept NVARCHAR(500) NULL,
+          Erwachsene INT NOT NULL DEFAULT 2,
+          Kinder INT NOT NULL DEFAULT 0,
+          BenutzerId INT NOT NULL,
+          HaushaltId INT NULL,
+          FOREIGN KEY (BenutzerId) REFERENCES Benutzer(Id)
+      )`);
+
     await db.request().query(`
       IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Favorit')
       CREATE TABLE Favorit (
@@ -1771,12 +1859,12 @@ async function startup() {
           FOREIGN KEY (BenutzerId) REFERENCES Benutzer(Id)
       )`);
 
-    // Ensure HaushaltRolle column on Benutzer
+    // Ensure HaushaltRolle column on Benutzer (for existing databases)
     await db.request().query(`
       IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id=OBJECT_ID('Benutzer') AND name='HaushaltRolle')
       ALTER TABLE Benutzer ADD HaushaltRolle NVARCHAR(20) NOT NULL DEFAULT 'schreibend'`);
 
-    // Ensure ErstelltVon column on Haushalt
+    // Ensure ErstelltVon column on Haushalt (for existing databases)
     await db.request().query(`
       IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id=OBJECT_ID('Haushalt') AND name='ErstelltVon')
       ALTER TABLE Haushalt ADD ErstelltVon INT NULL`);
