@@ -72,8 +72,8 @@ jobs:
 
       - name: Upload app_offline.htm
         run: |
-          curl -s --ssl-reqd -T - -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
-            "ftps://${{ secrets.FTP_HOST }}/subdomains/einkaufsliste/httpdocs/app_offline.htm" \
+          curl -s -T - -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_HOST }}/subdomains/einkaufsliste/httpdocs/app_offline.htm" \
             <<< '<html><body><h1>Update in progress...</h1></body></html>'
 
       - name: Wait for IIS to release files
@@ -83,8 +83,7 @@ jobs:
         run: |
           sudo apt-get install -y -qq lftp > /dev/null 2>&1
           lftp -c "
-            set ftp:ssl-force yes;
-            set ssl:verify-certificate no;
+            set ftp:ssl-allow no;
             open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
             mirror --reverse --delete --verbose --no-perms \
               ./publish/ /subdomains/einkaufsliste/httpdocs/;
@@ -93,6 +92,6 @@ jobs:
 
       - name: Remove app_offline.htm to restart IIS
         run: |
-          curl -s --ssl-reqd -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
-            "ftps://${{ secrets.FTP_HOST }}" \
+          curl -s -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "ftp://${{ secrets.FTP_HOST }}" \
             -Q "DELE /subdomains/einkaufsliste/httpdocs/app_offline.htm" || true
