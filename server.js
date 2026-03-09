@@ -487,6 +487,9 @@ app.post('/api/auth/register', async (req, res) => {
 
     if (username.length < 2) return res.status(400).json({ error: 'Benutzername muss mindestens 2 Zeichen haben.' });
     if (password.length < 8) return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben.' });
+    if (!/[A-Z]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens einen Grossbuchstaben enthalten.' });
+    if (!/[a-z]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens einen Kleinbuchstaben enthalten.' });
+    if (!/[^A-Za-z0-9]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens ein Sonderzeichen enthalten.' });
     if (emailAddr.length < 5 || !emailAddr.includes('@')) return res.status(400).json({ error: 'Bitte eine gültige E-Mail-Adresse eingeben.' });
 
     const db = await getPool();
@@ -682,6 +685,9 @@ app.post('/api/auth/reset', async (req, res) => {
     const password = req.body.passwort || '';
 
     if (password.length < 8) return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben.' });
+    if (!/[A-Z]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens einen Grossbuchstaben enthalten.' });
+    if (!/[a-z]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens einen Kleinbuchstaben enthalten.' });
+    if (!/[^A-Za-z0-9]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens ein Sonderzeichen enthalten.' });
 
     const db = await getPool();
     const find = await db.request()
@@ -1208,7 +1214,7 @@ app.put('/api/admin/benutzer/:id', requireAuth, async (req, res) => {
         .input('id', sql.Int, id)
         .query('UPDATE Benutzer SET IsAdmin=@val WHERE Id=@id');
     }
-    if (req.body.passwort && req.body.passwort.length >= 8) {
+    if (req.body.passwort && req.body.passwort.length >= 8 && /[A-Z]/.test(req.body.passwort) && /[a-z]/.test(req.body.passwort) && /[^A-Za-z0-9]/.test(req.body.passwort)) {
       await db.request()
         .input('hash', sql.NVarChar, hashPassword(req.body.passwort))
         .input('id', sql.Int, id)
