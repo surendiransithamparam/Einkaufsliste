@@ -2,7 +2,7 @@
     "name": "Einkaufsliste",
     "short_name": "Einkauf",
     "description": "Einkaufsliste mit Mengen, Kategorien und Fälligkeitsdatum",
-    "start_url": "./einkaufsliste.html",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#f3f4f6",
     "theme_color": "#2563eb",
