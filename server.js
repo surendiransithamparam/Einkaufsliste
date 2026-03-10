@@ -1875,7 +1875,7 @@ async function startup() {
       IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id=OBJECT_ID('Haushalt') AND name='ErstelltVon')
       ALTER TABLE Haushalt ADD ErstelltVon INT NULL`);
 
-    // Seed Admin
+    // Seed or update Admin
     if (adminPassword && adminPassword.length >= 8) {
       const check = await db.request().query("SELECT COUNT(*) AS cnt FROM Benutzer WHERE Benutzername='Admin'");
       if (check.recordset[0].cnt === 0) {
@@ -1883,6 +1883,11 @@ async function startup() {
           .input('hash', sql.NVarChar, hashPassword(adminPassword))
           .query("INSERT INTO Benutzer (Benutzername, PasswordHash, EmailBestaetigt, IsAdmin) VALUES ('Admin', @hash, 1, 1)");
         console.log('Admin-Benutzer erstellt');
+      } else {
+        await db.request()
+          .input('hash', sql.NVarChar, hashPassword(adminPassword))
+          .query("UPDATE Benutzer SET PasswordHash=@hash WHERE Benutzername='Admin'");
+        console.log('Admin-Passwort aktualisiert');
       }
     }
 
