@@ -747,6 +747,119 @@ input:focus, select:focus {
     .tile-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 }
 
+/* -- Aktionen Button -- */
+.aktionen-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+    position: relative;
+}
+.aktionen-count {
+    background: var(--red-500);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.35rem;
+    border-radius: 10px;
+    min-width: 1.1rem;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* -- Aktion Badge on Tile -- */
+.tile-aktion-row {
+    padding: 0.25rem 0 0;
+}
+.tile-badge.aktion {
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+.tile-badge.aktion:hover {
+    background: rgba(245, 158, 11, 0.22);
+}
+.tile.has-aktion {
+    border-left: 3px solid var(--yellow-500);
+}
+
+/* -- Aktion Cards (modal) -- */
+.aktion-card {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.aktion-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+.aktion-laden {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--green-600);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.aktion-card-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--gray-800);
+    margin-bottom: 0.2rem;
+}
+.aktion-card-preis {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+.aktion-preis {
+    font-weight: 700;
+    color: var(--red-500);
+}
+.aktion-orig-preis {
+    text-decoration: line-through;
+    color: var(--gray-400);
+    font-size: 0.8rem;
+}
+.aktion-rabatt {
+    background: var(--red-50);
+    color: var(--red-500);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+}
+.aktion-card-desc {
+    font-size: 0.78rem;
+    color: var(--gray-500);
+    margin-bottom: 0.15rem;
+}
+.aktion-card-gueltig {
+    font-size: 0.72rem;
+    color: var(--gray-400);
+    margin-top: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+@media (max-width: 480px) {
+    .aktionen-btn-label { display: none; }
+}
+
 /* Safe area for notch devices */
 @supports (padding: env(safe-area-inset-top)) {
     .navbar { padding-top: env(safe-area-inset-top); height: calc(56px + env(safe-area-inset-top)); }

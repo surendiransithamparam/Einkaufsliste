@@ -3,6 +3,7 @@ async function showApp() {
     showAppBase();
     await loadStores();
     loadItems();
+    loadAktionenMatches();
 }
 
 // -- Data --
@@ -317,8 +318,11 @@ function renderTile(item) {
         if (s === 'overdue') badgeHtml = `<span class="tile-badge danger"><i class="bi bi-exclamation-triangle-fill"></i> \u00DCberf\u00E4llig</span>`;
         else if (s === 'today') badgeHtml = `<span class="tile-badge warn"><i class="bi bi-clock-fill"></i> Heute</span>`;
 
+        // Aktion badge
+        const aktionBadge = renderAktionBadge(item.id);
+
         const isGekauft = item.gekauft;
-        const tileCls = [cls, isGekauft ? 'gekauft' : ''].filter(Boolean).join(' ');
+        const tileCls = [cls, isGekauft ? 'gekauft' : '', aktionBadge ? 'has-aktion' : ''].filter(Boolean).join(' ');
         const checkIcon = isGekauft ? 'bi-check-circle-fill' : 'bi-circle';
         const doneBadge = isGekauft ? '<span class="tile-badge done"><i class="bi bi-check-lg"></i> Gekauft</span>' : badgeHtml;
 
@@ -337,6 +341,7 @@ function renderTile(item) {
                 <span class="tile-field-value large">${item.menge} ${esc(item.einheit)}</span>
                 ${item.laden ? `<span class="tile-field-value"><i class="bi bi-shop"></i> ${esc(item.laden)}</span>` : ''}
             </div>
+            ${aktionBadge ? `<div class="tile-aktion-row">${aktionBadge}</div>` : ''}
             <div class="tile-footer">
                 <div class="tile-date ${dateClass}">
                     <i class="bi bi-calendar3"></i>
@@ -480,6 +485,166 @@ function mapEinheit(e) {
     return map[e] || 'Stück';
 }
 
+// -- Aktionen --
+let aktionenMatches = {}; // { artikelId: [{name, preis, laden, ...}] }
+
+async function loadAktionenMatches() {
+    try {
+        const res = await fetch('/api/aktionen/match');
+        if (res.ok) {
+            aktionenMatches = await res.json();
+            const matchCount = Object.keys(aktionenMatches).length;
+            const badge = document.getElementById('aktionenCountBadge');
+            if (matchCount > 0) {
+                badge.textContent = matchCount;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+            renderList();
+        }
+    } catch (e) {
+        console.error('Aktionen-Match fehlgeschlagen', e);
+    }
+}
+
+function renderAktionBadge(itemId) {
+    const matches = aktionenMatches[itemId];
+    if (!matches || matches.length === 0) return '';
+    const first = matches[0];
+    const preisText = first.preis ? `CHF ${first.preis.toFixed(2)}` : '';
+    const ladenText = first.laden || '';
+    const countExtra = matches.length > 1 ? ` +${matches.length - 1}` : '';
+    return `<span class="tile-badge aktion" onclick="event.stopPropagation();showAktionDetail(${itemId})" title="Aktion gefunden!">
+        <i class="bi bi-tag-fill"></i> ${esc(ladenText)}${preisText ? ' ' + preisText : ''}${countExtra}
+    </span>`;
+}
+
+function showAktionDetail(itemId) {
+    const matches = aktionenMatches[itemId];
+    const item = items.find(i => i.id === itemId);
+    if (!matches || !item) return;
+
+    const container = document.getElementById('aktionenResults');
+    const status = document.getElementById('aktionenStatus');
+    status.textContent = `Aktionen f\u00FCr \u00AB${item.artikel}\u00BB`;
+    container.innerHTML = matches.map(a => renderAktionCard(a)).join('');
+    document.getElementById('aktionenSuche').value = item.artikel;
+    document.getElementById('aktionenOverlay').classList.add('active');
+}
+
+function renderAktionCard(a) {
+    const preisHtml = a.preis ? `<span class="aktion-preis">CHF ${a.preis.toFixed(2)}</span>` : '';
+    const origHtml = a.originalPreis ? `<span class="aktion-orig-preis">statt CHF ${a.originalPreis.toFixed(2)}</span>` : '';
+    const rabattHtml = a.rabatt ? `<span class="aktion-rabatt">${esc(a.rabatt)}</span>` : '';
+    const beschreibung = a.beschreibung ? `<div class="aktion-card-desc">${esc(a.beschreibung)}</div>` : '';
+    const gueltig = a.gueltigVon && a.gueltigBis
+        ? `<div class="aktion-card-gueltig"><i class="bi bi-calendar3"></i> ${a.gueltigVon.substring(8,10)}.${a.gueltigVon.substring(5,7)}. \u2013 ${a.gueltigBis.substring(8,10)}.${a.gueltigBis.substring(5,7)}.</div>`
+        : '';
+    return `<div class="aktion-card">
+        <div class="aktion-card-header">
+            <span class="aktion-laden"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>
+            ${rabattHtml}
+        </div>
+        <div class="aktion-card-name">${esc(a.name)}</div>
+        ${beschreibung}
+        <div class="aktion-card-preis">${preisHtml} ${origHtml}</div>
+        ${gueltig}
+    </div>`;
+}
+
+function openAktionen() {
+    document.getElementById('aktionenSuche').value = '';
+    document.getElementById('aktionenLaden').value = '';
+    document.getElementById('aktionenResults').innerHTML = '<p style="color:var(--gray-400);font-size:0.85rem;text-align:center">Suche nach Produkten oder lade alle Aktionen...</p>';
+    document.getElementById('aktionenStatus').textContent = '';
+    document.getElementById('aktionenOverlay').classList.add('active');
+    setTimeout(() => document.getElementById('aktionenSuche').focus(), 200);
+    // Auto-load all aktionen overview
+    loadAktionenOverview();
+}
+
+function closeAktionen() {
+    document.getElementById('aktionenOverlay').classList.remove('active');
+}
+
+async function loadAktionenOverview() {
+    const container = document.getElementById('aktionenResults');
+    const status = document.getElementById('aktionenStatus');
+    try {
+        const res = await fetch('/api/aktionen/alle');
+        if (!res.ok) { container.innerHTML = '<p style="color:var(--red-500)">Fehler beim Laden.</p>'; return; }
+        const data = await res.json();
+        status.textContent = `${data.total} Aktionen geladen`;
+        if (data.total === 0) {
+            container.innerHTML = '<p style="color:var(--gray-500);font-size:0.85rem;text-align:center">Keine Aktionen gefunden. Die Daten werden beim ersten Aufruf geladen.</p>';
+            return;
+        }
+        let html = '';
+        for (const [laden, items] of Object.entries(data.byLaden)) {
+            html += `<div class="store-group-header" style="margin-top:0.75rem">
+                <span class="store-name"><i class="bi bi-shop"></i> ${esc(laden)}</span>
+                <span class="store-count">${items.length}</span>
+                <div class="store-line"></div>
+            </div>`;
+            html += items.slice(0, 10).map(a => renderAktionCard(a)).join('');
+            if (items.length > 10) {
+                html += `<p style="color:var(--gray-400);font-size:0.8rem;padding:0.25rem 0.5rem">... und ${items.length - 10} weitere</p>`;
+            }
+        }
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<p style="color:var(--red-500)">Fehler beim Laden der Aktionen.</p>';
+    }
+}
+
+async function searchAktionen() {
+    const suche = document.getElementById('aktionenSuche').value.trim();
+    const laden = document.getElementById('aktionenLaden').value;
+    const container = document.getElementById('aktionenResults');
+    const status = document.getElementById('aktionenStatus');
+
+    if (!suche && !laden) { loadAktionenOverview(); return; }
+
+    container.innerHTML = '<p style="color:var(--gray-400);font-size:0.85rem">Suche...</p>';
+
+    const params = new URLSearchParams();
+    if (suche) params.set('suche', suche);
+    if (laden) params.set('laden', laden);
+
+    try {
+        const res = await fetch(`/api/aktionen?${params}`);
+        if (!res.ok) { container.innerHTML = '<p style="color:var(--red-500)">Suche fehlgeschlagen.</p>'; return; }
+        const data = await res.json();
+        status.textContent = `${data.length} Treffer`;
+        if (data.length === 0) {
+            container.innerHTML = '<p style="color:var(--gray-500);font-size:0.85rem;text-align:center">Keine Aktionen gefunden.</p>';
+            return;
+        }
+        container.innerHTML = data.map(a => renderAktionCard(a)).join('');
+    } catch (e) {
+        container.innerHTML = '<p style="color:var(--red-500)">Fehler bei der Suche.</p>';
+    }
+}
+
+async function refreshAktionen() {
+    const status = document.getElementById('aktionenStatus');
+    status.textContent = 'Aktionen werden neu geladen...';
+    try {
+        const res = await fetch('/api/aktionen/refresh', { method: 'POST' });
+        if (res.ok) {
+            const data = await res.json();
+            toast(`${data.total} Aktionen geladen`);
+            loadAktionenOverview();
+            loadAktionenMatches();
+        } else {
+            status.textContent = 'Fehler beim Aktualisieren.';
+        }
+    } catch (e) {
+        status.textContent = 'Fehler beim Aktualisieren.';
+    }
+}
+
 // -- Haushalt: logic is in shared.js --
 
 // -- Tile click (skip if long-press) --
@@ -546,7 +711,7 @@ document.addEventListener('pointerdown', e => {
 
 // -- Keyboard --
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeDelete(); closeReactivate(); closeHaushalt(); closeRezept(); hideAllTileActions(); }
+    if (e.key === 'Escape') { closeModal(); closeDelete(); closeReactivate(); closeHaushalt(); closeRezept(); closeAktionen(); hideAllTileActions(); }
 });
 
 // -- PWA: Service Worker --
