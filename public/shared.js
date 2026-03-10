@@ -82,9 +82,9 @@ async function logout() {
 }
 
 // -- Toast --
-function toast(msg) {
+function toast(msg, isError) {
     const el = document.createElement('div');
-    el.className = 'toast success';
+    el.className = isError ? 'toast error' : 'toast success';
     el.textContent = msg;
     document.getElementById('toasts').appendChild(el);
     setTimeout(() => el.remove(), 2500);

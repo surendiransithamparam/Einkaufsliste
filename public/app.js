@@ -115,7 +115,16 @@ function toggleGekauftSection() {
 async function clearGekauft() {
     const count = items.filter(i => i.gekauft).length;
     if (count === 0) return;
-    await fetch('/api/artikel/gekauft', { method: 'DELETE' });
+    try {
+        const res = await fetch('/api/artikel/gekauft', { method: 'DELETE' });
+        if (!res.ok) {
+            toast('Fehler beim L\u00F6schen', true);
+            return;
+        }
+    } catch (e) {
+        toast('Netzwerkfehler \u2013 bitte erneut versuchen', true);
+        return;
+    }
     items = items.filter(i => !i.gekauft);
     toast(`${count} gekaufte Artikel entfernt`);
     renderList();
@@ -201,7 +210,18 @@ function closeDelete() { document.getElementById('deleteOverlay').classList.remo
 async function confirmDelete() {
     if (deleteTargetId !== null) {
         const item = items.find(i => i.id === deleteTargetId);
-        await fetch(`/api/artikel/${deleteTargetId}`, { method: 'DELETE' });
+        try {
+            const res = await fetch(`/api/artikel/${deleteTargetId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                toast('Fehler beim L\u00F6schen', true);
+                closeDelete();
+                return;
+            }
+        } catch (e) {
+            toast('Netzwerkfehler \u2013 bitte erneut versuchen', true);
+            closeDelete();
+            return;
+        }
         items = items.filter(i => i.id !== deleteTargetId);
         toast(`\u00AB${item?.artikel}\u00BB gel\u00F6scht`);
         renderList();

@@ -638,6 +638,7 @@ input:focus, select:focus {
     border: 1px solid var(--gray-200);
 }
 .toast.success { background: var(--green-600); color: white; border-color: transparent; }
+.toast.error { background: #dc3545; color: white; border-color: transparent; }
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
