@@ -1,4 +1,4 @@
-const CACHE_NAME = 'einkaufsliste-v7';
+const CACHE_NAME = 'einkaufsliste-v8';
 const ASSETS = [
     './',
     './index.html',
@@ -39,12 +39,16 @@ self.addEventListener('activate', e => {
     );
 });
 
-// Fetch: network first, fallback to cache
+// Fetch: network first, fallback to cache (only cache GET requests)
 self.addEventListener('fetch', e => {
+    if (e.request.method !== 'GET') {
+        e.respondWith(fetch(e.request));
+        return;
+    }
     e.respondWith(
         fetch(e.request)
             .then(response => {
-                // Cache successful responses
+                // Cache successful GET responses
                 if (response.ok) {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
