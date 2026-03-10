@@ -10,6 +10,7 @@ Eine Progressive Web App (PWA) für die gemeinsame Einkaufsplanung im Haushalt �
 - **Aktionen** — Aktuelle Angebote von Migros, Coop, Denner, Lidl und Aldi. Automatische Erkennung passender Aktionen für Artikel auf der Liste.
 - **Haushalt** — Haushalt erstellen, Mitglieder per Code einladen, gemeinsame Listen und Pläne. Rollenbasierter Zugriff (Lesen/Schreiben).
 - **PWA / Offline** — Als App auf dem Handy oder Desktop installierbar. Offline-Unterstützung via Service Worker.
+- **Bug melden** — Probleme direkt aus der App anonym melden. Die Meldung wird automatisch als GitHub Issue erstellt.
 
 ## Tech Stack
 
@@ -54,6 +55,9 @@ Der Server erwartet folgende Umgebungsvariablen:
 | `SMTP_FROM` | Absender-Adresse |
 | `BASE_URL` | Öffentliche URL der App |
 | `SESSION_SECRET` | Session-Secret |
+| `GITHUB_TOKEN` | GitHub Personal Access Token (für Bug-Reports) |
+| `GITHUB_OWNER` | GitHub Repository Owner (Standard: `surendiransithamparam`) |
+| `GITHUB_REPO` | GitHub Repository Name (Standard: `Einkaufsliste`) |
 
 ## Starten
 
@@ -106,7 +110,8 @@ Einkaufsliste/
 | Aktionen | `GET /api/aktionen` | Aktuelle Angebote |
 | Haushalt | `POST /api/haushalt` | Haushalt erstellen/beitreten |
 | Admin | `GET /api/admin/benutzer` | Benutzerverwaltung |
-| Health | `GET /health` | Health Check |
+| Bug Report | `POST /api/bugreport` | Anonymen Bug-Report erstellen |
+| Health | `GET /api/health` | Health Check |
 
 ## Sicherheit
 
