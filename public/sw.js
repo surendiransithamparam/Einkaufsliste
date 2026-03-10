@@ -1,7 +1,8 @@
-const CACHE_NAME = 'einkaufsliste-v6';
+const CACHE_NAME = 'einkaufsliste-v7';
 const ASSETS = [
     './',
     './index.html',
+    './about.html',
     './register.html',
     './reset.html',
     './rezepte.html',
