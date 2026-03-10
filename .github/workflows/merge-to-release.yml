@@ -3,6 +3,10 @@ name: Merge develop → release
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   create-pr:
     runs-on: ubuntu-latest
