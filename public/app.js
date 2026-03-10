@@ -59,13 +59,26 @@ async function toggleGekauft(id) {
 
     if (!item.gekauft) {
         item.gekauft = true;
-        await fetch(`/api/artikel/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item)
-        });
-        toast(`\u00AB${item.artikel}\u00BB erledigt`);
         renderList();
+        try {
+            const res = await fetch(`/api/artikel/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            });
+            if (!res.ok) {
+                item.gekauft = false;
+                renderList();
+                toast('Fehler beim Speichern', true);
+                return;
+            }
+        } catch (e) {
+            item.gekauft = false;
+            renderList();
+            toast('Netzwerkfehler – bitte erneut versuchen', true);
+            return;
+        }
+        toast(`\u00AB${item.artikel}\u00BB erledigt`);
     } else {
         reactivateTargetId = id;
         document.getElementById('reactivateName').textContent = `\u00AB${item.artikel}\u00BB`;
@@ -89,18 +102,37 @@ async function confirmReactivate(useNewDate) {
     if (reactivateTargetId === null) return;
     const item = items.find(i => i.id === reactivateTargetId);
     if (item) {
+        const prevGekauft = item.gekauft;
+        const prevDatum = item.datum;
         item.gekauft = false;
         if (useNewDate) {
             const newDate = document.getElementById('reactivateDate').value;
             item.datum = newDate || '';
         }
-        await fetch(`/api/artikel/${item.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item)
-        });
-        toast(`\u00AB${item.artikel}\u00BB wieder offen`);
         renderList();
+        try {
+            const res = await fetch(`/api/artikel/${item.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            });
+            if (!res.ok) {
+                item.gekauft = prevGekauft;
+                item.datum = prevDatum;
+                renderList();
+                toast('Fehler beim Speichern', true);
+                closeReactivate();
+                return;
+            }
+        } catch (e) {
+            item.gekauft = prevGekauft;
+            item.datum = prevDatum;
+            renderList();
+            toast('Netzwerkfehler – bitte erneut versuchen', true);
+            closeReactivate();
+            return;
+        }
+        toast(`\u00AB${item.artikel}\u00BB wieder offen`);
     }
     closeReactivate();
 }
@@ -115,7 +147,16 @@ function toggleGekauftSection() {
 async function clearGekauft() {
     const count = items.filter(i => i.gekauft).length;
     if (count === 0) return;
-    await fetch('/api/artikel/gekauft', { method: 'DELETE' });
+    try {
+        const res = await fetch('/api/artikel/gekauft', { method: 'DELETE' });
+        if (!res.ok) {
+            toast('Fehler beim L\u00F6schen', true);
+            return;
+        }
+    } catch (e) {
+        toast('Netzwerkfehler \u2013 bitte erneut versuchen', true);
+        return;
+    }
     items = items.filter(i => !i.gekauft);
     toast(`${count} gekaufte Artikel entfernt`);
     renderList();
@@ -201,7 +242,18 @@ function closeDelete() { document.getElementById('deleteOverlay').classList.remo
 async function confirmDelete() {
     if (deleteTargetId !== null) {
         const item = items.find(i => i.id === deleteTargetId);
-        await fetch(`/api/artikel/${deleteTargetId}`, { method: 'DELETE' });
+        try {
+            const res = await fetch(`/api/artikel/${deleteTargetId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                toast('Fehler beim L\u00F6schen', true);
+                closeDelete();
+                return;
+            }
+        } catch (e) {
+            toast('Netzwerkfehler \u2013 bitte erneut versuchen', true);
+            closeDelete();
+            return;
+        }
         items = items.filter(i => i.id !== deleteTargetId);
         toast(`\u00AB${item?.artikel}\u00BB gel\u00F6scht`);
         renderList();
