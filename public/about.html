@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Einkauf">
+    <meta name="description" content="Über die Einkaufsliste-App">
+    <title>Über — Einkaufsliste</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.svg">
+    <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="app.css">
+    <style>
+        .about-container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem 3rem;
+        }
+        .about-hero {
+            text-align: center;
+            padding: 2rem 1rem 1.5rem;
+        }
+        .about-hero i {
+            font-size: 3.5rem;
+            color: var(--green-600);
+        }
+        .about-hero h1 {
+            font-size: 1.6rem;
+            margin-top: 0.5rem;
+            color: var(--gray-800);
+        }
+        .about-hero p {
+            color: var(--gray-500);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        .about-section {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .about-section h2 {
+            font-size: 1rem;
+            color: var(--gray-800);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .about-section h2 i {
+            color: var(--green-600);
+            font-size: 1.1rem;
+        }
+        .about-section p,
+        .about-section li {
+            font-size: 0.88rem;
+            color: var(--gray-600);
+            line-height: 1.65;
+        }
+        .about-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        .about-section ul li {
+            padding: 0.35rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        .about-section ul li i {
+            color: var(--green-600);
+            margin-top: 0.15rem;
+            flex-shrink: 0;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .feature-card {
+            background: var(--surface-raised);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            text-align: center;
+        }
+        .feature-card i {
+            font-size: 1.5rem;
+            color: var(--green-600);
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .feature-card strong {
+            font-size: 0.85rem;
+            color: var(--gray-800);
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+        .feature-card span {
+            font-size: 0.78rem;
+            color: var(--gray-500);
+        }
+        .tech-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .tech-badge {
+            background: var(--green-50);
+            color: var(--green-600);
+            padding: 0.25rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+        .about-footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            color: var(--gray-400);
+            font-size: 0.78rem;
+        }
+        .about-footer a {
+            color: var(--green-600);
+            text-decoration: none;
+        }
+        .about-footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 480px) {
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-content">
+
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="navbar-left"></div>
+    <div class="navbar-center">
+        <a href="index.html" class="nav-tab" title="Einkaufsliste">
+            <i class="bi bi-cart3"></i>
+            <span>Einkauf</span>
+        </a>
+        <a href="wochenplan.html" class="nav-tab" title="Wochenplan">
+            <i class="bi bi-calendar-week"></i>
+            <span>Woche</span>
+        </a>
+        <a href="rezepte.html" class="nav-tab" title="Rezepte">
+            <i class="bi bi-book"></i>
+            <span>Rezepte</span>
+        </a>
+    </div>
+    <div class="navbar-right">
+        <a href="index.html" class="btn-nav btn-nav-icon" title="Zurück">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+    </div>
+</nav>
+
+<div class="about-container">
+
+    <!-- Hero -->
+    <div class="about-hero">
+        <i class="bi bi-cart3"></i>
+        <h1>Einkaufsliste</h1>
+        <p>Deine smarte Einkaufs- und Essensplanungs-App</p>
+    </div>
+
+    <!-- Beschreibung -->
+    <div class="about-section">
+        <h2><i class="bi bi-info-circle"></i> Was ist Einkaufsliste?</h2>
+        <p>
+            Einkaufsliste ist eine Progressive Web App (PWA) für die gemeinsame Einkaufsplanung
+            im Haushalt. Die App bietet weit mehr als eine einfache Liste: sie kombiniert
+            Einkaufsverwaltung, Wochenplanung, Rezeptverwaltung und aktuelle Aktionen
+            von Schweizer Detailhändlern in einer einzigen Anwendung.
+        </p>
+    </div>
+
+    <!-- Features -->
+    <div class="about-section">
+        <h2><i class="bi bi-stars"></i> Funktionen</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <i class="bi bi-cart3"></i>
+                <strong>Einkaufsliste</strong>
+                <span>Artikel mit Menge, Einheit, Laden und Datum verwalten</span>
+            </div>
+            <div class="feature-card">
+                <i class="bi bi-calendar-week"></i>
+                <strong>Wochenplan</strong>
+                <span>Mahlzeiten für die ganze Woche planen</span>
+            </div>
+            <div class="feature-card">
+                <i class="bi bi-book"></i>
+                <strong>Rezepte</strong>
+                <span>Rezepte suchen, speichern und eigene Gerichte erstellen</span>
+            </div>
+            <div class="feature-card">
+                <i class="bi bi-tag"></i>
+                <strong>Aktionen</strong>
+                <span>Aktuelle Angebote von Migros, Coop, Denner, Lidl & Aldi</span>
+            </div>
+            <div class="feature-card">
+                <i class="bi bi-people"></i>
+                <strong>Haushalt</strong>
+                <span>Listen mit Familie oder WG teilen</span>
+            </div>
+            <div class="feature-card">
+                <i class="bi bi-phone"></i>
+                <strong>PWA / Offline</strong>
+                <span>Als App installierbar und offline nutzbar</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Einkaufsliste -->
+    <div class="about-section">
+        <h2><i class="bi bi-cart3"></i> Einkaufsliste</h2>
+        <ul>
+            <li><i class="bi bi-check2"></i> Artikel mit Name, Menge und Einheit (Stück, Kg, Liter, etc.) erfassen</li>
+            <li><i class="bi bi-check2"></i> Laden zuweisen (Migros, Coop, Denner, Lidl, Aldi, etc.)</li>
+            <li><i class="bi bi-check2"></i> Fälligkeitsdatum für zeitkritische Einkäufe setzen</li>
+            <li><i class="bi bi-check2"></i> Artikel als gekauft markieren oder löschen</li>
+            <li><i class="bi bi-check2"></i> Nach Laden filtern, nach Name suchen, nach Datum sortieren</li>
+            <li><i class="bi bi-check2"></i> Automatischer Abgleich mit aktuellen Aktionen</li>
+        </ul>
+    </div>
+
+    <!-- Wochenplan -->
+    <div class="about-section">
+        <h2><i class="bi bi-calendar-week"></i> Wochenplan</h2>
+        <ul>
+            <li><i class="bi bi-check2"></i> Mahlzeiten pro Wochentag planen (Frühstück, Mittag, Abend, Snacks)</li>
+            <li><i class="bi bi-check2"></i> Rezepte direkt in den Plan einfügen</li>
+            <li><i class="bi bi-check2"></i> Anzahl Erwachsene und Kinder pro Mahlzeit angeben</li>
+            <li><i class="bi bi-check2"></i> Wochenweise vor- und zurückblättern</li>
+        </ul>
+    </div>
+
+    <!-- Rezepte -->
+    <div class="about-section">
+        <h2><i class="bi bi-book"></i> Rezepte & Gerichte</h2>
+        <ul>
+            <li><i class="bi bi-check2"></i> Online nach Rezepten suchen (z.B. von Chefkoch, Migros)</li>
+            <li><i class="bi bi-check2"></i> Rezepte als Favoriten speichern</li>
+            <li><i class="bi bi-check2"></i> Eigene Gerichte mit Zutaten erstellen und verwalten</li>
+            <li><i class="bi bi-check2"></i> Zutaten automatisch zur Einkaufsliste hinzufügen</li>
+        </ul>
+    </div>
+
+    <!-- Aktionen -->
+    <div class="about-section">
+        <h2><i class="bi bi-tag"></i> Aktionen</h2>
+        <ul>
+            <li><i class="bi bi-check2"></i> Aktuelle Angebote von Denner (offizielle API)</li>
+            <li><i class="bi bi-check2"></i> Aktionen von Migros, Coop, Lidl und Aldi</li>
+            <li><i class="bi bi-check2"></i> Automatische Erkennung passender Aktionen für Artikel auf der Liste</li>
+            <li><i class="bi bi-check2"></i> Aktionen nach Laden filtern und durchsuchen</li>
+        </ul>
+    </div>
+
+    <!-- Haushalt -->
+    <div class="about-section">
+        <h2><i class="bi bi-people"></i> Haushalt & Teilen</h2>
+        <ul>
+            <li><i class="bi bi-check2"></i> Haushalt erstellen und Mitglieder per Code einladen</li>
+            <li><i class="bi bi-check2"></i> Gemeinsame Einkaufsliste, Wochenplan und Rezepte</li>
+            <li><i class="bi bi-check2"></i> Rollenbasiert: Schreib- oder Lesezugriff für Mitglieder</li>
+        </ul>
+    </div>
+
+    <!-- Technologie -->
+    <div class="about-section">
+        <h2><i class="bi bi-gear"></i> Technologie</h2>
+        <p style="margin-bottom:0.75rem">Diese App wurde mit folgenden Technologien entwickelt:</p>
+        <div class="tech-badges">
+            <span class="tech-badge">Node.js</span>
+            <span class="tech-badge">Express</span>
+            <span class="tech-badge">SQL Server</span>
+            <span class="tech-badge">HTML5</span>
+            <span class="tech-badge">CSS3</span>
+            <span class="tech-badge">JavaScript</span>
+            <span class="tech-badge">PWA</span>
+            <span class="tech-badge">Service Worker</span>
+            <span class="tech-badge">Bootstrap Icons</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="about-footer">
+        <p>Version 1.0.0</p>
+        <p style="margin-top:0.25rem">
+            <a href="https://github.com/surendiransithamparam/Einkaufsliste" target="_blank" rel="noopener">
+                <i class="bi bi-github"></i> GitHub
+            </a>
+        </p>
+    </div>
+
+</div>
+
+</div><!-- /app-content -->
+
+</body>
+</html>
