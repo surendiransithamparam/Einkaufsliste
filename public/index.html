@@ -261,9 +261,35 @@
                 <label for="profilEmail">E-Mail</label>
                 <input type="email" id="profilEmail" placeholder="name@beispiel.ch">
             </div>
-            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-bottom:1.25rem">
                 <button class="btn btn-secondary" onclick="closeProfil()">Abbrechen</button>
                 <button class="btn btn-primary" onclick="saveProfil()"><i class="bi bi-check-lg"></i> Speichern</button>
+            </div>
+            <hr style="border:none;border-top:1px solid var(--gray-200);margin-bottom:1rem">
+            <h3 style="font-size:0.95rem;margin-bottom:0.75rem"><i class="bi bi-key"></i> Passwort ändern</h3>
+            <div style="margin-bottom:0.75rem">
+                <label for="profilOldPass">Aktuelles Passwort</label>
+                <input type="password" id="profilOldPass" autocomplete="current-password" placeholder="Aktuelles Passwort">
+            </div>
+            <div style="margin-bottom:0.5rem">
+                <label for="profilNewPass">Neues Passwort</label>
+                <input type="password" id="profilNewPass" autocomplete="new-password" placeholder="Neues Passwort" oninput="checkProfilPwPolicy()">
+            </div>
+            <div id="profilPwPolicy" style="font-size:0.78rem;line-height:1.6;margin-bottom:0.5rem">
+                <div id="ppol-len"><i class="bi bi-x-circle"></i> Mindestens 8 Zeichen</div>
+                <div id="ppol-upper"><i class="bi bi-x-circle"></i> Mindestens 1 Grossbuchstabe</div>
+                <div id="ppol-lower"><i class="bi bi-x-circle"></i> Mindestens 1 Kleinbuchstabe</div>
+                <div id="ppol-special"><i class="bi bi-x-circle"></i> Mindestens 1 Sonderzeichen</div>
+            </div>
+            <div style="margin-bottom:0.75rem">
+                <label for="profilNewPassConfirm">Neues Passwort bestätigen</label>
+                <input type="password" id="profilNewPassConfirm" autocomplete="new-password" placeholder="Passwort wiederholen" oninput="checkProfilPwPolicy()">
+            </div>
+            <div id="ppol-match" style="font-size:0.78rem;display:none;margin-bottom:0.5rem"><i class="bi bi-x-circle"></i> Passwörter stimmen überein</div>
+            <div id="profilPwError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
+            <div id="profilPwSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
+            <div style="display:flex;justify-content:flex-end">
+                <button class="btn btn-primary" onclick="changePassword()"><i class="bi bi-key"></i> Passwort ändern</button>
             </div>
         </div>
     </div>
