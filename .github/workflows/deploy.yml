@@ -48,6 +48,9 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PW: ${{ secrets.SMTP_PASSWORD }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          GH_TOKEN_APP: ${{ secrets.GH_TOKEN_APP }}
+          GH_OWNER: ${{ secrets.GH_OWNER }}
+          GH_REPO: ${{ secrets.GH_REPO }}
         run: |
           jq -n \
             --arg db "$DB_CONN" \
@@ -56,6 +59,9 @@ jobs:
             --arg smtpUser "$SMTP_USER" \
             --arg smtpPw "$SMTP_PW" \
             --arg sessionSecret "$SESSION_SECRET" \
+            --arg ghToken "$GH_TOKEN_APP" \
+            --arg ghOwner "${GH_OWNER:-surendiransithamparam}" \
+            --arg ghRepo "${GH_REPO:-Einkaufsliste}" \
             '{
               connectionString: $db,
               adminPassword: $admin,
@@ -67,6 +73,11 @@ jobs:
                 password: $smtpPw,
                 from: $smtpUser,
                 fromName: "Einkaufsliste"
+              },
+              github: {
+                token: $ghToken,
+                owner: $ghOwner,
+                repo: $ghRepo
               }
             }' > ./publish/config.json
 
