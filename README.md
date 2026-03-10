@@ -1,0 +1,121 @@
+# Einkaufsliste
+
+Eine Progressive Web App (PWA) für die gemeinsame Einkaufsplanung im Haushalt — mit Wochenplan, Rezepten und aktuellen Aktionen von Schweizer Detailhändlern.
+
+## Features
+
+- **Einkaufsliste** — Artikel mit Menge, Einheit, Laden und Fälligkeitsdatum verwalten. Nach Laden filtern, nach Name suchen, als gekauft markieren.
+- **Wochenplan** — Mahlzeiten für die Woche planen (Frühstück, Mittag, Abend, Snacks) mit Rezeptintegration und Personenangabe.
+- **Rezepte & Gerichte** — Online-Rezeptsuche, Favoriten speichern, eigene Gerichte mit Zutaten erstellen. Zutaten direkt auf die Einkaufsliste übernehmen.
+- **Aktionen** — Aktuelle Angebote von Migros, Coop, Denner, Lidl und Aldi. Automatische Erkennung passender Aktionen für Artikel auf der Liste.
+- **Haushalt** — Haushalt erstellen, Mitglieder per Code einladen, gemeinsame Listen und Pläne. Rollenbasierter Zugriff (Lesen/Schreiben).
+- **PWA / Offline** — Als App auf dem Handy oder Desktop installierbar. Offline-Unterstützung via Service Worker.
+
+## Tech Stack
+
+| Komponente | Technologie |
+|------------|-------------|
+| Backend | Node.js, Express |
+| Datenbank | Microsoft SQL Server |
+| Frontend | HTML5, CSS3, Vanilla JavaScript |
+| E-Mail | Nodemailer |
+| PWA | Service Worker, Web Manifest |
+| Icons | Bootstrap Icons |
+| Hosting | Azure / IIS mit iisnode |
+
+## Voraussetzungen
+
+- [Node.js](https://nodejs.org/) (v18+)
+- Microsoft SQL Server (lokal oder Azure)
+- SMTP-Server für E-Mail-Versand (Registrierung, Passwort-Reset)
+
+## Installation
+
+```bash
+git clone https://github.com/surendiransithamparam/Einkaufsliste.git
+cd Einkaufsliste
+npm install
+```
+
+## Konfiguration
+
+Der Server erwartet folgende Umgebungsvariablen:
+
+| Variable | Beschreibung |
+|----------|-------------|
+| `DB_SERVER` | SQL Server Hostname |
+| `DB_NAME` | Datenbankname |
+| `DB_USER` | Datenbank-Benutzer |
+| `DB_PASSWORD` | Datenbank-Passwort |
+| `SMTP_HOST` | SMTP-Server |
+| `SMTP_PORT` | SMTP-Port |
+| `SMTP_USER` | SMTP-Benutzername |
+| `SMTP_PASS` | SMTP-Passwort |
+| `SMTP_FROM` | Absender-Adresse |
+| `BASE_URL` | Öffentliche URL der App |
+| `SESSION_SECRET` | Session-Secret |
+
+## Starten
+
+```bash
+npm start
+```
+
+Die App ist dann unter `http://localhost:3000` erreichbar.
+
+## Projektstruktur
+
+```
+Einkaufsliste/
+├── server.js              # Express Backend (API + DB)
+├── package.json           # Abhängigkeiten
+├── web.config             # IIS-Konfiguration
+├── public/                # Frontend
+│   ├── index.html         # Einkaufsliste (Hauptseite)
+│   ├── wochenplan.html    # Wochenplan
+│   ├── rezepte.html       # Rezepte
+│   ├── about.html         # Über die App
+│   ├── register.html      # Registrierung
+│   ├── reset.html         # Passwort zurücksetzen
+│   ├── admin.html         # Admin-Dashboard
+│   ├── app.js             # Einkaufsliste-Logik
+│   ├── app.css            # Styles
+│   ├── shared.js          # Auth & gemeinsame Funktionen
+│   ├── wochenplan.js      # Wochenplan-Logik
+│   ├── wochenplan.css     # Wochenplan-Styles
+│   ├── rezepte.js         # Rezepte-Logik
+│   ├── sw.js              # Service Worker
+│   ├── manifest.json      # PWA-Manifest
+│   └── icons/             # App-Icons
+└── .github/workflows/     # CI/CD
+```
+
+## API-Endpunkte
+
+| Bereich | Pfad | Beschreibung |
+|---------|------|-------------|
+| Auth | `POST /api/auth/register` | Registrierung |
+| Auth | `POST /api/auth/login` | Anmeldung |
+| Auth | `POST /api/auth/change-password` | Passwort ändern |
+| Artikel | `GET/POST /api/artikel` | Einkaufsliste lesen/schreiben |
+| Artikel | `PUT/DELETE /api/artikel/:id` | Artikel bearbeiten/löschen |
+| Wochenplan | `GET/POST /api/wochenplan` | Wochenplan lesen/schreiben |
+| Rezepte | `GET/POST /api/gerichte` | Eigene Gerichte |
+| Rezepte | `GET /api/rezept/suche` | Rezeptsuche |
+| Favoriten | `GET/POST /api/favoriten` | Favoriten verwalten |
+| Aktionen | `GET /api/aktionen` | Aktuelle Angebote |
+| Haushalt | `POST /api/haushalt` | Haushalt erstellen/beitreten |
+| Admin | `GET /api/admin/benutzer` | Benutzerverwaltung |
+| Health | `GET /health` | Health Check |
+
+## Sicherheit
+
+- Passwort-Hashing mit PBKDF2 (100'000 Iterationen, zufälliger Salt)
+- E-Mail-Verifizierung bei Registrierung
+- Passwortrichtlinie: mindestens 8 Zeichen, Gross-/Kleinbuchstaben, Sonderzeichen
+- Session-basierte Authentifizierung
+- Rollenbasierte Zugriffskontrolle (Admin, Schreiben, Lesen)
+
+## Lizenz
+
+Dieses Projekt ist privat. Alle Rechte vorbehalten.
