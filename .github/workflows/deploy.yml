@@ -77,18 +77,35 @@ jobs:
             <<< '<html><body><h1>Update in progress...</h1></body></html>'
 
       - name: Wait for IIS to release files
-        run: sleep 5
+        run: sleep 15
 
       - name: Deploy via FTP (lftp mirror)
         run: |
           sudo apt-get install -y -qq lftp > /dev/null 2>&1
+          # First deploy everything except node.exe
           lftp -c "
             set ftp:ssl-allow no;
             open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
             mirror --reverse --delete --verbose --no-perms \
+              --exclude node.exe \
               ./publish/ /subdomains/einkaufsliste/httpdocs/;
             bye
           "
+          # Upload node.exe with retries (IIS may still hold a lock)
+          for i in 1 2 3 4 5; do
+            echo "Uploading node.exe (attempt $i)..."
+            if lftp -c "
+              set ftp:ssl-allow no;
+              open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+              put ./publish/node.exe -o /subdomains/einkaufsliste/httpdocs/node.exe;
+              bye
+            "; then
+              echo "node.exe uploaded successfully"
+              break
+            fi
+            echo "Retrying in 10s..."
+            sleep 10
+          done
 
       - name: Remove app_offline.htm to restart IIS
         run: |
