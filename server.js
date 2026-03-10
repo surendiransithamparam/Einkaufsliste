@@ -762,6 +762,37 @@ app.put('/api/auth/profil', requireAuth, async (req, res) => {
   }
 });
 
+app.post('/api/auth/change-password', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const oldPassword = req.body.altesPasswort || '';
+    const newPassword = req.body.neuesPasswort || '';
+
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben.' });
+    if (!/[A-Z]/.test(newPassword)) return res.status(400).json({ error: 'Passwort muss mindestens einen Grossbuchstaben enthalten.' });
+    if (!/[a-z]/.test(newPassword)) return res.status(400).json({ error: 'Passwort muss mindestens einen Kleinbuchstaben enthalten.' });
+    if (!/[^A-Za-z0-9]/.test(newPassword)) return res.status(400).json({ error: 'Passwort muss mindestens ein Sonderzeichen enthalten.' });
+
+    const db = await getPool();
+    const result = await db.request()
+      .input('uid', sql.Int, userId)
+      .query('SELECT PasswordHash FROM Benutzer WHERE Id=@uid');
+    if (result.recordset.length === 0) return res.status(404).json({ error: 'Benutzer nicht gefunden.' });
+
+    if (!verifyPassword(oldPassword, result.recordset[0].PasswordHash))
+      return res.status(400).json({ error: 'Aktuelles Passwort ist falsch.' });
+
+    await db.request()
+      .input('hash', sql.NVarChar, hashPassword(newPassword))
+      .input('uid', sql.Int, userId)
+      .query('UPDATE Benutzer SET PasswordHash=@hash WHERE Id=@uid');
+    res.json({ message: 'Passwort geändert.' });
+  } catch (err) {
+    console.error('change-password error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
 // ==================== HAUSHALT ENDPOINTS ====================
 
 app.post('/api/haushalt', requireAuth, async (req, res) => {
