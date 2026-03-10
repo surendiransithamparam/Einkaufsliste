@@ -99,6 +99,83 @@ function openProfil() {
 
 function closeProfil() {
     document.getElementById('profilOverlay').classList.remove('active');
+    // Reset password fields
+    const ids = ['profilOldPass', 'profilNewPass', 'profilNewPassConfirm'];
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const errEl = document.getElementById('profilPwError');
+    const successEl = document.getElementById('profilPwSuccess');
+    if (errEl) errEl.style.display = 'none';
+    if (successEl) successEl.style.display = 'none';
+    resetProfilPwPolicy();
+}
+
+function resetProfilPwPolicy() {
+    ['ppol-len','ppol-upper','ppol-lower','ppol-special'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.style.color = ''; el.querySelector('i').className = 'bi bi-x-circle'; }
+    });
+    const matchEl = document.getElementById('ppol-match');
+    if (matchEl) matchEl.style.display = 'none';
+}
+
+function checkProfilPwPolicy() {
+    const pass = document.getElementById('profilNewPass').value;
+    const conf = document.getElementById('profilNewPassConfirm').value;
+    const rules = [
+        { id: 'ppol-len', ok: pass.length >= 8 },
+        { id: 'ppol-upper', ok: /[A-Z]/.test(pass) },
+        { id: 'ppol-lower', ok: /[a-z]/.test(pass) },
+        { id: 'ppol-special', ok: /[^A-Za-z0-9]/.test(pass) },
+    ];
+    rules.forEach(r => {
+        const el = document.getElementById(r.id);
+        if (el) {
+            el.style.color = r.ok ? 'var(--green-600)' : 'var(--red-500)';
+            el.querySelector('i').className = r.ok ? 'bi bi-check-circle-fill' : 'bi bi-x-circle';
+        }
+    });
+    const matchEl = document.getElementById('ppol-match');
+    if (matchEl) {
+        if (conf.length > 0) {
+            matchEl.style.display = '';
+            const ok = pass === conf && pass.length > 0;
+            matchEl.style.color = ok ? 'var(--green-600)' : 'var(--red-500)';
+            matchEl.querySelector('i').className = ok ? 'bi bi-check-circle-fill' : 'bi bi-x-circle';
+        } else {
+            matchEl.style.display = 'none';
+        }
+    }
+    return rules.every(r => r.ok) && pass === conf;
+}
+
+async function changePassword() {
+    const oldPass = document.getElementById('profilOldPass').value;
+    const newPass = document.getElementById('profilNewPass').value;
+    const errEl = document.getElementById('profilPwError');
+    const successEl = document.getElementById('profilPwSuccess');
+    errEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    if (!oldPass) { errEl.textContent = 'Bitte aktuelles Passwort eingeben.'; errEl.style.display = ''; return; }
+    if (!checkProfilPwPolicy()) { errEl.textContent = 'Bitte alle Passwort-Anforderungen erfüllen.'; errEl.style.display = ''; return; }
+
+    const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ altesPasswort: oldPass, neuesPasswort: newPass })
+    });
+    const data = await res.json().catch(() => null);
+    if (res.ok) {
+        successEl.textContent = 'Passwort erfolgreich geändert.';
+        successEl.style.display = '';
+        document.getElementById('profilOldPass').value = '';
+        document.getElementById('profilNewPass').value = '';
+        document.getElementById('profilNewPassConfirm').value = '';
+        resetProfilPwPolicy();
+    } else {
+        errEl.textContent = data?.error || 'Fehler beim Ändern des Passworts.';
+        errEl.style.display = '';
+    }
 }
 
 async function saveProfil() {
