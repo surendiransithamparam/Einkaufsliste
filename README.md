@@ -10,7 +10,8 @@ Eine Progressive Web App (PWA) für die gemeinsame Einkaufsplanung im Haushalt �
 - **Aktionen** — Aktuelle Angebote von Migros, Coop, Denner, Lidl und Aldi. Automatische Erkennung passender Aktionen für Artikel auf der Liste.
 - **Haushalt** — Haushalt erstellen, Mitglieder per Code einladen, gemeinsame Listen und Pläne. Rollenbasierter Zugriff (Lesen/Schreiben).
 - **PWA / Offline** — Als App auf dem Handy oder Desktop installierbar. Offline-Unterstützung via Service Worker.
-- **Bug melden** — Probleme direkt aus der App anonym melden. Die Meldung wird automatisch als GitHub Issue erstellt.
+- **Admin-Panel** — Benutzer-, Haushalte- und Laden-Verwaltung. Benutzer aktivieren/deaktivieren, Rollen zuweisen, Läden erstellen/umbenennen/löschen.
+- **Bug melden** — Probleme direkt aus der App anonym melden (auf jeder Seite via 3-Punkte-Menü). Die Meldung wird automatisch als GitHub Issue erstellt.
 
 ## Tech Stack
 
@@ -85,6 +86,7 @@ Einkaufsliste/
 │   ├── app.js             # Einkaufsliste-Logik
 │   ├── app.css            # Styles
 │   ├── shared.js          # Auth & gemeinsame Funktionen
+│   ├── bugreport.js       # Bug-Report-Dialog (alle Seiten)
 │   ├── wochenplan.js      # Wochenplan-Logik
 │   ├── wochenplan.css     # Wochenplan-Styles
 │   ├── rezepte.js         # Rezepte-Logik
@@ -110,6 +112,8 @@ Einkaufsliste/
 | Aktionen | `GET /api/aktionen` | Aktuelle Angebote |
 | Haushalt | `POST /api/haushalt` | Haushalt erstellen/beitreten |
 | Admin | `GET /api/admin/benutzer` | Benutzerverwaltung |
+| Admin | `GET /api/admin/haushalte` | Haushalte-Verwaltung |
+| Admin | `POST/PUT/DELETE /api/admin/laden` | Laden-Verwaltung (CRUD) |
 | Bug Report | `POST /api/bugreport` | Anonymen Bug-Report erstellen |
 | Health | `GET /api/health` | Health Check |
 
