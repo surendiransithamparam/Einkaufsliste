@@ -1032,7 +1032,7 @@ app.get('/api/laden', requireAuth, async (req, res) => {
   try {
     const db = await getPool();
     const result = await db.request()
-      .query('SELECT Id, Name FROM Laden ORDER BY Sortierung, Name');
+      .query('SELECT Id, Name FROM Laden ORDER BY Name');
     res.json(result.recordset.map(r => ({ id: r.Id, name: r.Name })));
   } catch (err) {
     console.error('laden error:', err);
@@ -1482,6 +1482,89 @@ app.delete('/api/admin/haushalte/:id', requireAuth, async (req, res) => {
     res.json({});
   } catch (err) {
     console.error('admin haushalte delete error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
+// --- Admin Laden Endpoints ---
+
+app.post('/api/admin/laden', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await isAdmin(userId, db)) return res.status(403).json({});
+
+    const name = (req.body.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'Name darf nicht leer sein.' });
+
+    const dup = await db.request()
+      .input('name', sql.NVarChar, name)
+      .query('SELECT Id FROM Laden WHERE LOWER(Name)=LOWER(@name)');
+    if (dup.recordset.length > 0) return res.status(400).json({ error: 'Laden mit diesem Namen existiert bereits.' });
+
+    const result = await db.request()
+      .input('name', sql.NVarChar, name)
+      .query('INSERT INTO Laden (Name, Sortierung) VALUES (@name, 0); SELECT SCOPE_IDENTITY() AS id');
+    res.json({ id: result.recordset[0].id, name });
+  } catch (err) {
+    console.error('admin laden post error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
+app.put('/api/admin/laden/:id', requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await isAdmin(userId, db)) return res.status(403).json({});
+
+    const name = (req.body.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'Name darf nicht leer sein.' });
+
+    const dup = await db.request()
+      .input('name', sql.NVarChar, name)
+      .input('id', sql.Int, id)
+      .query('SELECT Id FROM Laden WHERE LOWER(Name)=LOWER(@name) AND Id<>@id');
+    if (dup.recordset.length > 0) return res.status(400).json({ error: 'Laden mit diesem Namen existiert bereits.' });
+
+    await db.request()
+      .input('name', sql.NVarChar, name)
+      .input('id', sql.Int, id)
+      .query('UPDATE Laden SET Name=@name WHERE Id=@id');
+    res.json({});
+  } catch (err) {
+    console.error('admin laden put error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
+app.delete('/api/admin/laden/:id', requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await isAdmin(userId, db)) return res.status(403).json({});
+
+    const laden = await db.request()
+      .input('id', sql.Int, id)
+      .query('SELECT Name FROM Laden WHERE Id=@id');
+    if (laden.recordset.length === 0) return res.status(404).json({ error: 'Laden nicht gefunden.' });
+
+    const ladenName = laden.recordset[0].Name;
+    const articles = await db.request()
+      .input('name', sql.NVarChar, ladenName)
+      .query('SELECT COUNT(*) AS cnt FROM Artikel WHERE Laden=@name');
+    if (articles.recordset[0].cnt > 0) {
+      return res.status(400).json({ error: `Laden kann nicht gelöscht werden – ${articles.recordset[0].cnt} Artikel verknüpft.` });
+    }
+
+    await db.request()
+      .input('id', sql.Int, id)
+      .query('DELETE FROM Laden WHERE Id=@id');
+    res.json({});
+  } catch (err) {
+    console.error('admin laden delete error:', err);
     res.status(500).json({ error: 'Interner Fehler.' });
   }
 });
