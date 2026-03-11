@@ -99,6 +99,23 @@
             </table>
         </div>
     </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:1.5rem 0 1rem">
+        <h2 style="font-size:1.1rem;margin:0;color:var(--gray-700)"><i class="bi bi-shop"></i> Läden</h2>
+        <button class="btn btn-primary btn-sm" onclick="addLaden()"><i class="bi bi-plus-lg"></i> Neuer Laden</button>
+    </div>
+    <div class="table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="ladenTableBody"></tbody>
+        </table>
+    </div>
 </div>
 </div>
 
@@ -171,6 +188,7 @@ function showApp() {
     document.getElementById('logoutBtn').style.display = '';
     loadUsers();
     loadHaushalte();
+    loadLaden();
 }
 
 function showLogin() {
@@ -398,6 +416,59 @@ async function deleteHaushalt(id, name) {
     toast('Haushalt gelöscht');
     closeHaushaltDetail();
     loadHaushalte();
+}
+
+// -- Läden --
+let laden = [];
+
+async function loadLaden() {
+    const res = await fetch('/api/laden');
+    if (!res.ok) return;
+    laden = await res.json();
+    renderLaden();
+}
+
+function renderLaden() {
+    const tbody = document.getElementById('ladenTableBody');
+    tbody.innerHTML = laden.map(l => `<tr>
+        <td>${l.id}</td>
+        <td><strong>${esc(l.name)}</strong></td>
+        <td>
+            <div class="admin-actions">
+                <button onclick="renameLaden(${l.id},'${esc(l.name).replace(/'/g,"\\'")}')" title="Umbenennen"><i class="bi bi-pencil"></i></button>
+                <button class="danger" onclick="deleteLaden(${l.id},'${esc(l.name).replace(/'/g,"\\'")}')" title="Löschen"><i class="bi bi-trash"></i></button>
+            </div>
+        </td>
+    </tr>`).join('');
+}
+
+async function addLaden() {
+    const name = prompt('Name des neuen Ladens:');
+    if (!name || !name.trim()) return;
+    const res = await fetch('/api/admin/laden', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim() })
+    });
+    if (res.ok) { toast('Laden erstellt'); loadLaden(); }
+    else { const d = await res.json().catch(()=>null); toast(d?.error || 'Fehler'); }
+}
+
+async function renameLaden(id, currentName) {
+    const newName = prompt('Neuer Name:', currentName);
+    if (!newName || newName.trim() === currentName) return;
+    const res = await fetch('/api/admin/laden/' + id, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim() })
+    });
+    if (res.ok) { toast('Laden umbenannt'); loadLaden(); }
+    else { const d = await res.json().catch(()=>null); toast(d?.error || 'Fehler'); }
+}
+
+async function deleteLaden(id, name) {
+    if (!confirm('Laden \"' + name + '\" wirklich löschen?')) return;
+    const res = await fetch('/api/admin/laden/' + id, { method: 'DELETE' });
+    if (res.ok) { toast('Laden gelöscht'); loadLaden(); }
+    else { const d = await res.json().catch(()=>null); toast(d?.error || 'Fehler'); }
 }
 
 function toggleNavDropdown(e) { e.stopPropagation(); document.getElementById('navDropdownMenu').classList.toggle('open'); }
