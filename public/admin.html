@@ -41,6 +41,12 @@
                 <button onclick="logout();closeNavDropdown()" id="logoutBtn" style="display:none">
                     <i class="bi bi-box-arrow-left"></i> Abmelden
                 </button>
+                <button onclick="openBugReport();closeNavDropdown()">
+                    <i class="bi bi-bug"></i> Bug melden
+                </button>
+                <a href="about.html" style="text-decoration:none">
+                    <i class="bi bi-info-circle"></i> Über
+                </a>
             </div>
         </div>
     </div>
@@ -165,6 +171,7 @@
 
 <div class="toast-container" id="toasts"></div>
 
+<script src="bugreport.js"></script>
 <script>
 let currentUser = null;
 let users = [];
@@ -474,7 +481,7 @@ async function deleteLaden(id, name) {
 function toggleNavDropdown(e) { e.stopPropagation(); document.getElementById('navDropdownMenu').classList.toggle('open'); }
 function closeNavDropdown() { document.getElementById('navDropdownMenu').classList.remove('open'); }
 document.addEventListener('click', () => closeNavDropdown());
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeResetPw(); closeHaushaltDetail(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeResetPw(); closeHaushaltDetail(); closeBugReport(); } });
 
 checkAuth();
 
