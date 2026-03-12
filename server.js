@@ -884,6 +884,106 @@ app.post('/api/auth/change-password', requireAuth, async (req, res) => {
   }
 });
 
+// ── Tankrabatte Endpoint ─────────────────────────────────────────────
+
+// Cache: 1 Stunde
+let tankrabatteCache = { data: null, timestamp: 0 };
+const TANKRABATTE_CACHE_TTL = 60 * 60 * 1000;
+
+async function scrapePreispirat(anbieter) {
+  const https = require('https');
+  const url = `https://www.preispirat.ch/gutscheine/${anbieter}/`;
+  return new Promise((resolve) => {
+    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible)' } }, (resp) => {
+      let html = '';
+      resp.on('data', chunk => html += chunk);
+      resp.on('end', () => {
+        const gutscheine = [];
+        // Einfaches Regex-Parsing der deal_block_row Einträge
+        const blocks = html.split('deal_block_row');
+        for (let i = 1; i < blocks.length; i++) {
+          const block = blocks[i];
+          // Titel extrahieren
+          const titelMatch = block.match(/<a[^>]*href="(https:\/\/www\.preispirat\.ch\/[^"]*)"[^>]*>([^<]+)<\/a>/);
+          // Rabatt extrahieren (im h5-Tag)
+          const rabattMatch = block.match(/<h5[^>]*>([^<]+)<\/h5>/);
+          // Abgelaufen?
+          const abgelaufen = block.includes('expired_coupon') || block.includes('Abgelaufen');
+          if (titelMatch) {
+            gutscheine.push({
+              titel: (titelMatch[2] || '').trim(),
+              url: (titelMatch[1] || '').trim(),
+              rabatt: rabattMatch ? rabattMatch[1].trim() : 'Rabatt',
+              abgelaufen,
+              details: abgelaufen ? 'Abgelaufen' : 'Aktiv'
+            });
+          }
+        }
+        resolve(gutscheine);
+      });
+      resp.on('error', () => resolve([]));
+    }).on('error', () => resolve([]));
+  });
+}
+
+async function scrapeShellCh() {
+  const https = require('https');
+  const url = 'https://www.shell.ch/de_ch/shoppen-und-geniessen/aktuelle-angebote.html';
+  return new Promise((resolve) => {
+    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible)' } }, (resp) => {
+      let html = '';
+      resp.on('data', chunk => html += chunk);
+      resp.on('end', () => {
+        const gutscheine = [];
+        // Shell-Seite: Angebote aus Promo-Blöcken extrahieren
+        const promoRegex = /<h[23][^>]*>([^<]*(?:rabatt|rappen|cent|sparen|tanken)[^<]*)<\/h[23]>/gi;
+        let m;
+        while ((m = promoRegex.exec(html)) !== null) {
+          gutscheine.push({
+            titel: m[1].trim(),
+            url,
+            rabatt: 'Aktion',
+            abgelaufen: false,
+            details: 'shell.ch'
+          });
+        }
+        resolve(gutscheine);
+      });
+      resp.on('error', () => resolve([]));
+    }).on('error', () => resolve([]));
+  });
+}
+
+app.get('/api/tankrabatte', requireAuth, async (req, res) => {
+  try {
+    if (tankrabatteCache.data && Date.now() - tankrabatteCache.timestamp < TANKRABATTE_CACHE_TTL) {
+      return res.json(tankrabatteCache.data);
+    }
+
+    const [coopPronto, migrol, shell] = await Promise.all([
+      scrapePreispirat('coop-pronto'),
+      scrapePreispirat('migrol'),
+      scrapeShellCh()
+    ]);
+
+    // AVIA: Kein öffentlicher Gutschein-Service, statischer Hinweis
+    const avia = [{
+      titel: 'AVIA Karte: 4-5 Rp./Liter Rabatt an allen AVIA-Stationen',
+      url: 'https://avia.ch',
+      rabatt: '4-5 Rp./L',
+      abgelaufen: false,
+      details: 'Dauerhaft mit AVIA-Karte'
+    }];
+
+    const data = { coopPronto, migrol, shell, avia };
+    tankrabatteCache = { data, timestamp: Date.now() };
+    res.json(data);
+  } catch (e) {
+    console.error('Tankrabatte Fehler:', e);
+    res.status(500).json({ error: 'Fehler beim Laden der Tankrabatte.' });
+  }
+});
+
 // ── WebAuthn / FIDO2 Endpoints ──────────────────────────────────────
 
 app.post('/api/webauthn/register-options', requireAuth, async (req, res) => {
