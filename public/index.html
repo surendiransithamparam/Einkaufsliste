@@ -301,6 +301,18 @@
             <div style="display:flex;justify-content:flex-end">
                 <button class="btn btn-primary" onclick="changePassword()"><i class="bi bi-key"></i> Passwort ändern</button>
             </div>
+          <!-- Biometrische Anmeldung -->
+          <hr style="margin:16px 0;">
+          <h3><i class="bi bi-fingerprint"></i> Biometrische Anmeldung</h3>
+          <div id="webauthnGeraeteSection" style="display:none;">
+            <div id="webauthnGeraeteListe"></div>
+            <button class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="webauthnNeuesGeraet()">
+              <i class="bi bi-plus-circle"></i> Neues Gerät hinzufügen
+            </button>
+          </div>
+          <div id="webauthnNichtVerfuegbar" style="display:none;color:var(--text-muted);">
+            <p>Biometrische Anmeldung wird von diesem Browser nicht unterstützt.</p>
+          </div>
         </div>
     </div>
 </div>
