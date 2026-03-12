@@ -1,0 +1,100 @@
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spin { animation: spin 1s linear infinite; display: inline-block; }
+
+.anbieter-section {
+    margin-bottom: 1.25rem;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.anbieter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    background: var(--gray-100);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--gray-700);
+}
+
+.anbieter-badge {
+    background: var(--green-600);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    min-width: 1.4rem;
+    text-align: center;
+}
+.anbieter-badge.none {
+    background: var(--gray-300);
+}
+
+.gutschein-liste {
+    padding: 0.5rem 0.75rem;
+}
+
+.gutschein-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--gray-100);
+}
+.gutschein-card:last-child {
+    border-bottom: none;
+}
+
+.gutschein-rabatt {
+    background: var(--green-50);
+    color: var(--green-600);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.gutschein-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.gutschein-titel {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    line-height: 1.3;
+}
+
+.gutschein-details {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+    margin-top: 0.2rem;
+}
+
+.gutschein-link {
+    flex-shrink: 0;
+    align-self: center;
+}
+.gutschein-link a {
+    color: var(--green-600);
+    font-size: 1rem;
+    text-decoration: none;
+}
+
+.gutschein-empty {
+    padding: 0.75rem 0;
+    color: var(--gray-400);
+    font-size: 0.85rem;
+    font-style: italic;
+    text-align: center;
+}
