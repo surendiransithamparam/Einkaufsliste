@@ -876,7 +876,7 @@ app.post('/api/auth/change-password', requireAuth, async (req, res) => {
 
 app.post('/api/webauthn/register-options', requireAuth, async (req, res) => {
   try {
-    if (isRateLimited(req, 'webauthn_register', 5, 300)) return res.status(429).json({ error: 'Zu viele Versuche.' });
+    if (isRateLimited(req, 'webauthn_register', 10, 60)) return res.status(429).json({ error: 'Zu viele Versuche.' });
     const { geraetename } = req.body;
     if (!geraetename || geraetename.trim().length < 1) return res.status(400).json({ error: 'Gerätename erforderlich.' });
 

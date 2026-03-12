@@ -18,7 +18,7 @@ async function checkAuth(onSuccess) {
 function showLogin() {
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('appContent').classList.add('hidden');
-    initWebauthnLogin();
+    if (typeof WebAuthnClient !== 'undefined') initWebauthnLogin();
 }
 
 function showAppBase() {
@@ -45,7 +45,7 @@ async function submitAuth(e) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ benutzername: user, passwort: pass })
     });
-    if (res.ok) { currentUser = await res.json(); showApp(); webauthnNachLoginPruefen(); }
+    if (res.ok) { currentUser = await res.json(); showApp(); if (typeof WebAuthnClient !== 'undefined') webauthnNachLoginPruefen(); }
     else if (res.status === 403) {
         const data = await res.json().catch(() => null);
         errEl.innerHTML = esc(data?.error || 'Konto nicht aktiviert.') +
@@ -96,7 +96,7 @@ function openProfil() {
     document.getElementById('profilUser').value = currentUser?.benutzername || '';
     document.getElementById('profilEmail').value = currentUser?.email || '';
     document.getElementById('profilOverlay').classList.add('active');
-    webauthnLadeGeraeteProfil();
+    if (typeof WebAuthnClient !== 'undefined') webauthnLadeGeraeteProfil();
 }
 
 function closeProfil() {
