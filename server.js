@@ -2626,6 +2626,32 @@ async function startup() {
           FOREIGN KEY (BenutzerId) REFERENCES Benutzer(Id)
       )`);
 
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='WebAuthnCredential')
+      CREATE TABLE WebAuthnCredential (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          BenutzerId INT NOT NULL,
+          CredentialId NVARCHAR(2048) NOT NULL,
+          CredentialIdHash AS HASHBYTES('SHA2_256', CredentialId) PERSISTED,
+          PublicKey VARBINARY(MAX) NOT NULL,
+          Counter INT NOT NULL DEFAULT 0,
+          Geraetename NVARCHAR(100) NOT NULL,
+          Transports NVARCHAR(500) NULL,
+          ErstelltAm DATETIME2 NOT NULL DEFAULT GETDATE(),
+          CONSTRAINT FK_WebAuthnCredential_Benutzer FOREIGN KEY (BenutzerId)
+              REFERENCES Benutzer(Id) ON DELETE CASCADE
+      )`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='UQ_WebAuthnCredential_CredentialIdHash')
+      CREATE UNIQUE INDEX UQ_WebAuthnCredential_CredentialIdHash
+          ON WebAuthnCredential(CredentialIdHash)`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_WebAuthnCredential_BenutzerId')
+      CREATE INDEX IX_WebAuthnCredential_BenutzerId
+          ON WebAuthnCredential(BenutzerId)`);
+
     // Ensure HaushaltRolle column on Benutzer (for existing databases)
     await db.request().query(`
       IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id=OBJECT_ID('Benutzer') AND name='HaushaltRolle')
