@@ -1,4 +1,4 @@
-const CACHE_NAME = 'einkaufsliste-v8';
+const CACHE_NAME = 'einkaufsliste-v9';
 const ASSETS = [
     './',
     './index.html',
@@ -10,6 +10,8 @@ const ASSETS = [
     './app.css',
     './app.js',
     './shared.js',
+    './webauthn.js',
+    './lib/simplewebauthn-browser.min.js',
     './rezepte.js',
     './wochenplan.js',
     './wochenplan.css',
