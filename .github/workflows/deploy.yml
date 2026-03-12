@@ -51,6 +51,9 @@ jobs:
           GH_TOKEN_APP: ${{ secrets.GH_TOKEN_APP }}
           GH_OWNER: ${{ secrets.GH_OWNER }}
           GH_REPO: ${{ secrets.GH_REPO }}
+          WEBAUTHN_RP_ID: ${{ secrets.WEBAUTHN_RP_ID }}
+          WEBAUTHN_RP_NAME: ${{ secrets.WEBAUTHN_RP_NAME }}
+          WEBAUTHN_ORIGIN: ${{ secrets.WEBAUTHN_ORIGIN }}
         run: |
           jq -n \
             --arg db "$DB_CONN" \
@@ -62,6 +65,9 @@ jobs:
             --arg ghToken "$GH_TOKEN_APP" \
             --arg ghOwner "${GH_OWNER:-surendiransithamparam}" \
             --arg ghRepo "${GH_REPO:-Einkaufsliste}" \
+            --arg waRpId "${WEBAUTHN_RP_ID:-localhost}" \
+            --arg waRpName "${WEBAUTHN_RP_NAME:-Einkaufsliste}" \
+            --arg waOrigin "${WEBAUTHN_ORIGIN:-http://localhost:3000}" \
             '{
               connectionString: $db,
               adminPassword: $admin,
@@ -78,6 +84,11 @@ jobs:
                 token: $ghToken,
                 owner: $ghOwner,
                 repo: $ghRepo
+              },
+              webauthn: {
+                rpId: $waRpId,
+                rpName: $waRpName,
+                origin: $waOrigin
               }
             }' > ./publish/config.json
 

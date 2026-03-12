@@ -18,6 +18,7 @@ async function checkAuth(onSuccess) {
 function showLogin() {
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('appContent').classList.add('hidden');
+    if (typeof WebAuthnClient !== 'undefined') initWebauthnLogin();
 }
 
 function showAppBase() {
@@ -44,7 +45,7 @@ async function submitAuth(e) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ benutzername: user, passwort: pass })
     });
-    if (res.ok) { currentUser = await res.json(); showApp(); }
+    if (res.ok) { currentUser = await res.json(); showApp(); if (typeof WebAuthnClient !== 'undefined') webauthnNachLoginPruefen(); }
     else if (res.status === 403) {
         const data = await res.json().catch(() => null);
         errEl.innerHTML = esc(data?.error || 'Konto nicht aktiviert.') +
@@ -95,6 +96,7 @@ function openProfil() {
     document.getElementById('profilUser').value = currentUser?.benutzername || '';
     document.getElementById('profilEmail').value = currentUser?.email || '';
     document.getElementById('profilOverlay').classList.add('active');
+    if (typeof WebAuthnClient !== 'undefined') webauthnLadeGeraeteProfil();
 }
 
 function closeProfil() {
@@ -393,3 +395,153 @@ function initPasswordToggles() {
     });
 }
 document.addEventListener('DOMContentLoaded', initPasswordToggles);
+
+// ── WebAuthn / FIDO2 Functions ──────────────────────────────────────
+
+async function initWebauthnLogin() {
+  const btn = document.getElementById('webauthnLoginBtn');
+  if (!btn) return;
+  const verfuegbar = await WebAuthnClient.istVerfuegbar();
+  btn.style.display = verfuegbar ? '' : 'none';
+}
+
+async function webauthnLogin() {
+  const benutzername = document.getElementById('authUser').value.trim();
+  const errorEl = document.getElementById('authError');
+  if (!benutzername) {
+    errorEl.textContent = 'Bitte Benutzername eingeben.';
+    errorEl.style.display = '';
+    return;
+  }
+  errorEl.style.display = 'none';
+  try {
+    const result = await WebAuthnClient.starteAnmeldung(benutzername);
+    currentUser = result.benutzer;
+    showApp();
+  } catch (e) {
+    if (e.name === 'NotAllowedError') {
+      errorEl.textContent = 'Anmeldung abgebrochen.';
+    } else {
+      errorEl.textContent = e.message || 'Biometrische Anmeldung fehlgeschlagen.';
+    }
+    errorEl.style.display = '';
+  }
+}
+
+async function webauthnNachLoginPruefen() {
+  try {
+    const verfuegbar = await WebAuthnClient.istVerfuegbar();
+    if (!verfuegbar) return;
+    // currentUser hat nach Login { benutzername } oder nach /api/auth/me { benutzername, ... }
+    const benutzername = currentUser && currentUser.benutzername;
+    if (!benutzername) return;
+    if (!WebAuthnClient.sollPromptZeigen(benutzername)) return;
+    document.getElementById('webauthnPromptOverlay').style.display = '';
+    // Gerätename-Vorschlag basierend auf User-Agent
+    const ua = navigator.userAgent;
+    let vorschlag = 'Mein Gerät';
+    if (/iPhone/i.test(ua)) vorschlag = 'iPhone';
+    else if (/iPad/i.test(ua)) vorschlag = 'iPad';
+    else if (/Android/i.test(ua)) vorschlag = 'Android';
+    else if (/Windows/i.test(ua)) vorschlag = 'Windows PC';
+    else if (/Mac/i.test(ua)) vorschlag = 'Mac';
+    document.getElementById('webauthnGeraetename').value = vorschlag;
+  } catch (e) {
+    console.error('WebAuthn Prompt Fehler:', e);
+  }
+}
+
+async function webauthnPromptAnnehmen() {
+  const geraetename = document.getElementById('webauthnGeraetename').value.trim();
+  const errorEl = document.getElementById('webauthnPromptError');
+  if (!geraetename) {
+    errorEl.textContent = 'Bitte Gerätename eingeben.';
+    errorEl.style.display = '';
+    return;
+  }
+  errorEl.style.display = 'none';
+  try {
+    await WebAuthnClient.starteRegistrierung(geraetename);
+    WebAuthnClient.markiereRegistriert(currentUser.benutzername);
+    document.getElementById('webauthnPromptOverlay').style.display = 'none';
+    alert('Biometrische Anmeldung erfolgreich eingerichtet!');
+  } catch (e) {
+    if (e.name === 'NotAllowedError') {
+      errorEl.textContent = 'Einrichtung abgebrochen. Du kannst es jederzeit im Profil erneut versuchen.';
+    } else {
+      errorEl.textContent = e.message || 'Einrichtung fehlgeschlagen.';
+    }
+    errorEl.style.display = '';
+  }
+}
+
+function webauthnPromptAblehnen() {
+  if (currentUser && currentUser.benutzername) {
+    WebAuthnClient.markiereAbgelehnt(currentUser.benutzername);
+  }
+  document.getElementById('webauthnPromptOverlay').style.display = 'none';
+}
+
+// WebAuthn: Profil - Geräte verwalten
+async function webauthnLadeGeraeteProfil() {
+  const section = document.getElementById('webauthnGeraeteSection');
+  const nichtVerfuegbar = document.getElementById('webauthnNichtVerfuegbar');
+  if (!section || !nichtVerfuegbar) return;
+
+  const verfuegbar = await WebAuthnClient.istVerfuegbar();
+  if (!verfuegbar) {
+    nichtVerfuegbar.style.display = '';
+    section.style.display = 'none';
+    return;
+  }
+
+  nichtVerfuegbar.style.display = 'none';
+  section.style.display = '';
+
+  try {
+    const geraete = await WebAuthnClient.ladeGeraete();
+    const liste = document.getElementById('webauthnGeraeteListe');
+    if (geraete.length === 0) {
+      liste.innerHTML = '<p style="color:var(--text-muted);">Keine Geräte registriert.</p>';
+      return;
+    }
+    liste.innerHTML = geraete.map(g => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-color);">
+        <div>
+          <strong>${esc(g.geraetename)}</strong><br>
+          <small style="color:var(--text-muted);">${new Date(g.erstelltAm).toLocaleDateString('de-CH')}</small>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="webauthnGeraetEntfernen(${g.id}, '${esc(g.geraetename)}')">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('Fehler beim Laden der Geräte:', e);
+  }
+}
+
+async function webauthnGeraetEntfernen(id, name) {
+  if (!confirm('Gerät "' + name + '" wirklich entfernen?')) return;
+  try {
+    await WebAuthnClient.loescheGeraet(id);
+    webauthnLadeGeraeteProfil();
+  } catch (e) {
+    alert(e.message || 'Fehler beim Entfernen.');
+  }
+}
+
+async function webauthnNeuesGeraet() {
+  const name = prompt('Gerätename:');
+  if (!name || !name.trim()) return;
+  try {
+    await WebAuthnClient.starteRegistrierung(name.trim());
+    WebAuthnClient.markiereRegistriert(currentUser.benutzername);
+    webauthnLadeGeraeteProfil();
+    alert('Gerät erfolgreich registriert!');
+  } catch (e) {
+    if (e.name !== 'NotAllowedError') {
+      alert(e.message || 'Registrierung fehlgeschlagen.');
+    }
+  }
+}

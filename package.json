@@ -7,9 +7,10 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@simplewebauthn/server": "^13.3.0",
     "express": "^4.21",
-    "mssql": "^11",
     "express-session": "^1.18",
+    "mssql": "^11",
     "nodemailer": "^6.9"
   }
 }
