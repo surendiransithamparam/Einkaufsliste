@@ -3,7 +3,16 @@
 function showApp() {
     showAppBase();
     ladeGutscheine();
-    loadAktionenOverview();
+
+    // Check for search parameter from Einkauf page badge click
+    const params = new URLSearchParams(window.location.search);
+    const suche = params.get('suche');
+    if (suche) {
+        document.getElementById('aktionenSuche').value = suche;
+        searchAktionen();
+    } else {
+        loadAktionenOverview();
+    }
 }
 
 // -- Einkaufsaktionen --

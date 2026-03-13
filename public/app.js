@@ -3,6 +3,7 @@ async function showApp() {
     showAppBase();
     await loadStores();
     loadItems();
+    loadAktionenMatches();
 }
 
 // -- Data --
@@ -369,8 +370,11 @@ function renderTile(item) {
         if (s === 'overdue') badgeHtml = `<span class="tile-badge danger"><i class="bi bi-exclamation-triangle-fill"></i> \u00DCberf\u00E4llig</span>`;
         else if (s === 'today') badgeHtml = `<span class="tile-badge warn"><i class="bi bi-clock-fill"></i> Heute</span>`;
 
+        // Aktion badge
+        const aktionBadge = renderAktionBadge(item.id);
+
         const isGekauft = item.gekauft;
-        const tileCls = [cls, isGekauft ? 'gekauft' : ''].filter(Boolean).join(' ');
+        const tileCls = [cls, isGekauft ? 'gekauft' : '', aktionBadge ? 'has-aktion' : ''].filter(Boolean).join(' ');
         const checkIcon = isGekauft ? 'bi-check-circle-fill' : 'bi-circle';
         const doneBadge = isGekauft ? '<span class="tile-badge done"><i class="bi bi-check-lg"></i> Gekauft</span>' : badgeHtml;
 
@@ -389,6 +393,7 @@ function renderTile(item) {
                 <span class="tile-field-value large">${item.menge} ${esc(item.einheit)}</span>
                 ${item.laden ? `<span class="tile-field-value"><i class="bi bi-shop"></i> ${esc(item.laden)}</span>` : ''}
             </div>
+            ${aktionBadge ? `<div class="tile-aktion-row">${aktionBadge}</div>` : ''}
             <div class="tile-footer">
                 <div class="tile-date ${dateClass}">
                     <i class="bi bi-calendar3"></i>
@@ -530,6 +535,39 @@ async function addZutaten() {
 function mapEinheit(e) {
     const map = { 'g': 'g', 'kg': 'kg', 'ml': 'ml', 'dl': 'ml', 'l': 'Liter', 'EL': 'Stück', 'TL': 'Stück', 'Prise': 'Stück', 'Bund': 'Bund' };
     return map[e] || 'Stück';
+}
+
+// -- Aktionen --
+let aktionenMatches = {}; // { artikelId: [{name, preis, laden, ...}] }
+
+async function loadAktionenMatches() {
+    try {
+        const res = await fetch('/api/aktionen/match');
+        if (res.ok) {
+            aktionenMatches = await res.json();
+            renderList();
+        }
+    } catch (e) {
+        console.error('Aktionen-Match fehlgeschlagen', e);
+    }
+}
+
+function renderAktionBadge(itemId) {
+    const matches = aktionenMatches[itemId];
+    if (!matches || matches.length === 0) return '';
+    const first = matches[0];
+    const preisText = first.preis ? `CHF ${first.preis.toFixed(2)}` : '';
+    const ladenText = first.laden || '';
+    const countExtra = matches.length > 1 ? ` +${matches.length - 1}` : '';
+    return `<span class="tile-badge aktion" onclick="event.stopPropagation();showAktionDetail(${itemId})" title="Aktion gefunden!">
+        <i class="bi bi-tag-fill"></i> ${esc(ladenText)}${preisText ? ' ' + preisText : ''}${countExtra}
+    </span>`;
+}
+
+function showAktionDetail(itemId) {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+    window.location.href = `tankrabatte.html?suche=${encodeURIComponent(item.artikel)}`;
 }
 
 // -- Haushalt: logic is in shared.js --
