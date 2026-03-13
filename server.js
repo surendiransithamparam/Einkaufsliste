@@ -30,11 +30,23 @@ const githubConfig = config.github || {
 };
 
 // WebAuthn / FIDO2 Konfiguration
-const webauthnConfig = {
-  rpID: process.env.WEBAUTHN_RP_ID || (config.webauthn && config.webauthn.rpId) || 'localhost',
-  rpName: process.env.WEBAUTHN_RP_NAME || (config.webauthn && config.webauthn.rpName) || 'HaushaltPLUS',
-  origin: process.env.WEBAUTHN_ORIGIN || (config.webauthn && config.webauthn.origin) || 'http://localhost:3000'
+const webauthnConfigStatic = {
+  rpID: process.env.WEBAUTHN_RP_ID || (config.webauthn && config.webauthn.rpId) || null,
+  rpName: process.env.WEBAUTHN_RP_NAME || (config.webauthn && config.webauthn.rpName) || 'Einkaufsliste',
+  origin: process.env.WEBAUTHN_ORIGIN || (config.webauthn && config.webauthn.origin) || null
 };
+
+// Dynamisch RP ID und Origin aus Request ableiten, falls nicht explizit konfiguriert
+function getWebauthnConfig(req) {
+  const host = req.hostname || req.headers.host?.split(':')[0] || 'localhost';
+  const protocol = req.protocol || (req.secure ? 'https' : 'http');
+  const port = req.headers.host?.includes(':') ? ':' + req.headers.host.split(':')[1] : '';
+  return {
+    rpID: webauthnConfigStatic.rpID || host,
+    rpName: webauthnConfigStatic.rpName,
+    origin: webauthnConfigStatic.origin || `${protocol}://${host}${port}`
+  };
+}
 
 // --- SQL pool ---
 let pool;
@@ -997,9 +1009,10 @@ app.post('/api/webauthn/register-options', requireAuth, async (req, res) => {
       transports: c.Transports ? JSON.parse(c.Transports) : undefined
     }));
 
+    const waCfg = getWebauthnConfig(req);
     const options = await generateRegistrationOptions({
-      rpName: webauthnConfig.rpName,
-      rpID: webauthnConfig.rpID,
+      rpName: waCfg.rpName,
+      rpID: waCfg.rpID,
       userID: new Uint8Array(Buffer.from(user.Id.toString())),
       userName: user.Benutzername,
       userDisplayName: user.Benutzername,
@@ -1034,11 +1047,12 @@ app.post('/api/webauthn/register-verify', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Challenge abgelaufen. Bitte erneut versuchen.' });
     }
 
+    const waCfg = getWebauthnConfig(req);
     const verification = await verifyRegistrationResponse({
       response: req.body,
       expectedChallenge: challengeData.challenge,
-      expectedOrigin: webauthnConfig.origin,
-      expectedRPID: webauthnConfig.rpID
+      expectedOrigin: waCfg.origin,
+      expectedRPID: waCfg.rpID
     });
 
     if (!verification.verified || !verification.registrationInfo) {
@@ -1104,8 +1118,9 @@ app.post('/api/webauthn/login-options', async (req, res) => {
       }
     }
 
+    const waCfg = getWebauthnConfig(req);
     const options = await generateAuthenticationOptions({
-      rpID: webauthnConfig.rpID,
+      rpID: waCfg.rpID,
       allowCredentials,
       userVerification: 'preferred'
     });
@@ -1150,11 +1165,12 @@ app.post('/api/webauthn/login-verify', async (req, res) => {
 
     const cred = credResult.recordset[0];
 
+    const waCfg = getWebauthnConfig(req);
     const verification = await verifyAuthenticationResponse({
       response: req.body,
       expectedChallenge: challengeData.challenge,
-      expectedOrigin: webauthnConfig.origin,
-      expectedRPID: webauthnConfig.rpID,
+      expectedOrigin: waCfg.origin,
+      expectedRPID: waCfg.rpID,
       credential: {
         id: cred.CredentialId,
         publicKey: cred.PublicKey,

@@ -399,32 +399,20 @@ document.addEventListener('DOMContentLoaded', initPasswordToggles);
 // ── WebAuthn / FIDO2 Functions ──────────────────────────────────────
 
 async function initWebauthnLogin() {
-  const btn = document.getElementById('webauthnLoginBtn');
-  if (!btn) return;
   const verfuegbar = await WebAuthnClient.istVerfuegbar();
-  btn.style.display = verfuegbar ? '' : 'none';
-}
-
-async function webauthnLogin() {
-  const benutzername = document.getElementById('authUser').value.trim();
-  const errorEl = document.getElementById('authError');
-  if (!benutzername) {
-    errorEl.textContent = 'Bitte Benutzername eingeben.';
-    errorEl.style.display = '';
-    return;
-  }
-  errorEl.style.display = 'none';
+  if (!verfuegbar) return;
+  // Automatisch biometrischen Login starten, wenn Gerät bereits registriert ist
+  const registrierterUser = WebAuthnClient.getRegistriertenBenutzer();
+  if (!registrierterUser) return;
   try {
-    const result = await WebAuthnClient.starteAnmeldung(benutzername);
+    const result = await WebAuthnClient.starteAnmeldung(registrierterUser);
     currentUser = result.benutzer;
     showApp();
   } catch (e) {
-    if (e.name === 'NotAllowedError') {
-      errorEl.textContent = 'Anmeldung abgebrochen.';
-    } else {
-      errorEl.textContent = e.message || 'Biometrische Anmeldung fehlgeschlagen.';
+    // Stil: Fehler nicht anzeigen beim Auto-Login, Benutzer kann normal mit Passwort fortfahren
+    if (e.name !== 'NotAllowedError') {
+      console.warn('Automatischer biometrischer Login fehlgeschlagen:', e.message);
     }
-    errorEl.style.display = '';
   }
 }
 

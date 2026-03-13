@@ -105,5 +105,16 @@ const WebAuthnClient = {
   // Markiert dass Prompt abgelehnt wurde
   markiereAbgelehnt(benutzername) {
     localStorage.setItem(`webauthn_dismissed_${benutzername}`, Date.now().toString());
+  },
+
+  // Gibt den Benutzernamen zurück, der auf diesem Gerät registriert ist (oder null)
+  getRegistriertenBenutzer() {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('webauthn_registered_')) {
+        return key.replace('webauthn_registered_', '');
+      }
+    }
+    return null;
   }
 };
