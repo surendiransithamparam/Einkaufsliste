@@ -26,7 +26,9 @@ function renderAktionCard(a, showLaden) {
         ? `<div class="aktion-card-gueltig"><i class="bi bi-calendar3"></i> ${a.gueltigVon.substring(8,10)}.${a.gueltigVon.substring(5,7)}. \u2013 ${a.gueltigBis.substring(8,10)}.${a.gueltigBis.substring(5,7)}.</div>`
         : '';
     const ladenHtml = showLaden ? `<span class="aktion-laden"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>` : '';
+    const bildHtml = a.bild ? `<div class="aktion-card-img"><img src="${esc(a.bild)}" alt="${esc(a.name)}" loading="lazy"></div>` : '';
     return `<div class="aktion-card">
+        ${bildHtml}
         <div class="aktion-card-header">
             ${ladenHtml}
             ${rabattHtml}
