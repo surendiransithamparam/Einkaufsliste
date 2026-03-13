@@ -1,9 +1,110 @@
-// Tankrabatte - Aktuelle Tankgutscheine anzeigen
+// Aktionen & Tankrabatte
 
 function showApp() {
     showAppBase();
     ladeGutscheine();
+    loadAktionenOverview();
 }
+
+// -- Einkaufsaktionen --
+
+function renderAktionCard(a) {
+    const preisHtml = a.preis ? `<span class="aktion-preis">CHF ${a.preis.toFixed(2)}</span>` : '';
+    const origHtml = a.originalPreis ? `<span class="aktion-orig-preis">statt CHF ${a.originalPreis.toFixed(2)}</span>` : '';
+    const rabattHtml = a.rabatt ? `<span class="aktion-rabatt">${esc(a.rabatt)}</span>` : '';
+    const beschreibung = a.beschreibung ? `<div class="aktion-card-desc">${esc(a.beschreibung)}</div>` : '';
+    const gueltig = a.gueltigVon && a.gueltigBis
+        ? `<div class="aktion-card-gueltig"><i class="bi bi-calendar3"></i> ${a.gueltigVon.substring(8,10)}.${a.gueltigVon.substring(5,7)}. \u2013 ${a.gueltigBis.substring(8,10)}.${a.gueltigBis.substring(5,7)}.</div>`
+        : '';
+    return `<div class="aktion-card">
+        <div class="aktion-card-header">
+            <span class="aktion-laden"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>
+            ${rabattHtml}
+        </div>
+        <div class="aktion-card-name">${esc(a.name)}</div>
+        ${beschreibung}
+        <div class="aktion-card-preis">${preisHtml} ${origHtml}</div>
+        ${gueltig}
+    </div>`;
+}
+
+async function loadAktionenOverview() {
+    const container = document.getElementById('aktionenResults');
+    const status = document.getElementById('aktionenStatus');
+    try {
+        const res = await fetch('/api/aktionen/alle');
+        if (!res.ok) { container.innerHTML = '<p style="color:var(--red-500)">Fehler beim Laden.</p>'; return; }
+        const data = await res.json();
+        status.textContent = `${data.total} Aktionen geladen`;
+        if (data.total === 0) {
+            container.innerHTML = '<p style="color:var(--gray-500);font-size:0.85rem;text-align:center">Keine Aktionen gefunden. Die Daten werden beim ersten Aufruf geladen.</p>';
+            return;
+        }
+        let html = '';
+        for (const [laden, items] of Object.entries(data.byLaden)) {
+            html += `<div class="store-group-header" style="margin-top:0.75rem">
+                <span class="store-name"><i class="bi bi-shop"></i> ${esc(laden)}</span>
+                <span class="store-count">${items.length}</span>
+                <div class="store-line"></div>
+            </div>`;
+            html += items.slice(0, 10).map(a => renderAktionCard(a)).join('');
+            if (items.length > 10) {
+                html += `<p style="color:var(--gray-400);font-size:0.8rem;padding:0.25rem 0.5rem">... und ${items.length - 10} weitere</p>`;
+            }
+        }
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<p style="color:var(--red-500)">Fehler beim Laden der Aktionen.</p>';
+    }
+}
+
+async function searchAktionen() {
+    const suche = document.getElementById('aktionenSuche').value.trim();
+    const laden = document.getElementById('aktionenLaden').value;
+    const container = document.getElementById('aktionenResults');
+    const status = document.getElementById('aktionenStatus');
+
+    if (!suche && !laden) { loadAktionenOverview(); return; }
+
+    container.innerHTML = '<p style="color:var(--gray-400);font-size:0.85rem">Suche...</p>';
+
+    const params = new URLSearchParams();
+    if (suche) params.set('suche', suche);
+    if (laden) params.set('laden', laden);
+
+    try {
+        const res = await fetch(`/api/aktionen?${params}`);
+        if (!res.ok) { container.innerHTML = '<p style="color:var(--red-500)">Suche fehlgeschlagen.</p>'; return; }
+        const data = await res.json();
+        status.textContent = `${data.length} Treffer`;
+        if (data.length === 0) {
+            container.innerHTML = '<p style="color:var(--gray-500);font-size:0.85rem;text-align:center">Keine Aktionen gefunden.</p>';
+            return;
+        }
+        container.innerHTML = data.map(a => renderAktionCard(a)).join('');
+    } catch (e) {
+        container.innerHTML = '<p style="color:var(--red-500)">Fehler bei der Suche.</p>';
+    }
+}
+
+async function refreshAktionen() {
+    const status = document.getElementById('aktionenStatus');
+    status.textContent = 'Aktionen werden neu geladen...';
+    try {
+        const res = await fetch('/api/aktionen/refresh', { method: 'POST' });
+        if (res.ok) {
+            const data = await res.json();
+            toast(`${data.total} Aktionen geladen`);
+            loadAktionenOverview();
+        } else {
+            status.textContent = 'Fehler beim Aktualisieren.';
+        }
+    } catch (e) {
+        status.textContent = 'Fehler beim Aktualisieren.';
+    }
+}
+
+// -- Tankrabatte --
 
 async function ladeGutscheine() {
     const loading = document.getElementById('tankrabatteLoading');
