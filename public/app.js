@@ -604,11 +604,21 @@ function toggleAktionPopup(event, itemId) {
         </div>
         <div class="aktion-popup-body">${html}</div>`;
 
-    // Position near the badge
+    // Position near the badge, append to body to escape tile stacking context
     const badge = event.currentTarget;
-    const tile = badge.closest('.tile');
-    tile.style.position = 'relative';
-    tile.appendChild(popup);
+    const rect = badge.getBoundingClientRect();
+    popup.style.minWidth = '300px';
+    popup.style.maxWidth = '360px';
+    popup.style.left = `${rect.left}px`;
+    document.body.appendChild(popup);
+
+    // Flip above badge if not enough space below
+    const popupHeight = popup.offsetHeight;
+    if (rect.bottom + 4 + popupHeight > window.innerHeight) {
+        popup.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+    } else {
+        popup.style.top = `${rect.bottom + 4}px`;
+    }
 }
 
 // Close popup when clicking outside
@@ -618,6 +628,12 @@ document.addEventListener('click', e => {
         popup.remove();
     }
 });
+
+// Close popup on scroll (fixed positioning doesn't follow scroll)
+window.addEventListener('scroll', () => {
+    const popup = document.getElementById('aktionPopup');
+    if (popup) popup.remove();
+}, true);
 
 // -- Haushalt: logic is in shared.js --
 
