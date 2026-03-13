@@ -414,8 +414,8 @@ function renderGrouped(list) {
     });
 
     const keys = Object.keys(groups).sort((a, b) => {
-        if (!a) return 1;
-        if (!b) return -1;
+        if (!a) return -1;
+        if (!b) return 1;
         return a.localeCompare(b);
     });
 
