@@ -95,7 +95,7 @@ jobs:
       - name: Upload app_offline.htm
         run: |
           curl -s -T - -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
-            "ftp://${{ secrets.FTP_HOST }}/subdomains/einkaufsliste/httpdocs/app_offline.htm" \
+            "ftp://${{ secrets.FTP_HOST }}/subdomains/haushaltplus/httpdocs/app_offline.htm" \
             <<< '<html><body><h1>Update in progress...</h1></body></html>'
 
       - name: Wait for IIS to release files
@@ -110,7 +110,7 @@ jobs:
             open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
             mirror --reverse --delete --verbose --no-perms \
               --exclude node.exe \
-              ./publish/ /subdomains/einkaufsliste/httpdocs/;
+              ./publish/ /subdomains/haushaltplus/httpdocs/;
             bye
           "
           # Upload node.exe with retries (IIS may still hold a lock)
@@ -119,7 +119,7 @@ jobs:
             if lftp -c "
               set ftp:ssl-allow no;
               open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-              put ./publish/node.exe -o /subdomains/einkaufsliste/httpdocs/node.exe;
+              put ./publish/node.exe -o /subdomains/haushaltplus/httpdocs/node.exe;
               bye
             "; then
               echo "node.exe uploaded successfully"
@@ -133,4 +133,4 @@ jobs:
         run: |
           curl -s -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
             "ftp://${{ secrets.FTP_HOST }}" \
-            -Q "DELE /subdomains/einkaufsliste/httpdocs/app_offline.htm" || true
+            -Q "DELE /subdomains/haushaltplus/httpdocs/app_offline.htm" || true
