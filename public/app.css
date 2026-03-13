@@ -490,6 +490,13 @@ input:focus, select:focus {
     gap: 0.5rem;
     padding: 0.6rem 0.25rem 0.2rem;
     margin-top: 0.25rem;
+    cursor: pointer;
+    user-select: none;
+}
+.store-toggle {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+    transition: transform 0.15s;
 }
 .store-group-header:first-child {
     margin-top: 0;

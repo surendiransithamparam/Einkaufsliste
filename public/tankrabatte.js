@@ -58,12 +58,14 @@ async function loadAktionenOverview() {
         let html = '';
         for (const [laden, items] of Object.entries(data.byLaden)) {
             if (items.length === 0) continue;
-            html += `<div class="store-group-header" style="margin-top:0.75rem">
+            const groupId = `store-${laden.replace(/[^a-zA-Z0-9]/g, '')}`;
+            html += `<div class="store-group-header" style="margin-top:0.75rem" onclick="toggleStoreGroup('${groupId}')" role="button">
+                <i class="bi bi-chevron-down store-toggle" id="${groupId}-icon"></i>
                 <span class="store-name"><i class="bi bi-shop"></i> ${esc(laden)}</span>
                 <span class="store-count">${items.length}</span>
                 <div class="store-line"></div>
             </div>`;
-            html += `<div class="aktion-grid">`;
+            html += `<div class="aktion-grid" id="${groupId}">`;
             html += items.map(a => renderAktionCard(a, false)).join('');
             html += `</div>`;
         }
@@ -116,6 +118,18 @@ async function refreshAktionen() {
         }
     } catch (e) {
         status.textContent = 'Fehler beim Aktualisieren.';
+    }
+}
+
+function toggleStoreGroup(groupId) {
+    const grid = document.getElementById(groupId);
+    const icon = document.getElementById(groupId + '-icon');
+    if (grid.style.display === 'none') {
+        grid.style.display = '';
+        icon.classList.replace('bi-chevron-right', 'bi-chevron-down');
+    } else {
+        grid.style.display = 'none';
+        icon.classList.replace('bi-chevron-down', 'bi-chevron-right');
     }
 }
 
