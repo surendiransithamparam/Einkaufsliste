@@ -17,7 +17,7 @@ function showApp() {
 
 // -- Einkaufsaktionen --
 
-function renderAktionCard(a) {
+function renderAktionCard(a, showLaden) {
     const preisHtml = a.preis ? `<span class="aktion-preis">CHF ${a.preis.toFixed(2)}</span>` : '';
     const origHtml = a.originalPreis ? `<span class="aktion-orig-preis">statt CHF ${a.originalPreis.toFixed(2)}</span>` : '';
     const rabattHtml = a.rabatt ? `<span class="aktion-rabatt">${esc(a.rabatt)}</span>` : '';
@@ -25,9 +25,10 @@ function renderAktionCard(a) {
     const gueltig = a.gueltigVon && a.gueltigBis
         ? `<div class="aktion-card-gueltig"><i class="bi bi-calendar3"></i> ${a.gueltigVon.substring(8,10)}.${a.gueltigVon.substring(5,7)}. \u2013 ${a.gueltigBis.substring(8,10)}.${a.gueltigBis.substring(5,7)}.</div>`
         : '';
+    const ladenHtml = showLaden ? `<span class="aktion-laden"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>` : '';
     return `<div class="aktion-card">
         <div class="aktion-card-header">
-            <span class="aktion-laden"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>
+            ${ladenHtml}
             ${rabattHtml}
         </div>
         <div class="aktion-card-name">${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.name)} <i class="bi bi-box-arrow-up-right" style="font-size:0.7rem"></i></a>` : esc(a.name)}</div>
@@ -62,7 +63,9 @@ async function loadAktionenOverview() {
                 <span class="store-count">${items.length}</span>
                 <div class="store-line"></div>
             </div>`;
-            html += items.slice(0, 10).map(a => renderAktionCard(a)).join('');
+            html += `<div class="aktion-grid">`;
+            html += items.slice(0, 10).map(a => renderAktionCard(a, false)).join('');
+            html += `</div>`;
             if (items.length > 10) {
                 html += `<p style="color:var(--gray-400);font-size:0.8rem;padding:0.25rem 0.5rem">... und ${items.length - 10} weitere</p>`;
             }
@@ -96,7 +99,7 @@ async function searchAktionen() {
             container.innerHTML = '<p style="color:var(--gray-500);font-size:0.85rem;text-align:center">Keine Aktionen gefunden.</p>';
             return;
         }
-        container.innerHTML = data.map(a => renderAktionCard(a)).join('');
+        container.innerHTML = `<div class="aktion-grid">${data.map(a => renderAktionCard(a, true)).join('')}</div>`;
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red-500)">Fehler bei der Suche.</p>';
     }

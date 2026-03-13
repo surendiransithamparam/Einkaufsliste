@@ -838,12 +838,18 @@ input:focus, select:focus {
 }
 
 /* -- Aktion Cards (modal) -- */
+.aktion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.5rem;
+}
 .aktion-card {
     background: var(--gray-50);
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-sm);
     padding: 0.65rem 0.75rem;
-    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
 }
 .aktion-card-header {
     display: flex;
