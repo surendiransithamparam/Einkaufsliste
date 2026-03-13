@@ -30,7 +30,7 @@ function renderAktionCard(a) {
             <span class="aktion-laden"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>
             ${rabattHtml}
         </div>
-        <div class="aktion-card-name">${esc(a.name)}</div>
+        <div class="aktion-card-name">${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.name)} <i class="bi bi-box-arrow-up-right" style="font-size:0.7rem"></i></a>` : esc(a.name)}</div>
         ${beschreibung}
         <div class="aktion-card-footer">
             <div class="aktion-card-preis">${preisHtml} ${origHtml}</div>
