@@ -559,16 +559,65 @@ function renderAktionBadge(itemId) {
     const preisText = first.preis ? `CHF ${first.preis.toFixed(2)}` : '';
     const ladenText = first.laden || '';
     const countExtra = matches.length > 1 ? ` +${matches.length - 1}` : '';
-    return `<span class="tile-badge aktion" onclick="event.stopPropagation();showAktionDetail(${itemId})" title="Aktion gefunden!">
+    return `<span class="tile-badge aktion" onclick="event.stopPropagation();toggleAktionPopup(event,${itemId})">
         <i class="bi bi-tag-fill"></i> ${esc(ladenText)}${preisText ? ' ' + preisText : ''}${countExtra}
     </span>`;
 }
 
-function showAktionDetail(itemId) {
-    const item = items.find(i => i.id === itemId);
-    if (!item) return;
-    window.location.href = `tankrabatte.html?suche=${encodeURIComponent(item.artikel)}`;
+function toggleAktionPopup(event, itemId) {
+    const existing = document.getElementById('aktionPopup');
+    if (existing) {
+        // Close if same item clicked again
+        if (existing.dataset.itemId == itemId) { existing.remove(); return; }
+        existing.remove();
+    }
+
+    const matches = aktionenMatches[itemId];
+    if (!matches || matches.length === 0) return;
+
+    const html = matches.map(a => {
+        const preis = a.preis ? `<strong>CHF ${a.preis.toFixed(2)}</strong>` : '';
+        const orig = a.originalPreis ? `<span style="text-decoration:line-through;color:var(--gray-400);font-size:0.75rem">CHF ${a.originalPreis.toFixed(2)}</span>` : '';
+        const rabatt = a.rabatt ? `<span class="aktion-popup-rabatt">${esc(a.rabatt)}</span>` : '';
+        const gueltig = a.gueltigVon && a.gueltigBis
+            ? `<div style="font-size:0.7rem;color:var(--gray-400)"><i class="bi bi-calendar3"></i> ${a.gueltigVon.substring(8,10)}.${a.gueltigVon.substring(5,7)}. – ${a.gueltigBis.substring(8,10)}.${a.gueltigBis.substring(5,7)}.</div>`
+            : '';
+        return `<div class="aktion-popup-item">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem">
+                <span style="font-size:0.75rem;color:var(--gray-500)"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>
+                ${rabatt}
+            </div>
+            <div style="font-weight:600;font-size:0.85rem">${esc(a.name)}</div>
+            ${a.beschreibung ? `<div style="font-size:0.75rem;color:var(--gray-500)">${esc(a.beschreibung)}</div>` : ''}
+            <div style="display:flex;align-items:center;gap:0.35rem">${preis} ${orig}</div>
+            ${gueltig}
+        </div>`;
+    }).join('');
+
+    const popup = document.createElement('div');
+    popup.id = 'aktionPopup';
+    popup.dataset.itemId = itemId;
+    popup.className = 'aktion-popup';
+    popup.innerHTML = `<div class="aktion-popup-header">
+            <span><i class="bi bi-tag-fill"></i> ${matches.length} Aktion${matches.length > 1 ? 'en' : ''}</span>
+            <button onclick="document.getElementById('aktionPopup').remove()" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--gray-400);padding:0"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="aktion-popup-body">${html}</div>`;
+
+    // Position near the badge
+    const badge = event.currentTarget;
+    const tile = badge.closest('.tile');
+    tile.style.position = 'relative';
+    tile.appendChild(popup);
 }
+
+// Close popup when clicking outside
+document.addEventListener('click', e => {
+    const popup = document.getElementById('aktionPopup');
+    if (popup && !e.target.closest('.aktion-popup') && !e.target.closest('.tile-badge.aktion')) {
+        popup.remove();
+    }
+});
 
 // -- Haushalt: logic is in shared.js --
 
