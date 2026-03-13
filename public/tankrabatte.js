@@ -32,7 +32,12 @@ function renderAktionCard(a) {
         </div>
         <div class="aktion-card-name">${esc(a.name)}</div>
         ${beschreibung}
-        <div class="aktion-card-preis">${preisHtml} ${origHtml}</div>
+        <div class="aktion-card-footer">
+            <div class="aktion-card-preis">${preisHtml} ${origHtml}</div>
+            <button class="aktion-add-btn" onclick="addToEinkauf('${esc(a.name).replace(/'/g, "\\'")}', '${esc(a.laden).replace(/'/g, "\\'")}', this)" title="Zum Einkauf hinzufügen">
+                <i class="bi bi-cart-plus"></i>
+            </button>
+        </div>
         ${gueltig}
     </div>`;
 }
@@ -110,6 +115,26 @@ async function refreshAktionen() {
         }
     } catch (e) {
         status.textContent = 'Fehler beim Aktualisieren.';
+    }
+}
+
+// -- Add Aktion to Einkauf --
+
+async function addToEinkauf(name, laden, btn) {
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/artikel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ artikel: name, menge: 1, einheit: 'Stück', laden: laden, datum: '' })
+        });
+        if (!res.ok) throw new Error();
+        btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+        btn.classList.add('added');
+        toast(`«${name}» zum Einkauf hinzugefügt`);
+    } catch (e) {
+        btn.disabled = false;
+        toast('Fehler beim Hinzufügen', true);
     }
 }
 
