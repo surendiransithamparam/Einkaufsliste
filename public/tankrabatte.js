@@ -58,7 +58,7 @@ async function loadAktionenOverview() {
             return;
         }
         let html = '';
-        for (const [laden, items] of Object.entries(data.byLaden)) {
+        for (const [laden, items] of Object.entries(data.byLaden).sort((a, b) => a[0].localeCompare(b[0]))) {
             if (items.length === 0) continue;
             const groupId = `store-${laden.replace(/[^a-zA-Z0-9]/g, '')}`;
             html += `<div class="store-group-header" style="margin-top:0.75rem" onclick="toggleStoreGroup('${groupId}')" role="button">
