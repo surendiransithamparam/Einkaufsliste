@@ -26,13 +26,13 @@ const smtpConfig = config.smtp || {};
 const githubConfig = config.github || {
   token: process.env.GITHUB_TOKEN || '',
   owner: process.env.GITHUB_OWNER || 'surendiransithamparam',
-  repo: process.env.GITHUB_REPO || 'Einkaufsliste'
+  repo: process.env.GITHUB_REPO || 'HaushaltPLUS'
 };
 
 // WebAuthn / FIDO2 Konfiguration
 const webauthnConfig = {
   rpID: process.env.WEBAUTHN_RP_ID || (config.webauthn && config.webauthn.rpId) || 'localhost',
-  rpName: process.env.WEBAUTHN_RP_NAME || (config.webauthn && config.webauthn.rpName) || 'Einkaufsliste',
+  rpName: process.env.WEBAUTHN_RP_NAME || (config.webauthn && config.webauthn.rpName) || 'HaushaltPLUS',
   origin: process.env.WEBAUTHN_ORIGIN || (config.webauthn && config.webauthn.origin) || 'http://localhost:3000'
 };
 
@@ -123,7 +123,7 @@ async function sendActivationEmail(email, username, token, req) {
   const user = smtpConfig.user || '';
   const pass = smtpConfig.password || '';
   const fromAddr = smtpConfig.from || user;
-  const fromName = smtpConfig.fromName || 'Einkaufsliste';
+  const fromName = smtpConfig.fromName || 'HaushaltPLUS';
 
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   const link = `${baseUrl}/api/auth/aktivieren?token=${encodeURIComponent(token)}`;
@@ -137,7 +137,7 @@ ${link}
 Falls du dich nicht registriert hast, kannst du diese E-Mail ignorieren.
 
 Viele Grüsse
-Einkaufsliste`;
+HaushaltPLUS`;
 
   const transporter = nodemailer.createTransport({
     host, port,
@@ -148,7 +148,7 @@ Einkaufsliste`;
   await transporter.sendMail({
     from: `"${fromName}" <${fromAddr}>`,
     to: email,
-    subject: 'Einkaufsliste – E-Mail bestätigen',
+    subject: 'HaushaltPLUS – E-Mail bestätigen',
     text: body
   });
 }
@@ -522,7 +522,7 @@ app.post('/api/bugreport', async (req, res) => {
           'Authorization': `Bearer ${githubConfig.token}`,
           'Accept': 'application/vnd.github+json',
           'Content-Type': 'application/json',
-          'User-Agent': 'Einkaufsliste-App'
+          'User-Agent': 'HaushaltPLUS-App'
         },
         body: JSON.stringify({
           title: `[Bug] ${titel.trim()}`,
@@ -634,8 +634,8 @@ app.get('/api/auth/aktivieren', async (req, res) => {
       .input('token', sql.NVarChar, token)
       .query('UPDATE Benutzer SET EmailBestaetigt=1, AktivierungsToken=NULL WHERE AktivierungsToken=@token AND EmailBestaetigt=0');
 
-    const htmlOk = '<html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2 style="color:#22c55e">&#10003; E-Mail bestätigt!</h2><p>Dein Konto ist jetzt aktiv. Du kannst dich anmelden.</p><a href="/">Zur Einkaufsliste</a></body></html>';
-    const htmlFail = '<html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2 style="color:#ef4444">Link ungültig</h2><p>Dieser Aktivierungslink ist ungültig oder wurde bereits verwendet.</p><a href="/">Zur Einkaufsliste</a></body></html>';
+    const htmlOk = '<html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2 style="color:#22c55e">&#10003; E-Mail bestätigt!</h2><p>Dein Konto ist jetzt aktiv. Du kannst dich anmelden.</p><a href="/">Zur HaushaltPLUS</a></body></html>';
+    const htmlFail = '<html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2 style="color:#ef4444">Link ungültig</h2><p>Dieser Aktivierungslink ist ungültig oder wurde bereits verwendet.</p><a href="/">Zur HaushaltPLUS</a></body></html>';
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(result.rowsAffected[0] > 0 ? htmlOk : htmlFail);
@@ -711,7 +711,7 @@ app.post('/api/auth/reset-request', async (req, res) => {
       const user = smtpConfig.user || '';
       const pass = smtpConfig.password || '';
       const fromAddr = smtpConfig.from || user;
-      const fromName = smtpConfig.fromName || 'Einkaufsliste';
+      const fromName = smtpConfig.fromName || 'HaushaltPLUS';
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
       const link = `${baseUrl}/reset.html?token=${encodeURIComponent(token)}`;
@@ -727,7 +727,7 @@ Der Link ist 1 Stunde gültig.
 Falls du dies nicht angefordert hast, kannst du diese E-Mail ignorieren.
 
 Viele Grüsse
-Einkaufsliste`;
+HaushaltPLUS`;
 
       const transporter = nodemailer.createTransport({
         host, port,
@@ -738,7 +738,7 @@ Einkaufsliste`;
       await transporter.sendMail({
         from: `"${fromName}" <${fromAddr}>`,
         to: email,
-        subject: 'Einkaufsliste – Passwort zurücksetzen',
+        subject: 'HaushaltPLUS – Passwort zurücksetzen',
         text: body
       });
     } catch (ex) {

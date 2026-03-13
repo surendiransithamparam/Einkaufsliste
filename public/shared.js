@@ -262,7 +262,7 @@ async function openHaushalt() {
     } else {
         body.innerHTML = `
             <p style="color:var(--gray-500);font-size:0.85rem;margin-bottom:1.25rem">
-                Erstelle einen Haushalt oder tritt einem bei, um die Einkaufsliste zu teilen.
+                Erstelle einen Haushalt oder tritt einem bei, um Einkaufsliste, Wochenplan und Rezepte zu teilen.
             </p>
             <div style="margin-bottom:1.25rem">
                 <label>Neuen Haushalt erstellen</label>

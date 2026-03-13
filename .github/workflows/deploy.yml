@@ -64,9 +64,9 @@ jobs:
             --arg sessionSecret "$SESSION_SECRET" \
             --arg ghToken "$GH_TOKEN_APP" \
             --arg ghOwner "${GH_OWNER:-surendiransithamparam}" \
-            --arg ghRepo "${GH_REPO:-Einkaufsliste}" \
+            --arg ghRepo "${GH_REPO:-HaushaltPLUS}" \
             --arg waRpId "${WEBAUTHN_RP_ID:-localhost}" \
-            --arg waRpName "${WEBAUTHN_RP_NAME:-Einkaufsliste}" \
+            --arg waRpName "${WEBAUTHN_RP_NAME:-HaushaltPLUS}" \
             --arg waOrigin "${WEBAUTHN_ORIGIN:-http://localhost:3000}" \
             '{
               connectionString: $db,
@@ -78,7 +78,7 @@ jobs:
                 user: $smtpUser,
                 password: $smtpPw,
                 from: $smtpUser,
-                fromName: "Einkaufsliste"
+                fromName: "HaushaltPLUS"
               },
               github: {
                 token: $ghToken,

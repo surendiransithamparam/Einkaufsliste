@@ -6,9 +6,9 @@
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Einkauf">
-    <meta name="description" content="Einkaufsliste mit Mengen, Kategorien und Fälligkeitsdatum">
-    <title>Einkaufsliste</title>
+    <meta name="apple-mobile-web-app-title" content="Haushalt+">
+    <meta name="description" content="HaushaltPLUS – Einkaufsliste, Wochenplan, Rezepte und mehr">
+    <title>HaushaltPLUS</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -40,9 +40,9 @@
             <i class="bi bi-book"></i>
             <span>Rezepte</span>
         </a>
-        <a href="tankrabatte.html" class="nav-tab" title="Tankrabatte">
-            <i class="bi bi-fuel-pump"></i>
-            <span>Tanken</span>
+        <a href="tankrabatte.html" class="nav-tab" title="Aktionen">
+            <i class="bi bi-tag"></i>
+            <span>Aktionen</span>
         </a>
     </div>
     <div class="navbar-right">
@@ -101,10 +101,6 @@
                     <option value="artikel_asc">Artikel A–Z</option>
                     <option value="laden_asc">Laden</option>
                 </select>
-                <button class="btn btn-secondary btn-sm aktionen-btn" onclick="openAktionen()" title="Aktionen anzeigen">
-                    <i class="bi bi-tag"></i> <span class="aktionen-btn-label">Aktionen</span>
-                    <span class="aktionen-count" id="aktionenCountBadge" style="display:none">0</span>
-                </button>
             </div>
         </div>
     </div>
@@ -323,32 +319,6 @@
 
 <!-- Modal: Haushalt -->
 
-<!-- Modal: Aktionen -->
-<div class="modal-overlay" id="aktionenOverlay" onclick="if(event.target===this)closeAktionen()">
-    <div class="modal" style="max-width:600px">
-        <div class="modal-header">
-            <h2><i class="bi bi-tag"></i> Aktionen</h2>
-            <button class="modal-close" onclick="closeAktionen()"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <div class="modal-body">
-            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap">
-                <input type="text" id="aktionenSuche" placeholder="Produkt suchen…" onkeydown="if(event.key==='Enter')searchAktionen()" style="flex:1;min-width:120px">
-                <select id="aktionenLaden" onchange="searchAktionen()" style="min-width:100px">
-                    <option value="">Alle Läden</option>
-                    <option>Migros</option>
-                    <option>Coop</option>
-                    <option>Denner</option>
-                    <option>Lidl</option>
-                    <option>Aldi</option>
-                </select>
-                <button class="btn btn-primary btn-sm" onclick="searchAktionen()"><i class="bi bi-search"></i></button>
-                <button class="btn btn-secondary btn-sm" onclick="refreshAktionen()" title="Aktionen neu laden"><i class="bi bi-arrow-clockwise"></i></button>
-            </div>
-            <div id="aktionenStatus" style="font-size:0.75rem;color:var(--gray-400);margin-bottom:0.5rem"></div>
-            <div id="aktionenResults"></div>
-        </div>
-    </div>
-</div>
 
 </div><!-- /app-content -->
 
@@ -357,7 +327,7 @@
     <div class="login-card">
         <div class="login-header">
             <i class="bi bi-cart3" style="font-size:2.5rem;color:var(--green-600)"></i>
-            <h1 style="font-size:1.5rem;margin-top:0.5rem">Einkaufsliste</h1>
+            <h1 style="font-size:1.5rem;margin-top:0.5rem">HaushaltPLUS</h1>
             <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Anmelden</p>
         </div>
         <form onsubmit="submitAuth(event)">

@@ -1,7 +1,7 @@
 {
-  "name": "einkaufsliste",
+  "name": "haushaltplus",
   "version": "1.0.0",
-  "description": "Einkaufsliste Backend (Node.js)",
+  "description": "HaushaltPLUS Backend (Node.js)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
