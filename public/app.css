@@ -865,6 +865,14 @@ input:focus, select:focus {
     color: var(--gray-800);
     margin-bottom: 0.2rem;
 }
+.aktion-card-name a {
+    color: inherit;
+    text-decoration: none;
+}
+.aktion-card-name a:hover {
+    color: var(--green-600);
+    text-decoration: underline;
+}
 .aktion-card-preis {
     display: flex;
     align-items: center;

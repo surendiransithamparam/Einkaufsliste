@@ -30,7 +30,7 @@ function renderAktionCard(a) {
             <span class="aktion-laden"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>
             ${rabattHtml}
         </div>
-        <div class="aktion-card-name">${esc(a.name)}</div>
+        <div class="aktion-card-name">${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.name)} <i class="bi bi-box-arrow-up-right" style="font-size:0.7rem"></i></a>` : esc(a.name)}</div>
         ${beschreibung}
         <div class="aktion-card-footer">
             <div class="aktion-card-preis">${preisHtml} ${origHtml}</div>
@@ -56,6 +56,7 @@ async function loadAktionenOverview() {
         }
         let html = '';
         for (const [laden, items] of Object.entries(data.byLaden)) {
+            if (items.length === 0) continue;
             html += `<div class="store-group-header" style="margin-top:0.75rem">
                 <span class="store-name"><i class="bi bi-shop"></i> ${esc(laden)}</span>
                 <span class="store-count">${items.length}</span>
