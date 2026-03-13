@@ -792,6 +792,53 @@ input:focus, select:focus {
     border-left: 3px solid var(--yellow-500);
 }
 
+/* -- Aktion Popup -- */
+.aktion-popup {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    margin-bottom: 0.25rem;
+    background: var(--surface);
+    border: 1px solid var(--gray-200);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    z-index: 100;
+    max-height: 280px;
+    overflow-y: auto;
+}
+.aktion-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #b45309;
+}
+.aktion-popup-body {
+    padding: 0.5rem;
+}
+.aktion-popup-item {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+.aktion-popup-item + .aktion-popup-item {
+    border-top: 1px solid var(--gray-100);
+}
+.aktion-popup-rabatt {
+    background: rgba(245, 158, 11, 0.15);
+    color: #b45309;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+}
+
 /* -- Aktion Cards (modal) -- */
 .aktion-card {
     background: var(--gray-50);
