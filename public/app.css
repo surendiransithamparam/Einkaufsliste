@@ -795,11 +795,13 @@ input:focus, select:focus {
 /* -- Aktion Popup -- */
 .aktion-popup {
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 100%;
-    margin-bottom: 0.25rem;
-    background: var(--surface);
+    left: -1rem;
+    right: -1rem;
+    min-width: 320px;
+    top: 100%;
+    margin-top: 0.25rem;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
     border: 1px solid var(--gray-200);
     border-radius: 0.75rem;
     box-shadow: 0 4px 16px rgba(0,0,0,0.15);
