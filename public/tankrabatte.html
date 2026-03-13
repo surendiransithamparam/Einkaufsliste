@@ -71,11 +71,15 @@
         <input type="text" id="aktionenSuche" placeholder="Produkt suchen…" onkeydown="if(event.key==='Enter')searchAktionen()" style="flex:1;min-width:120px">
         <select id="aktionenLaden" onchange="searchAktionen()" style="min-width:100px">
             <option value="">Alle Läden</option>
-            <option>Migros</option>
+            <option>Aldi</option>
             <option>Coop</option>
+            <option>Coop Megastore</option>
             <option>Denner</option>
             <option>Lidl</option>
-            <option>Aldi</option>
+            <option>Migros</option>
+            <option>OTTO'S</option>
+            <option>SPAR</option>
+            <option>Volg</option>
         </select>
         <button class="btn btn-primary btn-sm" onclick="searchAktionen()"><i class="bi bi-search"></i></button>
         <button class="btn btn-secondary btn-sm" onclick="refreshAktionen()" title="Aktionen neu laden"><i class="bi bi-arrow-clockwise"></i></button>

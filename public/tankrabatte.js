@@ -30,9 +30,14 @@ function renderAktionCard(a) {
             <span class="aktion-laden"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>
             ${rabattHtml}
         </div>
-        <div class="aktion-card-name">${esc(a.name)}</div>
+        <div class="aktion-card-name">${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.name)} <i class="bi bi-box-arrow-up-right" style="font-size:0.7rem"></i></a>` : esc(a.name)}</div>
         ${beschreibung}
-        <div class="aktion-card-preis">${preisHtml} ${origHtml}</div>
+        <div class="aktion-card-footer">
+            <div class="aktion-card-preis">${preisHtml} ${origHtml}</div>
+            <button class="aktion-add-btn" onclick="addToEinkauf('${esc(a.name).replace(/'/g, "\\'")}', '${esc(a.laden).replace(/'/g, "\\'")}', this)" title="Zum Einkauf hinzufügen">
+                <i class="bi bi-cart-plus"></i>
+            </button>
+        </div>
         ${gueltig}
     </div>`;
 }
@@ -51,6 +56,7 @@ async function loadAktionenOverview() {
         }
         let html = '';
         for (const [laden, items] of Object.entries(data.byLaden)) {
+            if (items.length === 0) continue;
             html += `<div class="store-group-header" style="margin-top:0.75rem">
                 <span class="store-name"><i class="bi bi-shop"></i> ${esc(laden)}</span>
                 <span class="store-count">${items.length}</span>
@@ -110,6 +116,26 @@ async function refreshAktionen() {
         }
     } catch (e) {
         status.textContent = 'Fehler beim Aktualisieren.';
+    }
+}
+
+// -- Add Aktion to Einkauf --
+
+async function addToEinkauf(name, laden, btn) {
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/artikel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ artikel: name, menge: 1, einheit: 'Stück', laden: laden, datum: '' })
+        });
+        if (!res.ok) throw new Error();
+        btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+        btn.classList.add('added');
+        toast(`«${name}» zum Einkauf hinzugefügt`);
+    } catch (e) {
+        btn.disabled = false;
+        toast('Fehler beim Hinzufügen', true);
     }
 }
 

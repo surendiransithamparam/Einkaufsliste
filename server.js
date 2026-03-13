@@ -2428,8 +2428,13 @@ async function fetchAktionisDeals() {
   const vendors = [
     { slug: 'migros', laden: 'Migros' },
     { slug: 'coop', laden: 'Coop' },
+    { slug: 'coop-megastore', laden: 'Coop Megastore' },
     { slug: 'lidl', laden: 'Lidl' },
     { slug: 'aldi-suisse', laden: 'Aldi' },
+    { slug: 'denner', laden: 'Denner' },
+    { slug: 'otto-s', laden: "OTTO'S" },
+    { slug: 'spar', laden: 'SPAR' },
+    { slug: 'volg', laden: 'Volg' },
   ];
 
   await Promise.all(vendors.map(async ({ slug, laden }) => {
@@ -2453,7 +2458,7 @@ async function fetchAktionisDeals() {
         // Aktionis uses deal cards with price, discount, product name
         const dealPattern = /<a[^>]*class="[^"]*deal[^"]*"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
         let dm;
-        while ((dm = dealPattern.exec(html)) !== null && items.length < 200) {
+        while ((dm = dealPattern.exec(html)) !== null && items.length < 500) {
           const block = dm[2];
           const dealUrl = dm[1];
 
@@ -2494,7 +2499,7 @@ async function fetchAktionisDeals() {
         if (items.filter(i => i.laden === laden).length === 0) {
           const cardPattern = /<div[^>]*class="[^"]*card[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/gi;
           let cm;
-          while ((cm = cardPattern.exec(html)) !== null && items.length < 200) {
+          while ((cm = cardPattern.exec(html)) !== null && items.length < 500) {
             const block = cm[1];
             const nameMatch = block.match(/<(?:h[2-5]|span|strong)[^>]*>([^<]{3,100})<\//i);
             const priceMatch = block.match(/(\d+\.\d{2})/);
