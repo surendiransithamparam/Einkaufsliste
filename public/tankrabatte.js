@@ -26,7 +26,9 @@ function renderAktionCard(a, showLaden) {
         ? `<div class="aktion-card-gueltig"><i class="bi bi-calendar3"></i> ${a.gueltigVon.substring(8,10)}.${a.gueltigVon.substring(5,7)}. \u2013 ${a.gueltigBis.substring(8,10)}.${a.gueltigBis.substring(5,7)}.</div>`
         : '';
     const ladenHtml = showLaden ? `<span class="aktion-laden"><i class="bi bi-shop"></i> ${esc(a.laden)}</span>` : '';
+    const bildHtml = a.bild ? `<div class="aktion-card-img"><img src="${esc(a.bild)}" alt="${esc(a.name)}" loading="lazy"></div>` : '';
     return `<div class="aktion-card">
+        ${bildHtml}
         <div class="aktion-card-header">
             ${ladenHtml}
             ${rabattHtml}
@@ -56,7 +58,7 @@ async function loadAktionenOverview() {
             return;
         }
         let html = '';
-        for (const [laden, items] of Object.entries(data.byLaden)) {
+        for (const [laden, items] of Object.entries(data.byLaden).sort((a, b) => a[0].localeCompare(b[0]))) {
             if (items.length === 0) continue;
             const groupId = `store-${laden.replace(/[^a-zA-Z0-9]/g, '')}`;
             html += `<div class="store-group-header" style="margin-top:0.75rem" onclick="toggleStoreGroup('${groupId}')" role="button">

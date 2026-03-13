@@ -2475,6 +2475,9 @@ async function fetchAktionisDeals() {
           // Extract discount percentage
           const discountMatch = block.match(/(-?\d+)\s*%/);
 
+          // Extract image
+          const imgMatch = block.match(/<img[^>]*src="([^"]+)"/i);
+
           if (nameMatch) {
             const name = decodeHTMLEntities(nameMatch[1].trim());
             if (name.length > 2) {
@@ -2488,7 +2491,7 @@ async function fetchAktionisDeals() {
                 kategorie: null,
                 gueltigVon: null,
                 gueltigBis: null,
-                bild: null,
+                bild: imgMatch ? imgMatch[1] : null,
                 url: dealUrl ? (dealUrl.startsWith('http') ? dealUrl : `https://www.aktionis.ch${dealUrl}`) : null
               });
             }
