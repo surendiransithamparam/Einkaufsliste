@@ -64,11 +64,8 @@ async function loadAktionenOverview() {
                 <div class="store-line"></div>
             </div>`;
             html += `<div class="aktion-grid">`;
-            html += items.slice(0, 10).map(a => renderAktionCard(a, false)).join('');
+            html += items.map(a => renderAktionCard(a, false)).join('');
             html += `</div>`;
-            if (items.length > 10) {
-                html += `<p style="color:var(--gray-400);font-size:0.8rem;padding:0.25rem 0.5rem">... und ${items.length - 10} weitere</p>`;
-            }
         }
         container.innerHTML = html;
     } catch (e) {
