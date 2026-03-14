@@ -20,7 +20,8 @@
 <body>
 
 <nav class="navbar">
-    <div class="navbar-left">
+    <div class="navbar-left"></div>
+    <div class="navbar-center">
         <span class="navbar-brand">HaushaltPLUS</span>
     </div>
     <div class="navbar-right">
@@ -29,9 +30,6 @@
                 <i class="bi bi-three-dots-vertical"></i>
             </button>
             <div class="nav-dropdown-menu" id="navDropdownMenu">
-                <button onclick="openHaushalt();closeNavDropdown()" id="haushaltBtn" style="display:none">
-                    <i class="bi bi-people"></i> Haushalt
-                </button>
                 <button onclick="logout();closeNavDropdown()" id="logoutBtn" style="display:none">
                     <i class="bi bi-box-arrow-left"></i> Abmelden
                 </button>
@@ -80,34 +78,45 @@
         </div>
     </div>
 
-    <!-- Passwort ändern -->
+    <!-- Haushalt -->
     <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem">
         <h2 style="font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem">
-            <i class="bi bi-key" style="color:var(--green-600)"></i> Passwort ändern
+            <i class="bi bi-people" style="color:var(--green-600)"></i> Haushalt
         </h2>
-        <div style="margin-bottom:0.75rem">
-            <label for="profilOldPass">Aktuelles Passwort</label>
-            <input type="password" id="profilOldPass" autocomplete="current-password" placeholder="Aktuelles Passwort">
-        </div>
-        <div style="margin-bottom:0.5rem">
-            <label for="profilNewPass">Neues Passwort</label>
-            <input type="password" id="profilNewPass" autocomplete="new-password" placeholder="Neues Passwort" oninput="checkProfilPwPolicy()">
-        </div>
-        <div id="profilPwPolicy" style="font-size:0.78rem;line-height:1.6;margin-bottom:0.5rem">
-            <div id="ppol-len"><i class="bi bi-x-circle"></i> Mindestens 8 Zeichen</div>
-            <div id="ppol-upper"><i class="bi bi-x-circle"></i> Mindestens 1 Grossbuchstabe</div>
-            <div id="ppol-lower"><i class="bi bi-x-circle"></i> Mindestens 1 Kleinbuchstabe</div>
-            <div id="ppol-special"><i class="bi bi-x-circle"></i> Mindestens 1 Sonderzeichen</div>
-        </div>
-        <div style="margin-bottom:0.75rem">
-            <label for="profilNewPassConfirm">Neues Passwort bestätigen</label>
-            <input type="password" id="profilNewPassConfirm" autocomplete="new-password" placeholder="Passwort wiederholen" oninput="checkProfilPwPolicy()">
-        </div>
-        <div id="ppol-match" style="font-size:0.78rem;display:none;margin-bottom:0.5rem"><i class="bi bi-x-circle"></i> Passwörter stimmen überein</div>
-        <div id="profilPwError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
-        <div id="profilPwSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
-        <div style="display:flex;justify-content:flex-end">
-            <button class="btn btn-primary" onclick="changePassword()"><i class="bi bi-key"></i> Passwort ändern</button>
+        <div id="haushaltSection"></div>
+    </div>
+
+    <!-- Passwort ändern -->
+    <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem">
+        <h2 style="font-size:1.1rem;margin-bottom:0;display:flex;align-items:center;gap:0.4rem;cursor:pointer" onclick="togglePasswordSection()">
+            <i class="bi bi-key" style="color:var(--green-600)"></i> Passwort ändern
+            <i class="bi bi-chevron-down" id="pwToggleIcon" style="margin-left:auto;font-size:0.85rem;color:var(--gray-400)"></i>
+        </h2>
+        <div id="passwordSection" style="display:none;margin-top:1rem">
+            <div style="margin-bottom:0.75rem">
+                <label for="profilOldPass">Aktuelles Passwort</label>
+                <input type="password" id="profilOldPass" autocomplete="current-password" placeholder="Aktuelles Passwort">
+            </div>
+            <div style="margin-bottom:0.5rem">
+                <label for="profilNewPass">Neues Passwort</label>
+                <input type="password" id="profilNewPass" autocomplete="new-password" placeholder="Neues Passwort" oninput="checkProfilPwPolicy()">
+            </div>
+            <div id="profilPwPolicy" style="font-size:0.78rem;line-height:1.6;margin-bottom:0.5rem">
+                <div id="ppol-len"><i class="bi bi-x-circle"></i> Mindestens 8 Zeichen</div>
+                <div id="ppol-upper"><i class="bi bi-x-circle"></i> Mindestens 1 Grossbuchstabe</div>
+                <div id="ppol-lower"><i class="bi bi-x-circle"></i> Mindestens 1 Kleinbuchstabe</div>
+                <div id="ppol-special"><i class="bi bi-x-circle"></i> Mindestens 1 Sonderzeichen</div>
+            </div>
+            <div style="margin-bottom:0.75rem">
+                <label for="profilNewPassConfirm">Neues Passwort bestätigen</label>
+                <input type="password" id="profilNewPassConfirm" autocomplete="new-password" placeholder="Passwort wiederholen" oninput="checkProfilPwPolicy()">
+            </div>
+            <div id="ppol-match" style="font-size:0.78rem;display:none;margin-bottom:0.5rem"><i class="bi bi-x-circle"></i> Passwörter stimmen überein</div>
+            <div id="profilPwError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
+            <div id="profilPwSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
+            <div style="display:flex;justify-content:flex-end">
+                <button class="btn btn-primary" onclick="changePassword()"><i class="bi bi-key"></i> Passwort ändern</button>
+            </div>
         </div>
     </div>
 
