@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Haushalt+">
+    <title>Profil — HaushaltPLUS</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.svg">
+    <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-left">
+        <span class="navbar-brand">HaushaltPLUS</span>
+    </div>
+    <div class="navbar-right">
+        <div class="nav-dropdown" id="navDropdown">
+            <button class="btn-nav btn-nav-icon" onclick="toggleNavDropdown(event)" title="Menü">
+                <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <div class="nav-dropdown-menu" id="navDropdownMenu">
+                <a href="index.html" class="nav-menu-link"><i class="bi bi-cart3"></i> Einkauf</a>
+                <a href="wochenplan.html" class="nav-menu-link"><i class="bi bi-calendar-week"></i> Woche</a>
+                <a href="rezepte.html" class="nav-menu-link"><i class="bi bi-book"></i> Rezepte</a>
+                <a href="tankrabatte.html" class="nav-menu-link"><i class="bi bi-tag"></i> Aktionen</a>
+                <div class="nav-menu-divider"></div>
+                <a href="profil.html" class="nav-menu-link active">
+                    <i class="bi bi-person"></i> Profil
+                </a>
+                <button onclick="openHaushalt();closeNavDropdown()" id="haushaltBtn" style="display:none">
+                    <i class="bi bi-people"></i> Haushalt
+                </button>
+                <button onclick="logout();closeNavDropdown()" id="logoutBtn" style="display:none">
+                    <i class="bi bi-box-arrow-left"></i> Abmelden
+                </button>
+                <button onclick="openBugReport();closeNavDropdown()">
+                    <i class="bi bi-bug"></i> Bug melden
+                </button>
+                <a href="about.html" style="text-decoration:none">
+                    <i class="bi bi-info-circle"></i> Über
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div id="appContent" class="app-content hidden">
+<div class="container" style="max-width:480px;margin:0 auto">
+
+    <!-- Profil -->
+    <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem">
+        <h2 style="font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem">
+            <i class="bi bi-person" style="color:var(--green-600)"></i> Profil
+        </h2>
+        <div style="margin-bottom:0.75rem">
+            <label>Benutzername</label>
+            <input type="text" id="profilUser" disabled style="background:var(--gray-100);color:var(--gray-500)">
+        </div>
+        <div style="margin-bottom:1rem">
+            <label for="profilEmail">E-Mail</label>
+            <input type="email" id="profilEmail" placeholder="name@beispiel.ch">
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" onclick="saveProfil()"><i class="bi bi-check-lg"></i> Speichern</button>
+        </div>
+    </div>
+
+    <!-- Passwort ändern -->
+    <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem">
+        <h2 style="font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem">
+            <i class="bi bi-key" style="color:var(--green-600)"></i> Passwort ändern
+        </h2>
+        <div style="margin-bottom:0.75rem">
+            <label for="profilOldPass">Aktuelles Passwort</label>
+            <input type="password" id="profilOldPass" autocomplete="current-password" placeholder="Aktuelles Passwort">
+        </div>
+        <div style="margin-bottom:0.5rem">
+            <label for="profilNewPass">Neues Passwort</label>
+            <input type="password" id="profilNewPass" autocomplete="new-password" placeholder="Neues Passwort" oninput="checkProfilPwPolicy()">
+        </div>
+        <div id="profilPwPolicy" style="font-size:0.78rem;line-height:1.6;margin-bottom:0.5rem">
+            <div id="ppol-len"><i class="bi bi-x-circle"></i> Mindestens 8 Zeichen</div>
+            <div id="ppol-upper"><i class="bi bi-x-circle"></i> Mindestens 1 Grossbuchstabe</div>
+            <div id="ppol-lower"><i class="bi bi-x-circle"></i> Mindestens 1 Kleinbuchstabe</div>
+            <div id="ppol-special"><i class="bi bi-x-circle"></i> Mindestens 1 Sonderzeichen</div>
+        </div>
+        <div style="margin-bottom:0.75rem">
+            <label for="profilNewPassConfirm">Neues Passwort bestätigen</label>
+            <input type="password" id="profilNewPassConfirm" autocomplete="new-password" placeholder="Passwort wiederholen" oninput="checkProfilPwPolicy()">
+        </div>
+        <div id="ppol-match" style="font-size:0.78rem;display:none;margin-bottom:0.5rem"><i class="bi bi-x-circle"></i> Passwörter stimmen überein</div>
+        <div id="profilPwError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
+        <div id="profilPwSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
+        <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" onclick="changePassword()"><i class="bi bi-key"></i> Passwort ändern</button>
+        </div>
+    </div>
+
+    <!-- Biometrische Anmeldung -->
+    <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem">
+        <h2 style="font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem">
+            <i class="bi bi-fingerprint" style="color:var(--green-600)"></i> Biometrische Anmeldung
+        </h2>
+        <div id="webauthnGeraeteSection" style="display:none;">
+            <div id="webauthnGeraeteListe"></div>
+            <button class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="webauthnNeuesGeraet()">
+                <i class="bi bi-plus-circle"></i> Neues Gerät hinzufügen
+            </button>
+        </div>
+        <div id="webauthnNichtVerfuegbar" style="display:none;color:var(--gray-500);">
+            <p>Biometrische Anmeldung wird von diesem Browser nicht unterstützt.</p>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="bi bi-person" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <h1 style="font-size:1.5rem;margin-top:0.5rem">Profil</h1>
+            <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Anmelden</p>
+        </div>
+        <form onsubmit="submitAuth(event)">
+            <div style="display:flex;flex-direction:column;gap:0.75rem">
+                <div>
+                    <label for="authUser">Benutzername</label>
+                    <input type="text" id="authUser" required autocomplete="username" placeholder="Benutzername">
+                </div>
+                <div>
+                    <label for="authPass">Passwort</label>
+                    <input type="password" id="authPass" required autocomplete="current-password" placeholder="Passwort">
+                </div>
+                <div id="authError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                <div id="authSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem">
+                    <i class="bi bi-box-arrow-in-right"></i> Anmelden
+                </button>
+                <a href="register.html" class="btn btn-secondary" style="width:100%;padding:0.7rem;font-size:0.95rem;text-decoration:none;text-align:center">
+                    <i class="bi bi-person-plus"></i> Registrieren
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-container" id="toasts"></div>
+
+<script src="lib/simplewebauthn-browser.min.js"></script>
+<script src="webauthn.js"></script>
+<script src="shared.js"></script>
+<script src="bugreport.js"></script>
+<script src="profil.js"></script>
+
+</body>
+</html>

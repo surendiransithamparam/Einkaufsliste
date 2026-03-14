@@ -1,4 +1,4 @@
-const CACHE_NAME = 'einkaufsliste-v10';
+const CACHE_NAME = 'einkaufsliste-v11';
 const ASSETS = [
     './',
     './index.html',
@@ -8,6 +8,8 @@ const ASSETS = [
     './rezepte.html',
     './wochenplan.html',
     './tankrabatte.html',
+    './profil.html',
+    './profil.js',
     './app.css',
     './app.js',
     './shared.js',
