@@ -1,5 +1,6 @@
 let karten = [];
 let deleteTargetId = null;
+let html5QrScanner = null;
 
 function showApp() {
     showAppBase();
@@ -45,12 +46,34 @@ function renderKarten() {
                     <button class="btn-icon" onclick="openDeleteConfirm(${k.id})" title="Löschen" style="color:var(--red-500)"><i class="bi bi-trash"></i></button>
                 </div>
             </div>
-            <div style="font-size:1.2rem;font-weight:700;letter-spacing:0.08em;color:var(--gray-700);font-family:monospace;word-break:break-all;margin-bottom:0.25rem">
+            <div style="text-align:center;margin:0.5rem 0">
+                <svg id="barcode-${k.id}"></svg>
+            </div>
+            <div style="font-size:1.1rem;font-weight:700;letter-spacing:0.08em;color:var(--gray-700);font-family:monospace;word-break:break-all;text-align:center;margin-bottom:0.25rem">
                 ${esc(k.kartennummer)}
             </div>
             ${k.notiz ? '<div style="font-size:0.78rem;color:var(--gray-400)">' + esc(k.notiz) + '</div>' : ''}
         </div>
     `).join('');
+
+    // Generate barcodes
+    karten.forEach(k => {
+        try {
+            const cleanNum = k.kartennummer.replace(/\s/g, '');
+            JsBarcode(`#barcode-${k.id}`, cleanNum, {
+                format: 'CODE128',
+                width: 1.5,
+                height: 50,
+                displayValue: false,
+                margin: 0,
+                background: 'transparent'
+            });
+        } catch (e) {
+            // If barcode generation fails, hide the SVG
+            const svg = document.getElementById(`barcode-${k.id}`);
+            if (svg) svg.style.display = 'none';
+        }
+    });
 }
 
 function openAddKarte() {
@@ -61,6 +84,7 @@ function openAddKarte() {
     document.getElementById('karteError').style.display = 'none';
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Neue Kundenkarte';
     document.getElementById('karteOverlay').classList.add('active');
+    stopScan();
 }
 
 function openEditKarte(id) {
@@ -73,10 +97,56 @@ function openEditKarte(id) {
     document.getElementById('karteError').style.display = 'none';
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Karte bearbeiten';
     document.getElementById('karteOverlay').classList.add('active');
+    stopScan();
 }
 
 function closeKarteModal() {
+    stopScan();
     document.getElementById('karteOverlay').classList.remove('active');
+}
+
+// -- Barcode Scanner --
+function startScan() {
+    const container = document.getElementById('scannerContainer');
+    container.style.display = '';
+
+    if (html5QrScanner) {
+        html5QrScanner.clear();
+        html5QrScanner = null;
+    }
+
+    html5QrScanner = new Html5Qrcode('scannerView');
+    html5QrScanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 280, height: 100 }, formatsToSupport: [
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.ITF,
+            Html5QrcodeSupportedFormats.QR_CODE
+        ]},
+        (decodedText) => {
+            document.getElementById('karteNummer').value = decodedText;
+            toast('Barcode erkannt: ' + decodedText);
+            stopScan();
+        },
+        () => {} // ignore scan errors
+    ).catch(err => {
+        console.error('Scanner Fehler:', err);
+        container.style.display = 'none';
+        toast('Kamera konnte nicht gestartet werden', true);
+    });
+}
+
+function stopScan() {
+    const container = document.getElementById('scannerContainer');
+    if (container) container.style.display = 'none';
+    if (html5QrScanner) {
+        html5QrScanner.stop().catch(() => {});
+        html5QrScanner.clear();
+        html5QrScanner = null;
+    }
 }
 
 async function saveKarte() {
