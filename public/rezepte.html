@@ -84,17 +84,9 @@
                 <i class="bi bi-three-dots-vertical"></i>
             </button>
             <div class="nav-dropdown-menu" id="navDropdownMenu">
-                <a href="index.html" class="nav-menu-link"><i class="bi bi-cart3"></i> Einkauf</a>
-                <a href="wochenplan.html" class="nav-menu-link"><i class="bi bi-calendar-week"></i> Woche</a>
-                <a href="rezepte.html" class="nav-menu-link active"><i class="bi bi-book"></i> Rezepte</a>
-                <a href="tankrabatte.html" class="nav-menu-link"><i class="bi bi-tag"></i> Aktionen</a>
-                <div class="nav-menu-divider"></div>
                 <button onclick="openGerichteModal();closeNavDropdown()">
                     <i class="bi bi-book"></i> Eigene Gerichte
                 </button>
-                <a href="profil.html" id="profilBtn" style="display:none;text-decoration:none">
-                    <i class="bi bi-person"></i> Profil
-                </a>
                 <button onclick="openHaushalt();closeNavDropdown()" id="haushaltBtn" style="display:none">
                     <i class="bi bi-people"></i> Haushalt
                 </button>
@@ -111,6 +103,19 @@
         </div>
     </div>
 </nav>
+
+<aside class="sidebar hidden" id="sidebar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menü ein-/ausblenden">
+        <i class="bi bi-list"></i>
+    </button>
+    <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link"><i class="bi bi-cart3"></i> <span>Einkauf</span></a>
+        <a href="wochenplan.html" class="sidebar-link"><i class="bi bi-calendar-week"></i> <span>Woche</span></a>
+        <a href="rezepte.html" class="sidebar-link active"><i class="bi bi-book"></i> <span>Rezepte</span></a>
+        <a href="tankrabatte.html" class="sidebar-link"><i class="bi bi-tag"></i> <span>Aktionen</span></a>
+        <a href="profil.html" class="sidebar-link"><i class="bi bi-person"></i> <span>Profil</span></a>
+    </nav>
+</aside>
 
 <div id="appContent" class="app-content hidden">
 <div class="container">
