@@ -188,6 +188,7 @@ function getMonday(d) {
     return date;
 }
 
+// Formats a Date object to "D.M." (short day.month without year, for week headers)
 function formatDate(d) { return `${d.getDate()}.${d.getMonth()+1}.`; }
 
 function mondayStr(d) {

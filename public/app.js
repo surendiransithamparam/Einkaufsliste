@@ -23,6 +23,7 @@ async function loadItems() {
 
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 
+// Formats a "YYYY-MM-DD" string to "DD.MM.YYYY" (full date with year)
 function formatDate(d) {
     const [y, m, day] = d.split('-');
     return `${day}.${m}.${y}`;
@@ -296,13 +297,11 @@ function renderList() {
     const offene = filtered.filter(i => !i.gekauft);
     const gekaufte = filtered.filter(i => i.gekauft);
 
-    const groupBy = true;
-
     // Gekauft section
     if (gekaufte.length > 0) {
         gekauftSection.style.display = '';
         document.getElementById('gekauftCount').textContent = gekaufte.length;
-        gekauftGrid.innerHTML = groupBy ? renderGrouped(gekaufte) : gekaufte.map(item => renderTile(item)).join('');
+        gekauftGrid.innerHTML = renderGrouped(gekaufte);
         gekauftGrid.classList.toggle('open', gekauftSectionOpen);
         document.getElementById('gekauftClear').style.display = gekauftSectionOpen ? '' : 'none';
     } else {
@@ -329,10 +328,8 @@ function renderList() {
                 <div class="empty-title">Alles erledigt!</div>
                 <div class="empty-text">Alle Artikel wurden gekauft.</div>
             </div>`;
-    } else if (groupBy) {
-        grid.innerHTML = renderGrouped(offene);
     } else {
-        grid.innerHTML = offene.map(item => renderTile(item)).join('');
+        grid.innerHTML = renderGrouped(offene);
     }
 
     const total = offene.length + gekaufte.length;
@@ -500,34 +497,36 @@ async function addZutaten() {
     const container = document.getElementById('rezeptZutaten');
     const zutaten = JSON.parse(container.dataset.zutaten || '[]');
     const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-    let added = 0;
 
+    const bulk = [];
     for (const cb of checkboxes) {
         if (!cb.checked) continue;
         const z = zutaten[parseInt(cb.dataset.idx)];
-        const data = {
+        bulk.push({
             artikel: z.artikel,
             menge: z.menge,
             einheit: mapEinheit(z.einheit),
             laden: '',
             datum: ''
-        };
-        const res = await fetch('/api/artikel', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
         });
-        if (res.ok) {
-            const result = await res.json();
-            data.id = result.id;
-            data.erstelltAm = result.erstelltAm;
-            data.gekauft = false;
-            items.push(data);
-            added++;
-        }
     }
 
-    toast(`${added} Zutaten hinzugef\u00FCgt`);
+    if (bulk.length === 0) return;
+
+    const res = await fetch('/api/artikel/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artikel: bulk })
+    });
+    if (res.ok) {
+        const { inserted } = await res.json();
+        inserted.forEach((result, i) => {
+            const data = { ...bulk[i], id: result.id, erstelltAm: result.erstelltAm, gekauft: false };
+            items.push(data);
+        });
+    }
+
+    toast(`${bulk.length} Zutaten hinzugef\u00FCgt`);
     closeRezept();
     renderList();
 }
@@ -636,8 +635,8 @@ document.addEventListener('click', e => {
     }
 });
 
-// Reposition popup on scroll
-window.addEventListener('scroll', () => positionAktionPopup(), true);
+// Reposition popup on scroll (throttled via rAF)
+window.addEventListener('scroll', () => requestAnimationFrame(positionAktionPopup), true);
 
 // -- Haushalt: logic is in shared.js --
 
