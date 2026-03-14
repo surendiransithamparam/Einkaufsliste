@@ -1700,6 +1700,98 @@ app.delete('/api/wochenplan/:id', requireAuth, async (req, res) => {
   }
 });
 
+// ==================== KUNDENKARTEN ENDPOINTS ====================
+
+app.get('/api/kundenkarten', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
+    let result;
+    if (hid != null) {
+      result = await db.request().input('hid', sql.Int, hid)
+        .query('SELECT Id, Name, Kartennummer, Notiz, ErstelltAm FROM Kundenkarte WHERE HaushaltId=@hid ORDER BY Name');
+    } else {
+      result = await db.request().input('uid', sql.Int, userId)
+        .query('SELECT Id, Name, Kartennummer, Notiz, ErstelltAm FROM Kundenkarte WHERE BenutzerId=@uid AND HaushaltId IS NULL ORDER BY Name');
+    }
+    res.json(result.recordset.map(r => ({ id: r.Id, name: r.Name, kartennummer: r.Kartennummer, notiz: r.Notiz || '', erstelltAm: r.ErstelltAm })));
+  } catch (e) {
+    console.error('Kundenkarten GET Fehler:', e);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
+app.post('/api/kundenkarten', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({ error: 'Keine Schreibrechte.' });
+    const hid = await getHaushaltId(userId, db);
+    const { name, kartennummer, notiz } = req.body;
+    if (!name || !kartennummer) return res.status(400).json({ error: 'Name und Kartennummer erforderlich.' });
+    const result = await db.request()
+      .input('name', sql.NVarChar, name.trim())
+      .input('kartennummer', sql.NVarChar, kartennummer.trim())
+      .input('notiz', sql.NVarChar, (notiz || '').trim() || null)
+      .input('uid', sql.Int, userId)
+      .input('hid', sql.Int, hid)
+      .query('INSERT INTO Kundenkarte (Name, Kartennummer, Notiz, BenutzerId, HaushaltId) OUTPUT INSERTED.Id, INSERTED.ErstelltAm VALUES (@name, @kartennummer, @notiz, @uid, @hid)');
+    const row = result.recordset[0];
+    res.json({ id: row.Id, erstelltAm: row.ErstelltAm });
+  } catch (e) {
+    console.error('Kundenkarten POST Fehler:', e);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
+app.put('/api/kundenkarten/:id', requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({ error: 'Keine Schreibrechte.' });
+    const hid = await getHaushaltId(userId, db);
+    const { name, kartennummer, notiz } = req.body;
+    if (!name || !kartennummer) return res.status(400).json({ error: 'Name und Kartennummer erforderlich.' });
+    const where = hid != null ? 'Id=@id AND HaushaltId=@hid' : 'Id=@id AND BenutzerId=@uid AND HaushaltId IS NULL';
+    const result = await db.request()
+      .input('id', sql.Int, id)
+      .input('name', sql.NVarChar, name.trim())
+      .input('kartennummer', sql.NVarChar, kartennummer.trim())
+      .input('notiz', sql.NVarChar, (notiz || '').trim() || null)
+      .input('uid', sql.Int, userId)
+      .input('hid', sql.Int, hid)
+      .query(`UPDATE Kundenkarte SET Name=@name, Kartennummer=@kartennummer, Notiz=@notiz WHERE ${where}`);
+    if (result.rowsAffected[0] > 0) res.json({});
+    else res.status(404).json({ error: 'Karte nicht gefunden.' });
+  } catch (e) {
+    console.error('Kundenkarten PUT Fehler:', e);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
+app.delete('/api/kundenkarten/:id', requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({ error: 'Keine Schreibrechte.' });
+    const hid = await getHaushaltId(userId, db);
+    const where = hid != null ? 'Id=@id AND HaushaltId=@hid' : 'Id=@id AND BenutzerId=@uid AND HaushaltId IS NULL';
+    const result = await db.request()
+      .input('id', sql.Int, id)
+      .input('uid', sql.Int, userId)
+      .input('hid', sql.Int, hid)
+      .query(`DELETE FROM Kundenkarte WHERE ${where}`);
+    if (result.rowsAffected[0] > 0) res.json({});
+    else res.status(404).json({ error: 'Karte nicht gefunden.' });
+  } catch (e) {
+    console.error('Kundenkarten DELETE Fehler:', e);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
 // ==================== ADMIN ENDPOINTS ====================
 
 app.get('/api/admin/benutzer', requireAuth, async (req, res) => {
@@ -2847,6 +2939,19 @@ async function startup() {
       IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_WebAuthnCredential_BenutzerId')
       CREATE INDEX IX_WebAuthnCredential_BenutzerId
           ON WebAuthnCredential(BenutzerId)`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='Kundenkarte')
+      CREATE TABLE Kundenkarte (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          Name NVARCHAR(200) NOT NULL,
+          Kartennummer NVARCHAR(500) NOT NULL,
+          Notiz NVARCHAR(500) NULL,
+          BenutzerId INT NOT NULL,
+          HaushaltId INT NULL,
+          ErstelltAm DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+          FOREIGN KEY (BenutzerId) REFERENCES Benutzer(Id)
+      )`);
 
     // Ensure HaushaltRolle column on Benutzer (for existing databases)
     await db.request().query(`

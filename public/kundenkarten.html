@@ -5,12 +5,17 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2563eb">
-    <title>Aktionen</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Haushalt+">
+    <title>Kundenkarten — HaushaltPLUS</title>
+
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.svg">
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
     <link rel="stylesheet" href="app.css">
-    <link rel="stylesheet" href="tankrabatte.css">
 </head>
 <body>
 
@@ -47,8 +52,8 @@
         <a href="index.html" class="sidebar-link"><i class="bi bi-cart3"></i> <span>Einkauf</span></a>
         <a href="wochenplan.html" class="sidebar-link"><i class="bi bi-calendar-week"></i> <span>Woche</span></a>
         <a href="rezepte.html" class="sidebar-link"><i class="bi bi-book"></i> <span>Rezepte</span></a>
-        <a href="tankrabatte.html" class="sidebar-link active"><i class="bi bi-tag"></i> <span>Aktionen</span></a>
-        <a href="kundenkarten.html" class="sidebar-link"><i class="bi bi-credit-card"></i> <span>Karten</span></a>
+        <a href="tankrabatte.html" class="sidebar-link"><i class="bi bi-tag"></i> <span>Aktionen</span></a>
+        <a href="kundenkarten.html" class="sidebar-link active"><i class="bi bi-credit-card"></i> <span>Karten</span></a>
         <a href="profil.html" class="sidebar-link"><i class="bi bi-person"></i> <span>Profil</span></a>
     </nav>
 </aside>
@@ -56,102 +61,79 @@
 <div id="appContent" class="app-content hidden">
 <div class="container">
 
-    <!-- Einkaufsaktionen -->
     <h2 style="font-size:1.1rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem">
-        <i class="bi bi-tag" style="color:var(--green-600)"></i> Einkaufsaktionen
+        <i class="bi bi-credit-card" style="color:var(--green-600)"></i> Kundenkarten
     </h2>
 
-    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap">
-        <input type="text" id="aktionenSuche" placeholder="Produkt suchen…" onkeydown="if(event.key==='Enter')searchAktionen()" style="flex:1;min-width:120px">
-        <select id="aktionenLaden" onchange="searchAktionen()" style="min-width:100px">
-            <option value="">Alle Läden</option>
-            <option>Aldi</option>
-            <option>Coop</option>
-            <option>Coop Megastore</option>
-            <option>Denner</option>
-            <option>Lidl</option>
-            <option>Migros</option>
-            <option>OTTO'S</option>
-            <option>SPAR</option>
-            <option>Volg</option>
-        </select>
-        <button class="btn btn-primary btn-sm" onclick="searchAktionen()"><i class="bi bi-search"></i></button>
-        <button class="btn btn-secondary btn-sm" onclick="refreshAktionen()" title="Aktionen neu laden"><i class="bi bi-arrow-clockwise"></i></button>
-    </div>
-    <div id="aktionenStatus" style="font-size:0.75rem;color:var(--gray-400);margin-bottom:0.5rem"></div>
-    <div id="aktionenResults"></div>
+    <div id="kartenGrid" class="tile-grid"></div>
 
-    <!-- Tankrabatte -->
-    <h2 style="font-size:1.1rem;margin-top:2rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem">
-        <i class="bi bi-fuel-pump" style="color:var(--green-600)"></i> Tankrabatte
-    </h2>
-
-    <div id="tankrabatteLoading" style="text-align:center;padding:2rem;color:var(--gray-400)">
-        <i class="bi bi-arrow-repeat spin" style="font-size:1.5rem"></i>
-        <p style="margin-top:0.5rem">Gutscheine werden geladen...</p>
+    <div id="kartenEmpty" style="display:none;text-align:center;padding:2rem 1rem;color:var(--gray-400)">
+        <i class="bi bi-credit-card" style="font-size:2.5rem;display:block;margin-bottom:0.5rem"></i>
+        <p>Noch keine Kundenkarten hinterlegt.</p>
+        <p style="font-size:0.8rem">Tippe auf + um eine Karte hinzuzufügen.</p>
     </div>
 
-    <div id="tankrabatteContent" style="display:none">
-        <!-- Coop Pronto -->
-        <div class="anbieter-section" id="sectionCoopPronto">
-            <div class="anbieter-header">
-                <span class="anbieter-name">Coop Pronto</span>
-                <span class="anbieter-badge" id="badgeCoopPronto">0</span>
-            </div>
-            <div class="gutschein-liste" id="listeCoopPronto"></div>
+    <!-- FAB -->
+    <button class="fab" onclick="openAddKarte()" title="Neue Kundenkarte">
+        <i class="bi bi-plus-lg"></i>
+    </button>
+
+</div>
+</div>
+
+<!-- Modal: Karte hinzufügen/bearbeiten -->
+<div class="modal-overlay" id="karteOverlay" onclick="if(event.target===this)closeKarteModal()">
+    <div class="modal" style="max-width:420px">
+        <div class="modal-header">
+            <h2 id="karteModalTitle"><i class="bi bi-credit-card"></i> Neue Kundenkarte</h2>
+            <button class="modal-close" onclick="closeKarteModal()"><i class="bi bi-x-lg"></i></button>
         </div>
-
-        <!-- Migrol -->
-        <div class="anbieter-section" id="sectionMigrol">
-            <div class="anbieter-header">
-                <span class="anbieter-name">Migrol</span>
-                <span class="anbieter-badge" id="badgeMigrol">0</span>
+        <div class="modal-body">
+            <input type="hidden" id="karteEditId">
+            <div style="margin-bottom:0.75rem">
+                <label for="karteName">Name</label>
+                <input type="text" id="karteName" placeholder="z.B. Migros Cumulus" maxlength="200">
             </div>
-            <div class="gutschein-liste" id="listeMigrol"></div>
-        </div>
-
-        <!-- Shell -->
-        <div class="anbieter-section" id="sectionShell">
-            <div class="anbieter-header">
-                <span class="anbieter-name">Shell</span>
-                <span class="anbieter-badge" id="badgeShell">0</span>
+            <div style="margin-bottom:0.75rem">
+                <label for="karteNummer">Kartennummer</label>
+                <input type="text" id="karteNummer" placeholder="z.B. 76 1234 5678 9" maxlength="500">
             </div>
-            <div class="gutschein-liste" id="listeShell"></div>
-        </div>
-
-        <!-- AVIA -->
-        <div class="anbieter-section" id="sectionAvia">
-            <div class="anbieter-header">
-                <span class="anbieter-name">AVIA</span>
-                <span class="anbieter-badge" id="badgeAvia">0</span>
+            <div style="margin-bottom:1rem">
+                <label for="karteNotiz">Notiz (optional)</label>
+                <input type="text" id="karteNotiz" placeholder="z.B. Familie" maxlength="500">
             </div>
-            <div class="gutschein-liste" id="listeAvia"></div>
+            <div id="karteError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-bottom:0.75rem"></div>
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="closeKarteModal()">Abbrechen</button>
+                <button class="btn btn-primary" onclick="saveKarte()"><i class="bi bi-check-lg"></i> Speichern</button>
+            </div>
         </div>
-    </div>
-
-    <div id="tankrabatteError" style="display:none;text-align:center;padding:2rem;color:var(--red-500)">
-        <i class="bi bi-exclamation-triangle" style="font-size:1.5rem"></i>
-        <p style="margin-top:0.5rem" id="tankrabatteErrorMsg">Fehler beim Laden.</p>
-        <button class="btn btn-secondary btn-sm" onclick="ladeGutscheine()" style="margin-top:0.75rem">
-            <i class="bi bi-arrow-clockwise"></i> Erneut versuchen
-        </button>
-    </div>
-
-    <div id="tankrabatteFooter" style="display:none;text-align:center;margin-top:1.5rem">
-        <button class="btn btn-secondary btn-sm" onclick="ladeGutscheine()">
-            <i class="bi bi-arrow-clockwise"></i> Aktualisieren
-        </button>
-        <p style="font-size:0.7rem;color:var(--gray-400);margin-top:0.5rem" id="letzteAktualisierung"></p>
     </div>
 </div>
+
+<!-- Delete Confirm -->
+<div class="modal-overlay" id="deleteOverlay" onclick="if(event.target===this)closeDeleteConfirm()">
+    <div class="modal" style="max-width:360px">
+        <div class="modal-header">
+            <h2><i class="bi bi-trash"></i> Karte löschen</h2>
+            <button class="modal-close" onclick="closeDeleteConfirm()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom:1rem">Möchtest du diese Kundenkarte wirklich löschen?</p>
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="closeDeleteConfirm()">Abbrechen</button>
+                <button class="btn btn-danger" onclick="confirmDelete()"><i class="bi bi-trash"></i> Löschen</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Login Screen -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
         <div class="login-header">
-            <i class="bi bi-tag" style="font-size:2.5rem;color:var(--green-600)"></i>
-            <h1 style="font-size:1.5rem;margin-top:0.5rem">Aktionen</h1>
+            <i class="bi bi-credit-card" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <h1 style="font-size:1.5rem;margin-top:0.5rem">Kundenkarten</h1>
             <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Anmelden</p>
         </div>
         <form onsubmit="submitAuth(event)">
@@ -177,13 +159,14 @@
     </div>
 </div>
 
-<!-- Toast -->
+<!-- Toasts -->
 <div class="toast-container" id="toasts"></div>
 
 <script src="lib/simplewebauthn-browser.min.js"></script>
 <script src="webauthn.js"></script>
 <script src="shared.js"></script>
 <script src="bugreport.js"></script>
-<script src="tankrabatte.js"></script>
+<script src="kundenkarten.js"></script>
+
 </body>
 </html>

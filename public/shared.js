@@ -4,7 +4,7 @@
 let _redirecting = false;
 (function() {
     const page = location.pathname.split('/').pop() || 'index.html';
-    const trackablePages = ['index.html', 'wochenplan.html', 'rezepte.html', 'tankrabatte.html'];
+    const trackablePages = ['index.html', 'wochenplan.html', 'rezepte.html', 'tankrabatte.html', 'kundenkarten.html'];
     if (trackablePages.includes(page)) {
         const lastPage = localStorage.getItem('lastVisitedPage');
         if (lastPage && lastPage !== page && trackablePages.includes(lastPage)) {
