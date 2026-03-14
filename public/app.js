@@ -752,4 +752,4 @@ updateOnlineStatus();
 
 // -- Init --
 _onLogout = () => { items = []; };
-checkAuth(showApp);
+if (!_redirecting) checkAuth(showApp);

@@ -375,8 +375,8 @@ async function deleteGericht(id) {
 
 // -- Keyboard --
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeAddToPlan(); closeGerichteModal(); closeGerichtEdit(); closeProfil(); closeHaushalt(); }
+    if (e.key === 'Escape') { closeAddToPlan(); closeGerichteModal(); closeGerichtEdit(); closeHaushalt(); }
 });
 
 // -- Init --
-checkAuth(showApp);
+if (!_redirecting) checkAuth(showApp);

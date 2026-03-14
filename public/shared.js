@@ -1,5 +1,21 @@
 // -- Shared utilities across all pages --
 
+// Letzte besuchte Seite merken und Redirect
+let _redirecting = false;
+(function() {
+    const page = location.pathname.split('/').pop() || 'index.html';
+    const trackablePages = ['index.html', 'wochenplan.html', 'rezepte.html', 'tankrabatte.html'];
+    if (trackablePages.includes(page)) {
+        const lastPage = localStorage.getItem('lastVisitedPage');
+        if (lastPage && lastPage !== page && trackablePages.includes(lastPage)) {
+            _redirecting = true;
+            location.replace(lastPage);
+            return;
+        }
+        localStorage.setItem('lastVisitedPage', page);
+    }
+})();
+
 let currentUser = null;
 
 function esc(s) {
@@ -92,25 +108,6 @@ function toast(msg, isError) {
 }
 
 // -- Profil --
-function openProfil() {
-    document.getElementById('profilUser').value = currentUser?.benutzername || '';
-    document.getElementById('profilEmail').value = currentUser?.email || '';
-    document.getElementById('profilOverlay').classList.add('active');
-    if (typeof WebAuthnClient !== 'undefined') webauthnLadeGeraeteProfil();
-}
-
-function closeProfil() {
-    document.getElementById('profilOverlay').classList.remove('active');
-    // Reset password fields
-    const ids = ['profilOldPass', 'profilNewPass', 'profilNewPassConfirm'];
-    ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    const errEl = document.getElementById('profilPwError');
-    const successEl = document.getElementById('profilPwSuccess');
-    if (errEl) errEl.style.display = 'none';
-    if (successEl) successEl.style.display = 'none';
-    resetProfilPwPolicy();
-}
-
 function resetProfilPwPolicy() {
     ['ppol-len','ppol-upper','ppol-lower','ppol-special'].forEach(id => {
         const el = document.getElementById(id);
@@ -190,7 +187,6 @@ async function saveProfil() {
     if (res.ok) {
         currentUser.email = email;
         toast('Profil gespeichert');
-        closeProfil();
     }
 }
 
