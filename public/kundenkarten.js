@@ -23,6 +23,49 @@ function esc(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// -- Store Logo --
+const STORE_LOGOS = [
+    { keywords: ['migros', 'cumulus', 'melectronics'], domain: 'migros.ch' },
+    { keywords: ['coop', 'supercard', 'interdiscount', 'microspot'], domain: 'coop.ch' },
+    { keywords: ['denner'], domain: 'denner.ch' },
+    { keywords: ['lidl'], domain: 'lidl.ch' },
+    { keywords: ['aldi'], domain: 'aldi.ch' },
+    { keywords: ['spar'], domain: 'spar.ch' },
+    { keywords: ['volg'], domain: 'volg.ch' },
+    { keywords: ['otto'], domain: 'ottos.ch' },
+    { keywords: ['ikea'], domain: 'ikea.ch' },
+    { keywords: ['manor'], domain: 'manor.ch' },
+    { keywords: ['mediamarkt', 'media markt'], domain: 'mediamarkt.ch' },
+    { keywords: ['h&m', 'hm '], domain: 'hm.com' },
+    { keywords: ['zalando'], domain: 'zalando.ch' },
+    { keywords: ['galaxus', 'digitec'], domain: 'galaxus.ch' },
+    { keywords: ['fnac'], domain: 'fnac.ch' },
+    { keywords: ['ochsner'], domain: 'ochsnersport.ch' },
+    { keywords: ['dosenbach'], domain: 'dosenbach.ch' },
+    { keywords: ['fust'], domain: 'fust.ch' },
+    { keywords: ['jumbo'], domain: 'jumbo.ch' },
+    { keywords: ['obi'], domain: 'obi.ch' },
+    { keywords: ['hornbach'], domain: 'hornbach.ch' },
+];
+
+function getStoreLogo(name) {
+    const lower = name.toLowerCase();
+    for (const store of STORE_LOGOS) {
+        if (store.keywords.some(kw => lower.includes(kw))) {
+            return `https://www.google.com/s2/favicons?domain=${store.domain}&sz=32`;
+        }
+    }
+    return null;
+}
+
+function storeLogoHtml(name, size) {
+    const logo = getStoreLogo(name);
+    if (logo) {
+        return `<img src="${esc(logo)}" alt="" style="width:${size}px;height:${size}px;border-radius:4px;flex-shrink:0" onerror="this.style.display='none';this.nextElementSibling.style.display=''"><i class="bi bi-credit-card" style="color:var(--green-600);font-size:${size > 24 ? '1.5rem' : '1.2rem'};flex-shrink:0;display:none"></i>`;
+    }
+    return `<i class="bi bi-credit-card" style="color:var(--green-600);font-size:${size > 24 ? '1.5rem' : '1.2rem'};flex-shrink:0"></i>`;
+}
+
 function renderKarten() {
     const grid = document.getElementById('kartenGrid');
     const empty = document.getElementById('kartenEmpty');
@@ -36,7 +79,7 @@ function renderKarten() {
     empty.style.display = 'none';
     grid.innerHTML = karten.map(k => `
         <div class="tile" style="cursor:pointer;display:flex;align-items:center;gap:0.6rem;padding:0.75rem 1rem" onclick="showBarcode(${k.id})">
-            <i class="bi bi-credit-card" style="color:var(--green-600);font-size:1.2rem;flex-shrink:0"></i>
+            ${storeLogoHtml(k.name, 24)}
             <span style="font-weight:700;font-size:0.95rem;color:var(--gray-800);flex:1">${esc(k.name)}</span>
             <div style="display:flex;gap:0.25rem;flex-shrink:0" onclick="event.stopPropagation()">
                 <button class="btn-icon" onclick="openEditKarte(${k.id})" title="Bearbeiten"><i class="bi bi-pencil"></i></button>
@@ -51,6 +94,7 @@ function showBarcode(id) {
     const k = karten.find(x => x.id === id);
     if (!k) return;
     const overlay = document.getElementById('barcodeOverlay');
+    document.getElementById('barcodeKarteLogo').innerHTML = storeLogoHtml(k.name, 40);
     document.getElementById('barcodeKarteName').textContent = k.name;
     document.getElementById('barcodeKarteNummer').textContent = k.kartennummer;
     const notizEl = document.getElementById('barcodeKarteNotiz');
