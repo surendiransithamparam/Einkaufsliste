@@ -1,13 +1,15 @@
 // -- Shared utilities across all pages --
 
-// Letzte besuchte Seite merken und Redirect
+// Letzte besuchte Seite merken und Redirect (nur beim App-Start, nicht bei normaler Navigation)
 let _redirecting = false;
 (function() {
     const page = location.pathname.split('/').pop() || 'index.html';
     const trackablePages = ['index.html', 'wochenplan.html', 'rezepte.html', 'tankrabatte.html', 'kundenkarten.html'];
     if (trackablePages.includes(page)) {
+        // Nur redirecten wenn kein Referrer (= App-Start/Direktaufruf, nicht Klick von anderer Seite)
+        const isAppStart = !document.referrer || !document.referrer.includes(location.host);
         const lastPage = localStorage.getItem('lastVisitedPage');
-        if (lastPage && lastPage !== page && trackablePages.includes(lastPage)) {
+        if (isAppStart && lastPage && lastPage !== page && trackablePages.includes(lastPage)) {
             _redirecting = true;
             location.replace(lastPage);
             return;
