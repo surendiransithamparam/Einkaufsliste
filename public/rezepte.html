@@ -75,24 +75,8 @@
 <body>
 
 <nav class="navbar">
-    <div class="navbar-left"></div>
-    <div class="navbar-center">
-        <a href="index.html" class="nav-tab" title="Einkaufsliste">
-            <i class="bi bi-cart3"></i>
-            <span>Einkauf</span>
-        </a>
-        <a href="wochenplan.html" class="nav-tab" title="Wochenplan">
-            <i class="bi bi-calendar-week"></i>
-            <span>Woche</span>
-        </a>
-        <a href="rezepte.html" class="nav-tab active" title="Rezepte">
-            <i class="bi bi-book"></i>
-            <span>Rezepte</span>
-        </a>
-        <a href="tankrabatte.html" class="nav-tab" title="Aktionen">
-            <i class="bi bi-tag"></i>
-            <span>Aktionen</span>
-        </a>
+    <div class="navbar-left">
+        <span class="navbar-brand">HaushaltPLUS</span>
     </div>
     <div class="navbar-right">
         <div class="nav-dropdown" id="navDropdown">
@@ -100,14 +84,19 @@
                 <i class="bi bi-three-dots-vertical"></i>
             </button>
             <div class="nav-dropdown-menu" id="navDropdownMenu">
+                <a href="index.html" class="nav-menu-link"><i class="bi bi-cart3"></i> Einkauf</a>
+                <a href="wochenplan.html" class="nav-menu-link"><i class="bi bi-calendar-week"></i> Woche</a>
+                <a href="rezepte.html" class="nav-menu-link active"><i class="bi bi-book"></i> Rezepte</a>
+                <a href="tankrabatte.html" class="nav-menu-link"><i class="bi bi-tag"></i> Aktionen</a>
+                <div class="nav-menu-divider"></div>
                 <button onclick="openGerichteModal();closeNavDropdown()">
                     <i class="bi bi-book"></i> Eigene Gerichte
                 </button>
+                <a href="profil.html" id="profilBtn" style="display:none;text-decoration:none">
+                    <i class="bi bi-person"></i> Profil
+                </a>
                 <button onclick="openHaushalt();closeNavDropdown()" id="haushaltBtn" style="display:none">
                     <i class="bi bi-people"></i> Haushalt
-                </button>
-                <button onclick="openProfil();closeNavDropdown()" id="profilBtn" style="display:none">
-                    <i class="bi bi-person"></i> Profil
                 </button>
                 <button onclick="logout();closeNavDropdown()" id="logoutBtn" style="display:none">
                     <i class="bi bi-box-arrow-left"></i> Abmelden
@@ -223,30 +212,6 @@
             <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1rem">
                 <button class="btn btn-secondary" onclick="closeGerichtEdit()">Abbrechen</button>
                 <button class="btn btn-primary" onclick="saveGericht()"><i class="bi bi-check-lg"></i> Speichern</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Profil -->
-<div class="modal-overlay" id="profilOverlay" onclick="if(event.target===this)closeProfil()">
-    <div class="modal" style="max-width:420px">
-        <div class="modal-header">
-            <h2><i class="bi bi-person"></i> Profil</h2>
-            <button class="modal-close" onclick="closeProfil()"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <div class="modal-body">
-            <div style="margin-bottom:0.75rem">
-                <label>Benutzername</label>
-                <input type="text" id="profilUser" disabled style="background:var(--gray-100);color:var(--gray-500)">
-            </div>
-            <div style="margin-bottom:1rem">
-                <label for="profilEmail">E-Mail</label>
-                <input type="email" id="profilEmail" placeholder="name@beispiel.ch">
-            </div>
-            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
-                <button class="btn btn-secondary" onclick="closeProfil()">Abbrechen</button>
-                <button class="btn btn-primary" onclick="saveProfil()"><i class="bi bi-check-lg"></i> Speichern</button>
             </div>
         </div>
     </div>

@@ -688,4 +688,4 @@ document.addEventListener('keydown', e => {
 });
 
 // -- Init --
-checkAuth(showApp);
+if (!_redirecting) checkAuth(showApp);

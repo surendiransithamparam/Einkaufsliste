@@ -220,4 +220,4 @@ function renderAnbieter(key, gutscheine) {
     }).join('');
 }
 
-checkAuth(showApp);
+if (!_redirecting) checkAuth(showApp);
