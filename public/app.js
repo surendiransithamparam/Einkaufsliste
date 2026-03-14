@@ -461,7 +461,7 @@ async function searchRezept() {
     }
 
     results.innerHTML = '<div style="font-size:0.8rem;font-weight:600;color:var(--gray-500);margin-bottom:0.4rem">Rezepte</div>' +
-        data.map(r => `<div class="rezept-item" onclick="loadZutaten('${esc(r.url)}','${esc(r.name)}')">
+        data.map(r => `<div class="rezept-item" onclick="loadZutaten(${esc(JSON.stringify(r.url))},${esc(JSON.stringify(r.name))})">
             <i class="bi bi-journal-text" style="color:var(--green-600)"></i>
             <span>${esc(r.name)}</span>
             <i class="bi bi-chevron-right" style="color:var(--gray-400);margin-left:auto;font-size:0.75rem"></i>

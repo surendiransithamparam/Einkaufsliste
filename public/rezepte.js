@@ -52,7 +52,7 @@ async function searchRecipes() {
     for (const [source, items] of Object.entries(grouped)) {
         html += `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem;margin-top:0.75rem">${esc(source)}</div>
         <div class="recipe-grid">
-            ${items.map(r => `<div class="recipe-card" onclick="openAddToPlan('${esc(r.name).replace(/'/g,"\\'")}', '${esc(r.url).replace(/'/g,"\\'")}')">
+            ${items.map(r => `<div class="recipe-card" onclick="openAddToPlan(${esc(JSON.stringify(r.name))},${esc(JSON.stringify(r.url))})">
                 <i class="bi bi-journal-text" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(r.name)}</span>
                 <span class="source-badge">${esc(source)}</span>
