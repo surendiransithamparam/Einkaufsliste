@@ -412,14 +412,44 @@ async function initWebauthnLogin() {
   }
 }
 
+function ensureWebauthnPrompt() {
+  if (document.getElementById('webauthnPromptOverlay')) return;
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="modal-overlay" id="webauthnPromptOverlay" style="display:none;">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h2><i class="bi bi-fingerprint"></i> Biometrie einrichten</h2>
+        <button class="modal-close" onclick="webauthnPromptAblehnen()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Möchtest du beim nächsten Mal Fingerabdruck oder Face ID zum Anmelden nutzen?</p>
+        <div style="margin-bottom:12px;">
+          <label for="webauthnGeraetename">Gerätename</label>
+          <input type="text" id="webauthnGeraetename" placeholder="z.B. Mein iPhone" maxlength="100">
+        </div>
+        <div id="webauthnPromptError" style="display:none;color:var(--red-500);margin-bottom:8px;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1;" onclick="webauthnPromptAnnehmen()">
+            <i class="bi bi-fingerprint"></i> Ja, einrichten
+          </button>
+          <button class="btn btn-secondary" style="flex:1;" onclick="webauthnPromptAblehnen()">
+            Später
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(div.firstElementChild);
+}
+
 async function webauthnNachLoginPruefen() {
   try {
     const verfuegbar = await WebAuthnClient.istVerfuegbar();
     if (!verfuegbar) return;
-    // currentUser hat nach Login { benutzername } oder nach /api/auth/me { benutzername, ... }
     const benutzername = currentUser && currentUser.benutzername;
     if (!benutzername) return;
     if (!WebAuthnClient.sollPromptZeigen(benutzername)) return;
+    ensureWebauthnPrompt();
     document.getElementById('webauthnPromptOverlay').style.display = '';
     // Gerätename-Vorschlag basierend auf User-Agent
     const ua = navigator.userAgent;
