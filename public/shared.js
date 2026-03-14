@@ -34,19 +34,18 @@ async function checkAuth(onSuccess) {
 function showLogin() {
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('appContent').classList.add('hidden');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.add('hidden');
     if (typeof WebAuthnClient !== 'undefined') initWebauthnLogin();
 }
 
 function showAppBase() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContent').classList.remove('hidden');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('hidden');
     const logoutBtn = document.getElementById('logoutBtn');
-    const profilBtn = document.getElementById('profilBtn');
-    const haushaltBtn = document.getElementById('haushaltBtn');
     if (logoutBtn) logoutBtn.style.display = '';
-    if (profilBtn) profilBtn.style.display = '';
-    if (haushaltBtn) haushaltBtn.style.display = '';
-    ensureHaushaltModal();
 }
 
 async function submitAuth(e) {
@@ -280,6 +279,78 @@ async function openHaushalt() {
 
 function closeHaushalt() { document.getElementById('haushaltOverlay').classList.remove('active'); }
 
+// Haushalt inline on Profil page
+async function loadHaushaltSection() {
+    const section = document.getElementById('haushaltSection');
+    if (!section) return;
+    section.innerHTML = '<p style="color:var(--gray-400);text-align:center">Laden...</p>';
+
+    const meRes = await fetch('/api/auth/me');
+    if (meRes.ok) currentUser = await meRes.json();
+
+    if (currentUser.haushalt) {
+        const membersRes = await fetch('/api/haushalt/mitglieder');
+        const members = membersRes.ok ? await membersRes.json() : [];
+        const isErsteller = currentUser.haushalt.isErsteller;
+        section.innerHTML = `
+            <div style="margin-bottom:1rem">
+                <div style="font-weight:700;font-size:1rem;margin-bottom:0.25rem">${esc(currentUser.haushalt.name)}</div>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">
+                    <span style="font-size:0.8rem;color:var(--gray-500)">Einladungscode:</span>
+                    <code style="background:var(--gray-100);padding:0.25rem 0.6rem;border-radius:6px;font-weight:700;font-size:1rem;letter-spacing:0.1em">${esc(currentUser.haushalt.code)}</code>
+                    <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('${currentUser.haushalt.code}');toast('Code kopiert')" title="Kopieren">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="shareHaushaltCode()" title="Teilen">
+                        <i class="bi bi-share"></i>
+                    </button>
+                </div>
+            </div>
+            <div style="margin-bottom:1rem">
+                <div style="font-size:0.8rem;font-weight:600;color:var(--gray-500);margin-bottom:0.4rem">Mitglieder</div>
+                ${members.map(m => {
+                    const rolleLabel = m.isErsteller ? 'Admin' : m.rolle === 'schreibend' ? 'Bearbeiten' : 'Nur lesen';
+                    const rolleColor = m.isErsteller ? 'var(--green-600)' : m.rolle === 'lesend' ? 'var(--gray-400)' : 'var(--blue-500, #3b82f6)';
+                    const rolleIcon = m.isErsteller ? 'bi-shield-fill-check' : m.rolle === 'lesend' ? 'bi-eye' : 'bi-pencil-fill';
+                    let rolleHtml = '<span style="font-size:0.7rem;color:' + rolleColor + ';font-weight:600;display:flex;align-items:center;gap:0.2rem"><i class="bi ' + rolleIcon + '"></i> ' + rolleLabel + '</span>';
+                    if (isErsteller && !m.isErsteller) {
+                        rolleHtml = '<select onchange="changeRolle(' + m.id + ',this.value)" style="font-size:0.75rem;padding:0.15rem 0.3rem;border-radius:4px;border:1px solid var(--gray-200)">' +
+                            '<option value="schreibend"' + (m.rolle === 'schreibend' ? ' selected' : '') + '>Bearbeiten</option>' +
+                            '<option value="lesend"' + (m.rolle === 'lesend' ? ' selected' : '') + '>Nur lesen</option>' +
+                            '</select>';
+                    }
+                    return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;font-size:0.9rem;justify-content:space-between">' +
+                        '<div style="display:flex;align-items:center;gap:0.4rem"><i class="bi bi-person-fill" style="color:var(--green-600)"></i> ' + esc(m.benutzername) + '</div>' +
+                        rolleHtml + '</div>';
+                }).join('')}
+            </div>
+            ${currentUser.haushalt.rolle === 'lesend' ? '<div style="background:var(--gray-100);border-radius:8px;padding:0.6rem 0.75rem;margin-bottom:1rem;font-size:0.8rem;color:var(--gray-500)"><i class="bi bi-eye"></i> Du hast nur Leserechte. Wende dich an den Haushalt-Admin, um Schreibrechte zu erhalten.</div>' : ''}
+            <button class="btn btn-danger" style="width:100%" onclick="leaveHaushalt()">
+                <i class="bi bi-box-arrow-right"></i> Haushalt verlassen
+            </button>`;
+    } else {
+        section.innerHTML = `
+            <p style="color:var(--gray-500);font-size:0.85rem;margin-bottom:1.25rem">
+                Erstelle einen Haushalt oder tritt einem bei, um Einkaufsliste, Wochenplan und Rezepte zu teilen.
+            </p>
+            <div style="margin-bottom:1.25rem">
+                <label>Neuen Haushalt erstellen</label>
+                <div style="display:flex;gap:0.5rem">
+                    <input type="text" id="haushaltName" placeholder="Name (z.B. Familie M\u00FCller)">
+                    <button class="btn btn-primary" onclick="createHaushalt()" style="white-space:nowrap">Erstellen</button>
+                </div>
+            </div>
+            <div style="border-top:1px solid var(--gray-200);padding-top:1.25rem">
+                <label>Haushalt beitreten</label>
+                <div style="display:flex;gap:0.5rem">
+                    <input type="text" id="haushaltCode" placeholder="Einladungscode" style="text-transform:uppercase;letter-spacing:0.1em">
+                    <button class="btn btn-primary" onclick="joinHaushalt()" style="white-space:nowrap">Beitreten</button>
+                </div>
+            </div>
+            <div id="haushaltError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-top:0.75rem"></div>`;
+    }
+}
+
 async function shareHaushaltCode() {
     const code = currentUser?.haushalt?.code;
     const name = currentUser?.haushalt?.name || 'Haushalt';
@@ -305,7 +376,7 @@ async function createHaushalt() {
     });
     if (res.ok) {
         toast('Haushalt erstellt!');
-        openHaushalt();
+        loadHaushaltSection();
         if (typeof loadItems === 'function') loadItems();
     } else {
         const data = await res.json().catch(() => null);
@@ -325,7 +396,7 @@ async function joinHaushalt() {
     if (res.ok) {
         const data = await res.json();
         toast(`Haushalt "${data.name}" beigetreten!`);
-        openHaushalt();
+        loadHaushaltSection();
         if (typeof loadItems === 'function') loadItems();
     } else {
         const data = await res.json().catch(() => null);
@@ -343,14 +414,14 @@ async function changeRolle(userId, rolle) {
         toast('Rolle ge\u00E4ndert: ' + (rolle === 'lesend' ? 'Nur lesen' : 'Bearbeiten'));
     } else {
         toast('Fehler beim \u00C4ndern der Rolle');
-        openHaushalt();
+        loadHaushaltSection();
     }
 }
 
 async function leaveHaushalt() {
     await fetch('/api/haushalt/leave', { method: 'POST' });
     toast('Haushalt verlassen');
-    closeHaushalt();
+    loadHaushaltSection();
     if (typeof loadItems === 'function') loadItems();
 }
 
@@ -364,7 +435,19 @@ function closeNavDropdown() {
     document.getElementById('navDropdownMenu').classList.remove('open');
 }
 
-document.addEventListener('click', () => closeNavDropdown());
+document.addEventListener('click', (e) => {
+    closeNavDropdown();
+    // Close expanded sidebar on click outside
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && sidebar.classList.contains('expanded') && !sidebar.contains(e.target)) {
+        sidebar.classList.remove('expanded');
+    }
+});
+
+// -- Sidebar Toggle --
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('expanded');
+}
 
 // -- Password toggle --
 function initPasswordToggles() {
@@ -412,14 +495,44 @@ async function initWebauthnLogin() {
   }
 }
 
+function ensureWebauthnPrompt() {
+  if (document.getElementById('webauthnPromptOverlay')) return;
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="modal-overlay" id="webauthnPromptOverlay" style="display:none;">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h2><i class="bi bi-fingerprint"></i> Biometrie einrichten</h2>
+        <button class="modal-close" onclick="webauthnPromptAblehnen()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Möchtest du beim nächsten Mal Fingerabdruck oder Face ID zum Anmelden nutzen?</p>
+        <div style="margin-bottom:12px;">
+          <label for="webauthnGeraetename">Gerätename</label>
+          <input type="text" id="webauthnGeraetename" placeholder="z.B. Mein iPhone" maxlength="100">
+        </div>
+        <div id="webauthnPromptError" style="display:none;color:var(--red-500);margin-bottom:8px;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1;" onclick="webauthnPromptAnnehmen()">
+            <i class="bi bi-fingerprint"></i> Ja, einrichten
+          </button>
+          <button class="btn btn-secondary" style="flex:1;" onclick="webauthnPromptAblehnen()">
+            Später
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(div.firstElementChild);
+}
+
 async function webauthnNachLoginPruefen() {
   try {
     const verfuegbar = await WebAuthnClient.istVerfuegbar();
     if (!verfuegbar) return;
-    // currentUser hat nach Login { benutzername } oder nach /api/auth/me { benutzername, ... }
     const benutzername = currentUser && currentUser.benutzername;
     if (!benutzername) return;
     if (!WebAuthnClient.sollPromptZeigen(benutzername)) return;
+    ensureWebauthnPrompt();
     document.getElementById('webauthnPromptOverlay').style.display = '';
     // Gerätename-Vorschlag basierend auf User-Agent
     const ua = navigator.userAgent;
