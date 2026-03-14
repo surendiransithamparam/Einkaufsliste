@@ -34,17 +34,19 @@ async function checkAuth(onSuccess) {
 function showLogin() {
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('appContent').classList.add('hidden');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.add('hidden');
     if (typeof WebAuthnClient !== 'undefined') initWebauthnLogin();
 }
 
 function showAppBase() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContent').classList.remove('hidden');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('hidden');
     const logoutBtn = document.getElementById('logoutBtn');
-    const profilBtn = document.getElementById('profilBtn');
     const haushaltBtn = document.getElementById('haushaltBtn');
     if (logoutBtn) logoutBtn.style.display = '';
-    if (profilBtn) profilBtn.style.display = '';
     if (haushaltBtn) haushaltBtn.style.display = '';
     ensureHaushaltModal();
 }
@@ -364,7 +366,19 @@ function closeNavDropdown() {
     document.getElementById('navDropdownMenu').classList.remove('open');
 }
 
-document.addEventListener('click', () => closeNavDropdown());
+document.addEventListener('click', (e) => {
+    closeNavDropdown();
+    // Close expanded sidebar on click outside
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && sidebar.classList.contains('expanded') && !sidebar.contains(e.target)) {
+        sidebar.classList.remove('expanded');
+    }
+});
+
+// -- Sidebar Toggle --
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('expanded');
+}
 
 // -- Password toggle --
 function initPasswordToggles() {
