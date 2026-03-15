@@ -20,6 +20,7 @@ function getMonday(d) {
     return date;
 }
 
+// Formats a Date object to "D.M." (short day.month without year, for week headers)
 function formatDate(d) {
     return `${d.getDate()}.${d.getMonth() + 1}.`;
 }
@@ -268,17 +269,19 @@ async function saveMeal() {
     }).filter(d => d.gericht);
     if (dishes.length === 0) return;
     const rezept = JSON.stringify(dishes);
-    await fetch('/api/wochenplan', {
+    const res = await fetch('/api/wochenplan', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ woche: mondayStr(), tag: editTag, mahlzeit: editMahlzeit, rezept })
     });
+    if (!res.ok) { toast('Fehler beim Speichern', true); return; }
     closeMealInput();
     loadPlan();
     toast('Gespeichert');
 }
 
 async function deleteMeal(id) {
-    await fetch(`/api/wochenplan/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/wochenplan/${id}`, { method: 'DELETE' });
+    if (!res.ok) { toast('Fehler beim Entfernen', true); return; }
     loadPlan();
     toast('Entfernt');
 }
@@ -457,25 +460,28 @@ async function addDishZutaten() {
     const body = document.getElementById('dishSearchBody');
     const zutaten = JSON.parse(body.dataset.zutaten || '[]');
     const checkboxes = body.querySelectorAll('input[type="checkbox"]');
-    let added = 0;
 
+    const bulk = [];
     for (const cb of checkboxes) {
         if (!cb.checked) continue;
         const z = zutaten[parseInt(cb.dataset.idx)];
-        const data = {
+        bulk.push({
             artikel: z.artikel,
             menge: z.menge,
             einheit: mapEinheit(z.einheit),
             laden: '',
             datum: dishSearchDate
-        };
-        const res = await fetch('/api/artikel', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
         });
-        if (res.ok) added++;
     }
+
+    if (bulk.length === 0) return;
+
+    const res = await fetch('/api/artikel/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artikel: bulk })
+    });
+    const added = res.ok ? bulk.length : 0;
 
     toast(`${added} Zutaten zur Einkaufsliste hinzugef\u00FCgt`);
     closeDishSearch();

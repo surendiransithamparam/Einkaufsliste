@@ -19,10 +19,6 @@ async function loadKarten() {
     renderKarten();
 }
 
-function esc(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 // -- Store Logo --
 const STORE_LOGOS = [
     { keywords: ['migros', 'cumulus', 'melectronics'], domain: 'migros.ch' },

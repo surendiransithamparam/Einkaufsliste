@@ -1,4 +1,4 @@
-const CACHE_NAME = 'einkaufsliste-v20';
+const CACHE_NAME = 'einkaufsliste-v21';
 const ASSETS = [
     './',
     './index.html',
@@ -48,16 +48,23 @@ self.addEventListener('activate', e => {
     );
 });
 
-// Fetch: network first, fallback to cache (only cache GET requests)
+// Fetch: network first, fallback to cache (only cache static assets, not API)
 self.addEventListener('fetch', e => {
     if (e.request.method !== 'GET') {
         e.respondWith(fetch(e.request));
         return;
     }
+
+    // Skip caching for API requests
+    if (e.request.url.includes('/api/')) {
+        e.respondWith(fetch(e.request));
+        return;
+    }
+
     e.respondWith(
         fetch(e.request)
             .then(response => {
-                // Cache successful GET responses
+                // Cache successful GET responses (static assets only)
                 if (response.ok) {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));

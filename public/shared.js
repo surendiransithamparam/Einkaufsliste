@@ -58,18 +58,23 @@ async function submitAuth(e) {
     const successEl = document.getElementById('authSuccess');
     errEl.style.display = 'none';
     if (successEl) successEl.style.display = 'none';
-    const res = await fetch('/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ benutzername: user, passwort: pass })
-    });
-    if (res.ok) { currentUser = await res.json(); showApp(); if (typeof WebAuthnClient !== 'undefined') webauthnNachLoginPruefen(); }
-    else if (res.status === 403) {
-        const data = await res.json().catch(() => null);
-        errEl.innerHTML = esc(data?.error || 'Konto nicht aktiviert.') +
-            ` <a href="#" onclick="resendActivation('${esc(user).replace(/'/g, "&#39;")}');return false" style="color:var(--green-600);text-decoration:underline">Aktivierungsmail erneut senden</a>`;
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ benutzername: user, passwort: pass })
+        });
+        if (res.ok) { currentUser = await res.json(); showApp(); if (typeof WebAuthnClient !== 'undefined') webauthnNachLoginPruefen(); }
+        else if (res.status === 403) {
+            const data = await res.json().catch(() => null);
+            errEl.innerHTML = esc(data?.error || 'Konto nicht aktiviert.') +
+                ` <a href="#" onclick="resendActivation('${esc(user).replace(/'/g, "&#39;")}');return false" style="color:var(--green-600);text-decoration:underline">Aktivierungsmail erneut senden</a>`;
+            errEl.style.display = '';
+        }
+        else { errEl.innerHTML = 'Benutzername oder Passwort falsch. <a href="reset.html" style="color:var(--green-600);text-decoration:underline">Passwort vergessen?</a>'; errEl.style.display = ''; }
+    } catch (err) {
+        errEl.textContent = 'Netzwerkfehler \u2013 bitte Verbindung pr\u00FCfen und erneut versuchen.';
         errEl.style.display = '';
     }
-    else { errEl.innerHTML = 'Benutzername oder Passwort falsch. <a href="reset.html" style="color:var(--green-600);text-decoration:underline">Passwort vergessen?</a>'; errEl.style.display = ''; }
 }
 
 async function resendActivation(username) {
@@ -421,6 +426,7 @@ async function changeRolle(userId, rolle) {
 }
 
 async function leaveHaushalt() {
+    if (!confirm('Möchtest du den Haushalt wirklich verlassen?')) return;
     await fetch('/api/haushalt/leave', { method: 'POST' });
     toast('Haushalt verlassen');
     loadHaushaltSection();
