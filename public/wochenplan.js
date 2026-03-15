@@ -62,7 +62,7 @@ function getMeal(tag, mahlzeit) {
 
 function renderRecipeItem(r) {
     const escaped = esc(r.name);
-    return `<div class="rezept-item" onclick="loadDishZutaten('${esc(r.url)}','${escaped.replace(/'/g, "\\'")}')">
+    return `<div class="rezept-item" onclick="loadDishZutaten(${esc(JSON.stringify(r.url))},${esc(JSON.stringify(r.name))})">
         <i class="bi bi-journal-text" style="color:var(--green-600)"></i>
         <span>${escaped}</span>
         <a href="${esc(r.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Originalrezept öffnen" style="color:var(--gray-400);font-size:0.85rem;padding:0.2rem;flex-shrink:0"><i class="bi bi-box-arrow-up-right"></i></a>

@@ -23,6 +23,49 @@ function esc(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// -- Store Logo --
+const STORE_LOGOS = [
+    { keywords: ['migros', 'cumulus', 'melectronics'], domain: 'migros.ch' },
+    { keywords: ['coop', 'supercard', 'interdiscount', 'microspot'], domain: 'coop.ch' },
+    { keywords: ['denner'], domain: 'denner.ch' },
+    { keywords: ['lidl'], domain: 'lidl.ch' },
+    { keywords: ['aldi'], domain: 'aldi.ch' },
+    { keywords: ['spar'], domain: 'spar.ch' },
+    { keywords: ['volg'], domain: 'volg.ch' },
+    { keywords: ['otto'], domain: 'ottos.ch' },
+    { keywords: ['ikea'], domain: 'ikea.ch' },
+    { keywords: ['manor'], domain: 'manor.ch' },
+    { keywords: ['mediamarkt', 'media markt'], domain: 'mediamarkt.ch' },
+    { keywords: ['h&m', 'hm '], domain: 'hm.com' },
+    { keywords: ['zalando'], domain: 'zalando.ch' },
+    { keywords: ['galaxus', 'digitec'], domain: 'galaxus.ch' },
+    { keywords: ['fnac'], domain: 'fnac.ch' },
+    { keywords: ['ochsner'], domain: 'ochsnersport.ch' },
+    { keywords: ['dosenbach'], domain: 'dosenbach.ch' },
+    { keywords: ['fust'], domain: 'fust.ch' },
+    { keywords: ['jumbo'], domain: 'jumbo.ch' },
+    { keywords: ['obi'], domain: 'obi.ch' },
+    { keywords: ['hornbach'], domain: 'hornbach.ch' },
+];
+
+function getStoreLogo(name) {
+    const lower = name.toLowerCase();
+    for (const store of STORE_LOGOS) {
+        if (store.keywords.some(kw => lower.includes(kw))) {
+            return `https://www.google.com/s2/favicons?domain=${store.domain}&sz=32`;
+        }
+    }
+    return null;
+}
+
+function storeLogoHtml(name, size) {
+    const logo = getStoreLogo(name);
+    if (logo) {
+        return `<img src="${esc(logo)}" alt="" style="width:${size}px;height:${size}px;border-radius:4px;flex-shrink:0" onerror="this.style.display='none';this.nextElementSibling.style.display=''"><i class="bi bi-credit-card" style="color:var(--green-600);font-size:${size > 24 ? '1.5rem' : '1.2rem'};flex-shrink:0;display:none"></i>`;
+    }
+    return `<i class="bi bi-credit-card" style="color:var(--green-600);font-size:${size > 24 ? '1.5rem' : '1.2rem'};flex-shrink:0"></i>`;
+}
+
 function renderKarten() {
     const grid = document.getElementById('kartenGrid');
     const empty = document.getElementById('kartenEmpty');
@@ -35,45 +78,51 @@ function renderKarten() {
 
     empty.style.display = 'none';
     grid.innerHTML = karten.map(k => `
-        <div class="tile">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
-                <div style="display:flex;align-items:center;gap:0.4rem;font-weight:700;font-size:0.95rem;color:var(--gray-800)">
-                    <i class="bi bi-credit-card" style="color:var(--green-600)"></i>
-                    ${esc(k.name)}
-                </div>
-                <div style="display:flex;gap:0.25rem">
-                    <button class="btn-icon" onclick="openEditKarte(${k.id})" title="Bearbeiten"><i class="bi bi-pencil"></i></button>
-                    <button class="btn-icon" onclick="openDeleteConfirm(${k.id})" title="Löschen" style="color:var(--red-500)"><i class="bi bi-trash"></i></button>
-                </div>
+        <div class="tile" style="cursor:pointer;display:flex;align-items:center;gap:0.6rem;padding:0.75rem 1rem" onclick="showBarcode(${k.id})">
+            ${storeLogoHtml(k.name, 24)}
+            <span style="font-weight:700;font-size:0.95rem;color:var(--gray-800);flex:1">${esc(k.name)}</span>
+            <div style="display:flex;gap:0.25rem;flex-shrink:0" onclick="event.stopPropagation()">
+                <button class="btn-icon" onclick="openEditKarte(${k.id})" title="Bearbeiten"><i class="bi bi-pencil"></i></button>
+                <button class="btn-icon" onclick="openDeleteConfirm(${k.id})" title="Löschen" style="color:var(--red-500)"><i class="bi bi-trash"></i></button>
             </div>
-            <div style="text-align:center;margin:0.5rem 0">
-                <svg id="barcode-${k.id}"></svg>
-            </div>
-            <div style="font-size:1.1rem;font-weight:700;letter-spacing:0.08em;color:var(--gray-700);font-family:monospace;word-break:break-all;text-align:center;margin-bottom:0.25rem">
-                ${esc(k.kartennummer)}
-            </div>
-            ${k.notiz ? '<div style="font-size:0.78rem;color:var(--gray-400)">' + esc(k.notiz) + '</div>' : ''}
         </div>
     `).join('');
+}
 
-    // Generate barcodes
-    karten.forEach(k => {
-        try {
-            const cleanNum = k.kartennummer.replace(/\s/g, '');
-            JsBarcode(`#barcode-${k.id}`, cleanNum, {
-                format: 'CODE128',
-                width: 1.5,
-                height: 50,
-                displayValue: false,
-                margin: 0,
-                background: 'transparent'
-            });
-        } catch (e) {
-            // If barcode generation fails, hide the SVG
-            const svg = document.getElementById(`barcode-${k.id}`);
-            if (svg) svg.style.display = 'none';
-        }
-    });
+// -- Barcode Fullscreen Overlay --
+function showBarcode(id) {
+    const k = karten.find(x => x.id === id);
+    if (!k) return;
+    const overlay = document.getElementById('barcodeOverlay');
+    document.getElementById('barcodeKarteLogo').innerHTML = storeLogoHtml(k.name, 40);
+    document.getElementById('barcodeKarteName').textContent = k.name;
+    document.getElementById('barcodeKarteNummer').textContent = k.kartennummer;
+    const notizEl = document.getElementById('barcodeKarteNotiz');
+    notizEl.textContent = k.notiz || '';
+    notizEl.style.display = k.notiz ? '' : 'none';
+
+    // Generate barcode
+    const svg = document.getElementById('barcodeDisplay');
+    svg.style.display = '';
+    try {
+        const cleanNum = k.kartennummer.replace(/\s/g, '');
+        JsBarcode('#barcodeDisplay', cleanNum, {
+            format: 'CODE128',
+            width: 2,
+            height: 80,
+            displayValue: false,
+            margin: 0,
+            background: '#ffffff'
+        });
+    } catch (e) {
+        svg.style.display = 'none';
+    }
+
+    overlay.classList.add('active');
+}
+
+function closeBarcodeOverlay() {
+    document.getElementById('barcodeOverlay').classList.remove('active');
 }
 
 function openAddKarte() {
@@ -131,7 +180,7 @@ function startScan() {
             toast('Barcode erkannt: ' + decodedText);
             stopScan();
         },
-        () => {} // ignore scan errors
+        () => {}
     ).catch(err => {
         console.error('Scanner Fehler:', err);
         container.style.display = 'none';
@@ -205,7 +254,7 @@ async function confirmDelete() {
 
 // Keyboard
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeKarteModal(); closeDeleteConfirm(); }
+    if (e.key === 'Escape') { closeBarcodeOverlay(); closeKarteModal(); closeDeleteConfirm(); }
 });
 
 if (!_redirecting) checkAuth(showApp);

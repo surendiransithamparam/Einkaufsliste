@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Haushalt+">
-    <title>Kundenkarten — HaushaltPLUS</title>
+    <title>Haushalt+</title>
 
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192.svg">
@@ -85,6 +85,22 @@
     </button>
 
 </div>
+</div>
+
+<!-- Barcode Fullscreen Overlay -->
+<div class="modal-overlay" id="barcodeOverlay" onclick="if(event.target===this)closeBarcodeOverlay()" style="background:rgba(0,0,0,0.85)">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:2rem;text-align:center">
+        <div id="barcodeKarteLogo" style="margin-bottom:0.75rem"></div>
+        <div style="font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:0.5rem" id="barcodeKarteName"></div>
+        <div id="barcodeKarteNotiz" style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:1.5rem"></div>
+        <div style="background:#fff;border-radius:12px;padding:1.5rem 2rem;margin-bottom:1rem">
+            <svg id="barcodeDisplay"></svg>
+        </div>
+        <div style="font-size:1.3rem;font-weight:700;letter-spacing:0.1em;color:#fff;font-family:monospace;margin-bottom:2rem" id="barcodeKarteNummer"></div>
+        <button class="btn btn-secondary" onclick="closeBarcodeOverlay()" style="color:#fff;border-color:rgba(255,255,255,0.3)">
+            <i class="bi bi-x-lg"></i> Schliessen
+        </button>
+    </div>
 </div>
 
 <!-- Modal: Karte hinzufügen/bearbeiten -->
