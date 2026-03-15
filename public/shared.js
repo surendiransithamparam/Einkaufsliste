@@ -34,7 +34,7 @@ async function checkAuth(onSuccess) {
 }
 
 function showLogin() {
-    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('loginScreen').classList.add('visible');
     document.getElementById('appContent').classList.add('hidden');
     const sidebar = document.getElementById('sidebar');
     if (sidebar) sidebar.classList.add('hidden');
@@ -42,7 +42,7 @@ function showLogin() {
 }
 
 function showAppBase() {
-    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('visible');
     document.getElementById('appContent').classList.remove('hidden');
     const sidebar = document.getElementById('sidebar');
     if (sidebar) sidebar.classList.remove('hidden');

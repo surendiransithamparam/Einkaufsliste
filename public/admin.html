@@ -28,10 +28,11 @@
 <body>
 
 <nav class="navbar">
-    <div class="navbar-left"></div>
-    <div class="navbar-brand">
-        <i class="bi bi-shield-lock"></i>
-        <span>Admin</span>
+    <div class="navbar-left">
+        <a href="index.html" class="btn-nav btn-nav-icon" title="Startseite" aria-label="Startseite"><i class="bi bi-house-door-fill"></i></a>
+    </div>
+    <div class="navbar-center">
+        <span class="navbar-brand">HaushaltPLUS</span>
     </div>
     <div class="navbar-right">
         <div class="nav-dropdown" id="navDropdown">
@@ -52,6 +53,21 @@
         </div>
     </div>
 </nav>
+
+<aside class="sidebar hidden" id="sidebar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menü ein-/ausblenden" aria-label="Menü">
+        <i class="bi bi-list"></i>
+    </button>
+    <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link"><i class="bi bi-cart3"></i> <span>Einkauf</span></a>
+        <a href="wochenplan.html" class="sidebar-link"><i class="bi bi-calendar-week"></i> <span>Woche</span></a>
+        <a href="rezepte.html" class="sidebar-link"><i class="bi bi-book"></i> <span>Rezepte</span></a>
+        <a href="tankrabatte.html" class="sidebar-link"><i class="bi bi-tag"></i> <span>Aktionen</span></a>
+        <a href="kundenkarten.html" class="sidebar-link"><i class="bi bi-credit-card"></i> <span>Karten</span></a>
+        <a href="profil.html" class="sidebar-link"><i class="bi bi-person"></i> <span>Profil</span></a>
+        <a href="admin.html" class="sidebar-link active"><i class="bi bi-shield-lock"></i> <span>Admin</span></a>
+    </nav>
+</aside>
 
 <div id="appContent" class="app-content hidden">
 <div class="container">
@@ -234,8 +250,9 @@ async function checkAuth() {
 }
 
 function showApp() {
-    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('visible');
     document.getElementById('appContent').classList.remove('hidden');
+    document.getElementById('sidebar').classList.remove('hidden');
     document.getElementById('logoutBtn').style.display = '';
     loadUsers();
     loadHaushalte();
@@ -244,8 +261,9 @@ function showApp() {
 }
 
 function showLogin() {
-    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('loginScreen').classList.add('visible');
     document.getElementById('appContent').classList.add('hidden');
+    document.getElementById('sidebar').classList.add('hidden');
 }
 
 async function submitAuth(e) {
@@ -660,9 +678,10 @@ async function resetKkLogo() {
     }
 }
 
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('expanded'); }
 function toggleNavDropdown(e) { e.stopPropagation(); document.getElementById('navDropdownMenu').classList.toggle('open'); }
 function closeNavDropdown() { document.getElementById('navDropdownMenu').classList.remove('open'); }
-document.addEventListener('click', () => closeNavDropdown());
+document.addEventListener('click', (e) => { closeNavDropdown(); const sb = document.getElementById('sidebar'); if (sb && sb.classList.contains('expanded') && !sb.contains(e.target)) sb.classList.remove('expanded'); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeResetPw(); closeHaushaltDetail(); closeKkLogoModal(); closeBugReport(); } });
 
 checkAuth();
