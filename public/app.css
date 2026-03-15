@@ -690,12 +690,12 @@ input:focus, select:focus {
     inset: 0;
     background: var(--gray-100);
     z-index: 500;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 1rem;
 }
-.login-screen.hidden { display: none; }
+.login-screen.visible { display: flex; }
 .login-card {
     background: var(--surface);
     border-radius: var(--radius);

@@ -234,7 +234,7 @@ async function checkAuth() {
 }
 
 function showApp() {
-    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('visible');
     document.getElementById('appContent').classList.remove('hidden');
     document.getElementById('logoutBtn').style.display = '';
     loadUsers();
@@ -244,7 +244,7 @@ function showApp() {
 }
 
 function showLogin() {
-    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('loginScreen').classList.add('visible');
     document.getElementById('appContent').classList.add('hidden');
 }
 
