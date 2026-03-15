@@ -140,7 +140,10 @@
         </table>
     </div>
 
-    <h2 style="font-size:1.1rem;margin:1.5rem 0 1rem;color:var(--gray-700)"><i class="bi bi-credit-card"></i> Kundenkarten-Logos</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:1.5rem 0 1rem">
+        <h2 style="font-size:1.1rem;margin:0;color:var(--gray-700)"><i class="bi bi-credit-card"></i> Kundenkarten-Logos</h2>
+        <button class="btn btn-primary btn-sm" onclick="addKkLogo()"><i class="bi bi-plus-lg"></i> Neuer Laden</button>
+    </div>
     <div id="kkLogosEmpty" style="display:none;text-align:center;padding:1rem;color:var(--gray-400);font-size:0.85rem">
         Keine Kundenkarten vorhanden.
     </div>
@@ -675,6 +678,23 @@ async function resetKkLogo() {
         loadKkLogos();
     } else {
         toast('Fehler beim Zurücksetzen');
+    }
+}
+
+async function addKkLogo() {
+    const storeName = prompt('Name des Ladens (z.B. "Migros"):');
+    if (!storeName || !storeName.trim()) return;
+    const logoUrl = prompt('Logo-URL (optional, leer lassen für automatisch):');
+    const res = await fetch('/api/admin/kundenkarten-logos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeName: storeName.trim(), logoUrl: logoUrl?.trim() || null })
+    });
+    if (res.ok) {
+        toast('Logo-Eintrag erstellt');
+        loadKkLogos();
+    } else {
+        toast('Fehler beim Erstellen', true);
     }
 }
 

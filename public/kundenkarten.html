@@ -71,6 +71,12 @@
         <i class="bi bi-credit-card" style="color:var(--green-600)"></i> Kundenkarten
     </h2>
 
+    <div id="kartenFilterCard" style="display:none;margin-bottom:0.75rem">
+        <div class="filter-bar">
+            <input type="text" id="kartenSearch" placeholder="Karte suchen…" oninput="renderKarten()">
+        </div>
+    </div>
+
     <div id="kartenGrid" class="tile-grid"></div>
 
     <div id="kartenEmpty" style="display:none;text-align:center;padding:2rem 1rem;color:var(--gray-400)">
@@ -119,7 +125,7 @@
             <div style="margin-bottom:0.75rem">
                 <label for="karteNummer">Kartennummer</label>
                 <div style="display:flex;gap:0.5rem">
-                    <input type="text" id="karteNummer" placeholder="z.B. 76 1234 5678 9" maxlength="500" style="flex:1">
+                    <input type="text" id="karteNummer" placeholder="z.B. 76 1234 5678 9" maxlength="500" style="flex:1" oninput="previewKarteValidation()">
                     <button class="btn btn-secondary btn-icon" onclick="startScan()" title="Barcode scannen" style="width:44px;height:44px;flex-shrink:0">
                         <i class="bi bi-upc-scan"></i>
                     </button>
@@ -130,6 +136,9 @@
                         <i class="bi bi-x-lg"></i> Scanner schliessen
                     </button>
                 </div>
+            </div>
+            <div id="karteNummerWarning" style="display:none;color:var(--yellow-600,#ca8a04);font-size:0.75rem;font-weight:500;margin-top:0.25rem;margin-bottom:0.5rem">
+                <i class="bi bi-exclamation-triangle"></i> <span id="karteNummerWarningText"></span>
             </div>
             <div style="margin-bottom:1rem">
                 <label for="karteNotiz">Notiz (optional)</label>
