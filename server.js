@@ -1138,6 +1138,12 @@ app.post('/api/webauthn/register-verify', requireAuth, async (req, res) => {
 
     const { credential } = verification.registrationInfo;
 
+    if (!credential || !credential.publicKey) {
+      console.error('WebAuthn register-verify: credential oder publicKey fehlt', verification.registrationInfo);
+      delete req.session.webauthnChallenge;
+      return res.status(400).json({ error: 'Registrierung fehlgeschlagen: Credential-Daten unvollständig.' });
+    }
+
     const db = await getPool();
     await db.request()
       .input('benutzerId', sql.Int, req.session.userId)

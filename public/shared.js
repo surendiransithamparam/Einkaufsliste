@@ -601,18 +601,23 @@ async function webauthnPromptAnnehmen() {
     return;
   }
   errorEl.style.display = 'none';
+  const btns = document.querySelectorAll('#webauthnPromptOverlay button');
+  btns.forEach(b => b.disabled = true);
   try {
     await WebAuthnClient.starteRegistrierung(geraetename);
     WebAuthnClient.markiereRegistriert(currentUser.benutzername);
     document.getElementById('webauthnPromptOverlay').style.display = 'none';
-    alert('Biometrische Anmeldung erfolgreich eingerichtet!');
+    toast('Biometrische Anmeldung erfolgreich eingerichtet!');
   } catch (e) {
-    if (e.name === 'NotAllowedError') {
+    console.error('WebAuthn Prompt Registrierung Fehler:', e);
+    if (e.name === 'NotAllowedError' || e.code === 'ERROR_CEREMONY_ABORTED') {
       errorEl.textContent = 'Einrichtung abgebrochen. Du kannst es jederzeit im Profil erneut versuchen.';
     } else {
       errorEl.textContent = e.message || 'Einrichtung fehlgeschlagen.';
     }
     errorEl.style.display = '';
+  } finally {
+    btns.forEach(b => b.disabled = false);
   }
 }
 
@@ -675,14 +680,21 @@ async function webauthnGeraetEntfernen(id, name) {
 async function webauthnNeuesGeraet() {
   const name = prompt('Gerätename:');
   if (!name || !name.trim()) return;
+  const btn = document.querySelector('#webauthnGeraeteSection button');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Warte auf Biometrie…'; }
   try {
     await WebAuthnClient.starteRegistrierung(name.trim());
     WebAuthnClient.markiereRegistriert(currentUser.benutzername);
     webauthnLadeGeraeteProfil();
-    alert('Gerät erfolgreich registriert!');
+    toast('Gerät erfolgreich registriert!');
   } catch (e) {
-    if (e.name !== 'NotAllowedError') {
-      alert(e.message || 'Registrierung fehlgeschlagen.');
+    console.error('WebAuthn Registrierung Fehler:', e);
+    if (e.name === 'NotAllowedError' || e.code === 'ERROR_CEREMONY_ABORTED') {
+      toast('Einrichtung abgebrochen.', true);
+    } else {
+      toast(e.message || 'Registrierung fehlgeschlagen.', true);
     }
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-plus-circle"></i> Neues Gerät hinzufügen'; }
   }
 }
