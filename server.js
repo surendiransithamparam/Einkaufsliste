@@ -2170,6 +2170,73 @@ app.delete('/api/admin/laden/:id', requireAuth, async (req, res) => {
   }
 });
 
+// ==================== KUNDENKARTEN-LOGOS ADMIN ENDPOINTS ====================
+
+// Public endpoint: all logo overrides as map (for kundenkarten.js)
+app.get('/api/kundenkarten-logos', requireAuth, async (req, res) => {
+  try {
+    const db = await getPool();
+    const result = await db.request()
+      .query('SELECT StoreName, LogoUrl FROM KundenkartenLogo WHERE LogoUrl IS NOT NULL');
+    const map = {};
+    for (const r of result.recordset) {
+      map[r.StoreName.toLowerCase()] = r.LogoUrl;
+    }
+    res.json(map);
+  } catch (err) {
+    console.error('kundenkarten-logos get error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
+// Admin: list all unique store names from Kundenkarte with optional logo override
+app.get('/api/admin/kundenkarten-logos', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await isAdmin(userId, db)) return res.status(403).json({});
+    const result = await db.request()
+      .query(`SELECT DISTINCT k.Name AS storeName, l.LogoUrl AS logoUrl
+              FROM Kundenkarte k
+              LEFT JOIN KundenkartenLogo l ON LOWER(k.Name) = LOWER(l.StoreName)
+              ORDER BY k.Name`);
+    res.json(result.recordset.map(r => ({ storeName: r.storeName, logoUrl: r.logoUrl || null })));
+  } catch (err) {
+    console.error('admin kundenkarten-logos get error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
+// Admin: set/update logo URL for a store name (upsert)
+app.put('/api/admin/kundenkarten-logos', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await isAdmin(userId, db)) return res.status(403).json({});
+    const storeName = (req.body.storeName || '').trim();
+    const logoUrl = (req.body.logoUrl || '').trim() || null;
+    if (!storeName) return res.status(400).json({ error: 'StoreName erforderlich.' });
+    const existing = await db.request()
+      .input('name', sql.NVarChar, storeName)
+      .query('SELECT Id FROM KundenkartenLogo WHERE LOWER(StoreName)=LOWER(@name)');
+    if (existing.recordset.length > 0) {
+      await db.request()
+        .input('name', sql.NVarChar, storeName)
+        .input('url', sql.NVarChar, logoUrl)
+        .query('UPDATE KundenkartenLogo SET LogoUrl=@url WHERE LOWER(StoreName)=LOWER(@name)');
+    } else {
+      await db.request()
+        .input('name', sql.NVarChar, storeName)
+        .input('url', sql.NVarChar, logoUrl)
+        .query('INSERT INTO KundenkartenLogo (StoreName, LogoUrl) VALUES (@name, @url)');
+    }
+    res.json({});
+  } catch (err) {
+    console.error('admin kundenkarten-logos put error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
 // ==================== GERICHTE ENDPOINTS ====================
 
 app.get('/api/gerichte', requireAuth, async (req, res) => {
@@ -3009,6 +3076,14 @@ async function startup() {
           HaushaltId INT NULL,
           ErstelltAm DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
           FOREIGN KEY (BenutzerId) REFERENCES Benutzer(Id)
+      )`);
+
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name='KundenkartenLogo')
+      CREATE TABLE KundenkartenLogo (
+          Id INT IDENTITY(1,1) PRIMARY KEY,
+          StoreName NVARCHAR(200) NOT NULL UNIQUE,
+          LogoUrl NVARCHAR(1000) NULL
       )`);
 
     // Ensure HaushaltRolle column on Benutzer (for existing databases)
