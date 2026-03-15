@@ -2196,10 +2196,15 @@ app.get('/api/admin/kundenkarten-logos', requireAuth, async (req, res) => {
     const db = await getPool();
     if (!await isAdmin(userId, db)) return res.status(403).json({});
     const result = await db.request()
-      .query(`SELECT DISTINCT k.Name AS storeName, l.LogoUrl AS logoUrl
-              FROM Kundenkarte k
-              LEFT JOIN KundenkartenLogo l ON LOWER(k.Name) = LOWER(l.StoreName)
-              ORDER BY k.Name`);
+      .query(`SELECT storeName, logoUrl FROM (
+                SELECT DISTINCT k.Name AS storeName, l.LogoUrl AS logoUrl
+                FROM Kundenkarte k
+                LEFT JOIN KundenkartenLogo l ON LOWER(k.Name) = LOWER(l.StoreName)
+                UNION
+                SELECT l2.StoreName AS storeName, l2.LogoUrl AS logoUrl
+                FROM KundenkartenLogo l2
+                WHERE NOT EXISTS (SELECT 1 FROM Kundenkarte k2 WHERE LOWER(k2.Name) = LOWER(l2.StoreName))
+              ) AS combined ORDER BY storeName`);
     res.json(result.recordset.map(r => ({ storeName: r.storeName, logoUrl: r.logoUrl || null })));
   } catch (err) {
     console.error('admin kundenkarten-logos get error:', err);
