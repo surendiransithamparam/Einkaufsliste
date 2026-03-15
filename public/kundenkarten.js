@@ -76,7 +76,10 @@ function renderKarten() {
     grid.innerHTML = karten.map(k => `
         <div class="tile" style="cursor:pointer;display:flex;align-items:center;gap:0.6rem;padding:0.75rem 1rem" onclick="showBarcode(${k.id})">
             ${storeLogoHtml(k.name, 24)}
-            <span style="font-weight:700;font-size:0.95rem;color:var(--gray-800);flex:1">${esc(k.name)}</span>
+            <div style="flex:1;min-width:0">
+                <span style="font-weight:700;font-size:0.95rem;color:var(--gray-800);display:block">${esc(k.name)}</span>
+                ${k.notiz ? `<span style="font-size:0.75rem;color:var(--gray-400);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.notiz)}</span>` : ''}
+            </div>
             <div style="display:flex;gap:0.25rem;flex-shrink:0" onclick="event.stopPropagation()">
                 <button class="btn-icon" onclick="openEditKarte(${k.id})" title="Bearbeiten"><i class="bi bi-pencil"></i></button>
                 <button class="btn-icon" onclick="openDeleteConfirm(${k.id})" title="Löschen" style="color:var(--red-500)"><i class="bi bi-trash"></i></button>
