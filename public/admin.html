@@ -123,7 +123,50 @@
             <tbody id="ladenTableBody"></tbody>
         </table>
     </div>
+
+    <h2 style="font-size:1.1rem;margin:1.5rem 0 1rem;color:var(--gray-700)"><i class="bi bi-credit-card"></i> Kundenkarten-Logos</h2>
+    <div id="kkLogosEmpty" style="display:none;text-align:center;padding:1rem;color:var(--gray-400);font-size:0.85rem">
+        Keine Kundenkarten vorhanden.
+    </div>
+    <div class="table-wrap" id="kkLogosTableWrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Logo</th>
+                    <th>Store-Name</th>
+                    <th>Quelle</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="kkLogosTableBody"></tbody>
+        </table>
+    </div>
 </div>
+</div>
+
+<!-- Modal: Kundenkarten-Logo bearbeiten -->
+<div class="modal-overlay" id="kkLogoOverlay" onclick="if(event.target===this)closeKkLogoModal()">
+    <div class="modal" style="max-width:420px">
+        <div class="modal-header">
+            <h2><i class="bi bi-image"></i> Logo bearbeiten</h2>
+            <button class="modal-close" onclick="closeKkLogoModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:0.75rem">Logo für <strong id="kkLogoStoreName"></strong></p>
+            <div style="text-align:center;margin-bottom:1rem">
+                <img id="kkLogoPreview" src="" alt="Logo Vorschau" style="width:64px;height:64px;border-radius:8px;border:1px solid var(--gray-200);object-fit:contain;background:#fff" onerror="this.src='';this.alt='Kein Bild'">
+            </div>
+            <div style="margin-bottom:0.75rem">
+                <label for="kkLogoUrlInput">Logo-URL</label>
+                <input type="url" id="kkLogoUrlInput" placeholder="https://example.com/logo.png" oninput="previewKkLogo()">
+            </div>
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="resetKkLogo()" title="Auf Favicon zurücksetzen"><i class="bi bi-arrow-counterclockwise"></i> Zurücksetzen</button>
+                <button class="btn btn-secondary" onclick="closeKkLogoModal()">Abbrechen</button>
+                <button class="btn btn-primary" onclick="saveKkLogo()"><i class="bi bi-check-lg"></i> Speichern</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal: Passwort zurücksetzen -->
@@ -197,6 +240,7 @@ function showApp() {
     loadUsers();
     loadHaushalte();
     loadLaden();
+    loadKkLogos();
 }
 
 function showLogin() {
@@ -479,10 +523,147 @@ async function deleteLaden(id, name) {
     else { const d = await res.json().catch(()=>null); toast(d?.error || 'Fehler'); }
 }
 
+// -- Kundenkarten-Logos --
+const STORE_LOGOS = [
+    { keywords: ['migros', 'cumulus', 'melectronics'], domain: 'migros.ch' },
+    { keywords: ['coop', 'supercard', 'interdiscount', 'microspot'], domain: 'coop.ch' },
+    { keywords: ['denner'], domain: 'denner.ch' },
+    { keywords: ['lidl'], domain: 'lidl.ch' },
+    { keywords: ['aldi'], domain: 'aldi.ch' },
+    { keywords: ['spar'], domain: 'spar.ch' },
+    { keywords: ['volg'], domain: 'volg.ch' },
+    { keywords: ['otto'], domain: 'ottos.ch' },
+    { keywords: ['ikea'], domain: 'ikea.ch' },
+    { keywords: ['manor'], domain: 'manor.ch' },
+    { keywords: ['mediamarkt', 'media markt'], domain: 'mediamarkt.ch' },
+    { keywords: ['h&m', 'hm '], domain: 'hm.com' },
+    { keywords: ['zalando'], domain: 'zalando.ch' },
+    { keywords: ['galaxus', 'digitec'], domain: 'galaxus.ch' },
+    { keywords: ['fnac'], domain: 'fnac.ch' },
+    { keywords: ['ochsner'], domain: 'ochsnersport.ch' },
+    { keywords: ['dosenbach'], domain: 'dosenbach.ch' },
+    { keywords: ['fust'], domain: 'fust.ch' },
+    { keywords: ['jumbo'], domain: 'jumbo.ch' },
+    { keywords: ['obi'], domain: 'obi.ch' },
+    { keywords: ['hornbach'], domain: 'hornbach.ch' },
+];
+
+function getFaviconUrl(name) {
+    const lower = name.toLowerCase();
+    for (const store of STORE_LOGOS) {
+        if (store.keywords.some(kw => lower.includes(kw))) {
+            return `https://www.google.com/s2/favicons?domain=${store.domain}&sz=32`;
+        }
+    }
+    return null;
+}
+
+let kkLogos = [];
+let kkLogoEditStore = null;
+
+async function loadKkLogos() {
+    const res = await fetch('/api/admin/kundenkarten-logos');
+    if (!res.ok) return;
+    kkLogos = await res.json();
+    renderKkLogos();
+}
+
+function getLogoSrc(item) {
+    if (item.logoUrl) return item.logoUrl;
+    return getFaviconUrl(item.storeName);
+}
+
+function renderKkLogos() {
+    const tbody = document.getElementById('kkLogosTableBody');
+    const empty = document.getElementById('kkLogosEmpty');
+    const wrap = document.getElementById('kkLogosTableWrap');
+    if (kkLogos.length === 0) {
+        empty.style.display = '';
+        wrap.style.display = 'none';
+        return;
+    }
+    empty.style.display = 'none';
+    wrap.style.display = '';
+    tbody.innerHTML = kkLogos.map(item => {
+        const src = getLogoSrc(item);
+        const logoHtml = src
+            ? `<img src="${esc(src)}" alt="" style="width:24px;height:24px;border-radius:4px;object-fit:contain;background:#fff" onerror="this.style.display='none'">`
+            : '<i class="bi bi-credit-card" style="color:var(--green-600)"></i>';
+        const sourceLabel = item.logoUrl
+            ? '<span class="badge badge-blue">Benutzerdefiniert</span>'
+            : (getFaviconUrl(item.storeName) ? '<span class="badge badge-green">Favicon</span>' : '<span class="badge badge-red">Kein Logo</span>');
+        return `<tr>
+            <td style="width:40px;text-align:center">${logoHtml}</td>
+            <td><strong>${esc(item.storeName)}</strong></td>
+            <td>${sourceLabel}</td>
+            <td>
+                <div class="admin-actions">
+                    <button onclick="openKkLogoModal('${esc(item.storeName).replace(/'/g,"\\'")}')" title="Logo bearbeiten"><i class="bi bi-pencil"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function openKkLogoModal(storeName) {
+    kkLogoEditStore = storeName;
+    document.getElementById('kkLogoStoreName').textContent = storeName;
+    const item = kkLogos.find(i => i.storeName === storeName);
+    const currentUrl = item?.logoUrl || '';
+    document.getElementById('kkLogoUrlInput').value = currentUrl;
+    const src = currentUrl || getFaviconUrl(storeName) || '';
+    const img = document.getElementById('kkLogoPreview');
+    img.src = src;
+    img.alt = src ? 'Logo Vorschau' : 'Kein Bild';
+    document.getElementById('kkLogoOverlay').classList.add('active');
+}
+
+function closeKkLogoModal() {
+    document.getElementById('kkLogoOverlay').classList.remove('active');
+    kkLogoEditStore = null;
+}
+
+function previewKkLogo() {
+    const url = document.getElementById('kkLogoUrlInput').value.trim();
+    const img = document.getElementById('kkLogoPreview');
+    img.src = url || getFaviconUrl(kkLogoEditStore) || '';
+}
+
+async function saveKkLogo() {
+    const logoUrl = document.getElementById('kkLogoUrlInput').value.trim() || null;
+    const res = await fetch('/api/admin/kundenkarten-logos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeName: kkLogoEditStore, logoUrl })
+    });
+    if (res.ok) {
+        toast('Logo gespeichert');
+        closeKkLogoModal();
+        loadKkLogos();
+    } else {
+        toast('Fehler beim Speichern');
+    }
+}
+
+async function resetKkLogo() {
+    const res = await fetch('/api/admin/kundenkarten-logos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeName: kkLogoEditStore, logoUrl: null })
+    });
+    if (res.ok) {
+        toast('Logo zurückgesetzt');
+        closeKkLogoModal();
+        loadKkLogos();
+    } else {
+        toast('Fehler beim Zurücksetzen');
+    }
+}
+
 function toggleNavDropdown(e) { e.stopPropagation(); document.getElementById('navDropdownMenu').classList.toggle('open'); }
 function closeNavDropdown() { document.getElementById('navDropdownMenu').classList.remove('open'); }
 document.addEventListener('click', () => closeNavDropdown());
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeResetPw(); closeHaushaltDetail(); closeBugReport(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeResetPw(); closeHaushaltDetail(); closeKkLogoModal(); closeBugReport(); } });
 
 checkAuth();
 
