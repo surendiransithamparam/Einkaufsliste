@@ -3,7 +3,7 @@
 function ensureBugReportModal() {
     if (document.getElementById('bugReportOverlay')) return;
     const div = document.createElement('div');
-    div.innerHTML = `<div class="modal-overlay" id="bugReportOverlay" onclick="if(event.target===this)closeBugReport()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;justify-content:center;align-items:flex-end;padding:0">
+    div.innerHTML = `<div class="modal-overlay" id="bugReportOverlay" onclick="if(event.target===this)closeBugReport()" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;justify-content:center;align-items:flex-end;padding:0">
     <div style="background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:500px;margin:0 auto;max-height:90dvh;overflow-y:auto;padding:1.25rem;animation:slideUp .25s ease">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
             <h2 style="font-size:1.1rem;margin:0;display:flex;align-items:center;gap:0.5rem;color:var(--gray-800)"><i class="bi bi-bug" style="color:var(--green-600)"></i> Bug melden</h2>
@@ -44,13 +44,13 @@ function openBugReport() {
     document.getElementById('bugError').style.display = 'none';
     document.getElementById('bugSubmitBtn').disabled = false;
     document.getElementById('bugSubmitBtn').innerHTML = '<i class="bi bi-send"></i> Absenden';
-    document.getElementById('bugReportOverlay').style.display = 'flex';
+    document.getElementById('bugReportOverlay').classList.add('active');
     setTimeout(() => document.getElementById('bugTitel').focus(), 200);
 }
 
 function closeBugReport() {
     const overlay = document.getElementById('bugReportOverlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) overlay.classList.remove('active');
 }
 
 async function submitBugReport(e) {

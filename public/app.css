@@ -1,4 +1,5 @@
 :root {
+    /* Note: --green-* variables are the primary brand color (blue), kept for backwards compatibility */
     --green-600: #3b82f6;
     --green-700: #2563eb;
     --green-50: rgba(59,130,246,0.08);

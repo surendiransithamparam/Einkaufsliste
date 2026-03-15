@@ -72,6 +72,25 @@ function isRateLimited(req, prefix, maxRequests = 10, windowSeconds = 60) {
   return entry.count > maxRequests;
 }
 
+// Periodic cleanup of expired rate limit entries (every 10 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore) {
+    if (entry.window < now) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
+
+// --- Password Validation ---
+function validatePassword(pass) {
+  if (pass.length < 8) return 'Passwort muss mindestens 8 Zeichen haben.';
+  if (!/[A-Z]/.test(pass)) return 'Passwort muss mindestens einen Grossbuchstaben enthalten.';
+  if (!/[a-z]/.test(pass)) return 'Passwort muss mindestens einen Kleinbuchstaben enthalten.';
+  if (!/[^A-Za-z0-9]/.test(pass)) return 'Passwort muss mindestens ein Sonderzeichen enthalten.';
+  return null;
+}
+
 // --- Password Helpers ---
 function hashPassword(password) {
   const salt = crypto.randomBytes(16);
@@ -185,6 +204,8 @@ async function deleteHaushaltCascade(hid, db) {
     .query('UPDATE Artikel SET HaushaltId=NULL WHERE HaushaltId=@hid');
   await db.request().input('hid', sql.Int, hid)
     .query('DELETE FROM Favorit WHERE HaushaltId=@hid');
+  await db.request().input('hid', sql.Int, hid)
+    .query('DELETE FROM Kundenkarte WHERE HaushaltId=@hid');
   await db.request().input('hid', sql.Int, hid)
     .query('DELETE FROM Haushalt WHERE Id=@hid');
 }
@@ -474,7 +495,7 @@ function parseZutat(text, list) {
 class MssqlStore extends session.Store {
   async get(sid, cb) {
     try {
-      const pool = await sql.connect(config.sql);
+      const pool = await getPool();
       const result = await pool.request()
         .input('sid', sql.NVarChar, sid)
         .query('SELECT sess FROM Sessions WHERE sid=@sid AND expire > GETUTCDATE()');
@@ -484,7 +505,7 @@ class MssqlStore extends session.Store {
   }
   async set(sid, sess, cb) {
     try {
-      const pool = await sql.connect(config.sql);
+      const pool = await getPool();
       const maxAge = (sess.cookie && sess.cookie.maxAge) || 86400000;
       const expire = new Date(Date.now() + maxAge);
       await pool.request()
@@ -499,7 +520,7 @@ class MssqlStore extends session.Store {
   }
   async destroy(sid, cb) {
     try {
-      const pool = await sql.connect(config.sql);
+      const pool = await getPool();
       await pool.request().input('sid', sql.NVarChar, sid)
         .query('DELETE FROM Sessions WHERE sid=@sid');
       cb(null);
@@ -507,7 +528,7 @@ class MssqlStore extends session.Store {
   }
   async touch(sid, sess, cb) {
     try {
-      const pool = await sql.connect(config.sql);
+      const pool = await getPool();
       const maxAge = (sess.cookie && sess.cookie.maxAge) || 86400000;
       const expire = new Date(Date.now() + maxAge);
       await pool.request()
@@ -520,7 +541,7 @@ class MssqlStore extends session.Store {
   startCleanup() {
     setInterval(async () => {
       try {
-        const pool = await sql.connect(config.sql);
+        const pool = await getPool();
         await pool.request().query('DELETE FROM Sessions WHERE expire < GETUTCDATE()');
       } catch (e) { /* ignore cleanup errors */ }
     }, 15 * 60 * 1000); // every 15 minutes
@@ -632,10 +653,8 @@ app.post('/api/auth/register', async (req, res) => {
     const emailAddr = (email || '').trim();
 
     if (username.length < 2) return res.status(400).json({ error: 'Benutzername muss mindestens 2 Zeichen haben.' });
-    if (password.length < 8) return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben.' });
-    if (!/[A-Z]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens einen Grossbuchstaben enthalten.' });
-    if (!/[a-z]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens einen Kleinbuchstaben enthalten.' });
-    if (!/[^A-Za-z0-9]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens ein Sonderzeichen enthalten.' });
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ error: pwError });
     if (emailAddr.length < 5 || !emailAddr.includes('@')) return res.status(400).json({ error: 'Bitte eine gültige E-Mail-Adresse eingeben.' });
 
     const db = await getPool();
@@ -830,10 +849,8 @@ app.post('/api/auth/reset', async (req, res) => {
     const token = (req.body.token || '').trim();
     const password = req.body.passwort || '';
 
-    if (password.length < 8) return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben.' });
-    if (!/[A-Z]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens einen Grossbuchstaben enthalten.' });
-    if (!/[a-z]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens einen Kleinbuchstaben enthalten.' });
-    if (!/[^A-Za-z0-9]/.test(password)) return res.status(400).json({ error: 'Passwort muss mindestens ein Sonderzeichen enthalten.' });
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ error: pwError });
 
     const db = await getPool();
     const find = await db.request()
@@ -920,10 +937,8 @@ app.post('/api/auth/change-password', requireAuth, async (req, res) => {
     const oldPassword = req.body.altesPasswort || '';
     const newPassword = req.body.neuesPasswort || '';
 
-    if (newPassword.length < 8) return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben.' });
-    if (!/[A-Z]/.test(newPassword)) return res.status(400).json({ error: 'Passwort muss mindestens einen Grossbuchstaben enthalten.' });
-    if (!/[a-z]/.test(newPassword)) return res.status(400).json({ error: 'Passwort muss mindestens einen Kleinbuchstaben enthalten.' });
-    if (!/[^A-Za-z0-9]/.test(newPassword)) return res.status(400).json({ error: 'Passwort muss mindestens ein Sonderzeichen enthalten.' });
+    const pwError = validatePassword(newPassword);
+    if (pwError) return res.status(400).json({ error: pwError });
 
     const db = await getPool();
     const result = await db.request()
@@ -1554,6 +1569,45 @@ app.post('/api/artikel', requireAuth, async (req, res) => {
   }
 });
 
+app.post('/api/artikel/bulk', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({});
+    const hid = await getHaushaltId(userId, db);
+
+    const { artikel } = req.body;
+    if (!Array.isArray(artikel) || artikel.length === 0) return res.status(400).json({ error: 'artikel array required' });
+
+    const results = [];
+    const transaction = new sql.Transaction(db);
+    await transaction.begin();
+    try {
+      for (const item of artikel) {
+        const result = await new sql.Request(transaction)
+          .input('artikel', sql.NVarChar, item.artikel)
+          .input('menge', sql.Decimal(18, 2), item.menge)
+          .input('einheit', sql.NVarChar, item.einheit)
+          .input('laden', sql.NVarChar, item.laden || null)
+          .input('datum', sql.DateTime2, item.datum ? new Date(item.datum) : null)
+          .input('uid', sql.Int, userId)
+          .input('hid', sql.Int, hid)
+          .query('INSERT INTO Artikel (Artikel, Menge, Einheit, Laden, Datum, BenutzerId, HaushaltId) OUTPUT INSERTED.Id, INSERTED.ErstelltAm VALUES (@artikel, @menge, @einheit, @laden, @datum, @uid, @hid)');
+        const row = result.recordset[0];
+        results.push({ id: row.Id, erstelltAm: row.ErstelltAm.toISOString() });
+      }
+      await transaction.commit();
+    } catch (txErr) {
+      await transaction.rollback();
+      throw txErr;
+    }
+    res.json({ inserted: results });
+  } catch (err) {
+    console.error('artikel bulk post error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
 app.put('/api/artikel/:id', requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -1658,6 +1712,9 @@ app.post('/api/wochenplan', requireAuth, async (req, res) => {
     const hid = await getHaushaltId(userId, db);
 
     const { woche, tag, mahlzeit, rezept, erwachsene, kinder } = req.body;
+    const mergeOn = hid != null
+      ? 't.Woche=s.Woche AND t.Tag=s.Tag AND t.Mahlzeit=s.Mahlzeit AND t.HaushaltId=@hid'
+      : 't.Woche=s.Woche AND t.Tag=s.Tag AND t.Mahlzeit=s.Mahlzeit AND t.BenutzerId=s.BenutzerId';
     await db.request()
       .input('woche', sql.DateTime2, new Date(woche))
       .input('tag', sql.Int, tag)
@@ -1669,7 +1726,7 @@ app.post('/api/wochenplan', requireAuth, async (req, res) => {
       .input('hid', sql.Int, hid)
       .query(`MERGE Wochenplan AS t
               USING (SELECT @woche AS Woche, @tag AS Tag, @mahlzeit AS Mahlzeit, @uid AS BenutzerId) AS s
-              ON t.Woche=s.Woche AND t.Tag=s.Tag AND t.Mahlzeit=s.Mahlzeit AND t.BenutzerId=s.BenutzerId
+              ON ${mergeOn}
               WHEN MATCHED THEN UPDATE SET Rezept=@rezept, Erwachsene=@erw, Kinder=@kind
               WHEN NOT MATCHED THEN INSERT (Woche,Tag,Mahlzeit,Rezept,Erwachsene,Kinder,BenutzerId,HaushaltId) VALUES (@woche,@tag,@mahlzeit,@rezept,@erw,@kind,@uid,@hid);`);
     res.json({});
@@ -1820,6 +1877,7 @@ app.get('/api/admin/benutzer', requireAuth, async (req, res) => {
   }
 });
 
+// Formats a Date object to "DD.MM.YYYY HH:MM" (full date+time for server-side timestamps)
 function formatDate(d) {
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -1848,7 +1906,7 @@ app.put('/api/admin/benutzer/:id', requireAuth, async (req, res) => {
         .input('id', sql.Int, id)
         .query('UPDATE Benutzer SET IsAdmin=@val WHERE Id=@id');
     }
-    if (req.body.passwort && req.body.passwort.length >= 8 && /[A-Z]/.test(req.body.passwort) && /[a-z]/.test(req.body.passwort) && /[^A-Za-z0-9]/.test(req.body.passwort)) {
+    if (req.body.passwort && !validatePassword(req.body.passwort)) {
       await db.request()
         .input('hash', sql.NVarChar, hashPassword(req.body.passwort))
         .input('id', sql.Int, id)
