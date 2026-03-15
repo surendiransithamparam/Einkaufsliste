@@ -239,7 +239,10 @@ async function openHaushalt() {
         const isErsteller = currentUser.haushalt.isErsteller;
         body.innerHTML = `
             <div style="margin-bottom:1rem">
-                <div style="font-weight:700;font-size:1rem;margin-bottom:0.25rem">${esc(currentUser.haushalt.name)}</div>
+                <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.25rem">
+                    <span style="font-weight:700;font-size:1rem">${esc(currentUser.haushalt.name)}</span>
+                    ${isErsteller ? '<button class="btn-icon" onclick="renameHaushalt()" title="Umbenennen" style="font-size:0.85rem;color:var(--gray-400)"><i class="bi bi-pencil"></i></button>' : ''}
+                </div>
                 <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">
                     <span style="font-size:0.8rem;color:var(--gray-500)">Einladungscode:</span>
                     <code style="background:var(--gray-100);padding:0.25rem 0.6rem;border-radius:6px;font-weight:700;font-size:1rem;letter-spacing:0.1em">${esc(currentUser.haushalt.code)}</code>
@@ -313,7 +316,10 @@ async function loadHaushaltSection() {
         const isErsteller = currentUser.haushalt.isErsteller;
         section.innerHTML = `
             <div style="margin-bottom:1rem">
-                <div style="font-weight:700;font-size:1rem;margin-bottom:0.25rem">${esc(currentUser.haushalt.name)}</div>
+                <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.25rem">
+                    <span style="font-weight:700;font-size:1rem">${esc(currentUser.haushalt.name)}</span>
+                    ${isErsteller ? '<button class="btn-icon" onclick="renameHaushalt()" title="Umbenennen" style="font-size:0.85rem;color:var(--gray-400)"><i class="bi bi-pencil"></i></button>' : ''}
+                </div>
                 <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">
                     <span style="font-size:0.8rem;color:var(--gray-500)">Einladungscode:</span>
                     <code style="background:var(--gray-100);padding:0.25rem 0.6rem;border-radius:6px;font-weight:700;font-size:1rem;letter-spacing:0.1em">${esc(currentUser.haushalt.code)}</code>
@@ -434,6 +440,24 @@ async function changeRolle(userId, rolle) {
     } else {
         toast('Fehler beim \u00C4ndern der Rolle');
         loadHaushaltSection();
+    }
+}
+
+async function renameHaushalt() {
+    const currentName = currentUser?.haushalt?.name || '';
+    const newName = prompt('Neuer Name für den Haushalt:', currentName);
+    if (!newName || newName.trim() === currentName) return;
+    const res = await fetch('/api/haushalt/name', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim() })
+    });
+    if (res.ok) {
+        toast('Haushalt umbenannt');
+        loadHaushaltSection();
+    } else {
+        const data = await res.json().catch(() => null);
+        toast(data?.error || 'Fehler beim Umbenennen', true);
     }
 }
 
