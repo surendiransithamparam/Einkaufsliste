@@ -1458,6 +1458,33 @@ app.get('/api/haushalt/mitglieder', requireAuth, async (req, res) => {
   }
 });
 
+app.put('/api/haushalt/name', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const name = (req.body.name || '').trim();
+    if (!name || name.length < 2) return res.status(400).json({ error: 'Name muss mindestens 2 Zeichen haben.' });
+
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
+    if (hid == null) return res.status(400).json({ error: 'Du bist in keinem Haushalt.' });
+
+    const check = await db.request()
+      .input('hid', sql.Int, hid)
+      .query('SELECT ErstelltVon FROM Haushalt WHERE Id=@hid');
+    const creatorId = check.recordset[0]?.ErstelltVon;
+    if (creatorId == null || creatorId !== userId) return res.status(403).json({ error: 'Nur der Ersteller kann den Haushalt umbenennen.' });
+
+    await db.request()
+      .input('name', sql.NVarChar, name)
+      .input('hid', sql.Int, hid)
+      .query('UPDATE Haushalt SET Name=@name WHERE Id=@hid');
+    res.json({});
+  } catch (err) {
+    console.error('haushalt rename error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
 app.put('/api/haushalt/rolle', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -2196,10 +2223,15 @@ app.get('/api/admin/kundenkarten-logos', requireAuth, async (req, res) => {
     const db = await getPool();
     if (!await isAdmin(userId, db)) return res.status(403).json({});
     const result = await db.request()
-      .query(`SELECT DISTINCT k.Name AS storeName, l.LogoUrl AS logoUrl
-              FROM Kundenkarte k
-              LEFT JOIN KundenkartenLogo l ON LOWER(k.Name) = LOWER(l.StoreName)
-              ORDER BY k.Name`);
+      .query(`SELECT storeName, logoUrl FROM (
+                SELECT DISTINCT k.Name AS storeName, l.LogoUrl AS logoUrl
+                FROM Kundenkarte k
+                LEFT JOIN KundenkartenLogo l ON LOWER(k.Name) = LOWER(l.StoreName)
+                UNION
+                SELECT l2.StoreName AS storeName, l2.LogoUrl AS logoUrl
+                FROM KundenkartenLogo l2
+                WHERE NOT EXISTS (SELECT 1 FROM Kundenkarte k2 WHERE LOWER(k2.Name) = LOWER(l2.StoreName))
+              ) AS combined ORDER BY storeName`);
     res.json(result.recordset.map(r => ({ storeName: r.storeName, logoUrl: r.logoUrl || null })));
   } catch (err) {
     console.error('admin kundenkarten-logos get error:', err);

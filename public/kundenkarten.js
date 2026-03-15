@@ -79,22 +79,41 @@ function storeLogoHtml(name, size) {
 function renderKarten() {
     const grid = document.getElementById('kartenGrid');
     const empty = document.getElementById('kartenEmpty');
+    const filterCard = document.getElementById('kartenFilterCard');
+    const searchTerm = (document.getElementById('kartenSearch')?.value || '').trim().toLowerCase();
 
     if (karten.length === 0) {
         grid.innerHTML = '';
         empty.style.display = '';
+        if (filterCard) filterCard.style.display = 'none';
         return;
     }
 
     empty.style.display = 'none';
-    grid.innerHTML = karten.map(k => `
-        <div class="tile" style="cursor:pointer;display:flex;align-items:center;gap:0.6rem;padding:0.75rem 1rem" onclick="showBarcode(${k.id})">
-            ${storeLogoHtml(k.name, 24)}
+    if (filterCard) filterCard.style.display = '';
+
+    let filtered = karten;
+    if (searchTerm) {
+        filtered = karten.filter(k =>
+            k.name.toLowerCase().includes(searchTerm) ||
+            k.kartennummer.toLowerCase().includes(searchTerm) ||
+            (k.notiz && k.notiz.toLowerCase().includes(searchTerm))
+        );
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--gray-400)">Keine Karten gefunden.</div>';
+        return;
+    }
+
+    grid.innerHTML = filtered.map(k => `
+        <div class="tile" style="cursor:pointer;display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem" onclick="onKarteTileClick(event, ${k.id})">
+            ${storeLogoHtml(k.name, 48)}
             <div style="flex:1;min-width:0">
                 <span style="font-weight:700;font-size:0.95rem;color:var(--gray-800);display:block">${esc(k.name)}</span>
                 ${k.notiz ? `<span style="font-size:0.75rem;color:var(--gray-400);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.notiz)}</span>` : ''}
             </div>
-            <div style="display:flex;gap:0.25rem;flex-shrink:0" onclick="event.stopPropagation()">
+            <div class="tile-actions" onclick="event.stopPropagation()">
                 <button class="btn-icon" onclick="openEditKarte(${k.id})" title="Bearbeiten"><i class="bi bi-pencil"></i></button>
                 <button class="btn-icon" onclick="openDeleteConfirm(${k.id})" title="Löschen" style="color:var(--red-500)"><i class="bi bi-trash"></i></button>
             </div>
@@ -144,6 +163,8 @@ function openAddKarte() {
     document.getElementById('karteNummer').value = '';
     document.getElementById('karteNotiz').value = '';
     document.getElementById('karteError').style.display = 'none';
+    document.getElementById('karteNummerWarning').style.display = 'none';
+    delete document.getElementById('karteNummerWarning').dataset.acknowledged;
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Neue Kundenkarte';
     document.getElementById('karteOverlay').classList.add('active');
     stopScan();
@@ -157,6 +178,8 @@ function openEditKarte(id) {
     document.getElementById('karteNummer').value = k.kartennummer;
     document.getElementById('karteNotiz').value = k.notiz || '';
     document.getElementById('karteError').style.display = 'none';
+    document.getElementById('karteNummerWarning').style.display = 'none';
+    delete document.getElementById('karteNummerWarning').dataset.acknowledged;
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Karte bearbeiten';
     document.getElementById('karteOverlay').classList.add('active');
     stopScan();
@@ -224,6 +247,19 @@ async function saveKarte() {
         return;
     }
 
+    const warnEl = document.getElementById('karteNummerWarning');
+    const warnTextEl = document.getElementById('karteNummerWarningText');
+    const warnings = validateKartennummer(kartennummer);
+    if (warnings.length > 0) {
+        warnTextEl.textContent = warnings.join(' ');
+        warnEl.style.display = '';
+        if (!warnEl.dataset.acknowledged) {
+            warnEl.dataset.acknowledged = '1';
+            return;
+        }
+    }
+    if (warnEl) { warnEl.style.display = 'none'; delete warnEl.dataset.acknowledged; }
+
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/kundenkarten/${id}` : '/api/kundenkarten';
     const res = await fetch(url, {
@@ -265,9 +301,102 @@ async function confirmDelete() {
     closeDeleteConfirm();
 }
 
+// -- Kartennummer Validierung --
+function validateKartennummer(raw) {
+    const warnings = [];
+    const cleaned = raw.replace(/\s/g, '');
+
+    if (cleaned.length > 0 && cleaned.length < 4) {
+        warnings.push('Kartennummer scheint sehr kurz zu sein.');
+    }
+
+    if (cleaned.length > 0 && !/^[\d\s]+$/.test(raw)) {
+        warnings.push('Kartennummer enthält ungewöhnliche Zeichen (erwartet: Ziffern und Leerzeichen).');
+    }
+
+    if (/^\d{13}$/.test(cleaned)) {
+        const digits = cleaned.split('').map(Number);
+        let sum = 0;
+        for (let i = 0; i < 12; i++) {
+            sum += digits[i] * (i % 2 === 0 ? 1 : 3);
+        }
+        const checkDigit = (10 - (sum % 10)) % 10;
+        if (checkDigit !== digits[12]) {
+            warnings.push('EAN-13 Prüfziffer stimmt nicht (erwartet: ' + checkDigit + ').');
+        }
+    }
+
+    return warnings;
+}
+
+function previewKarteValidation() {
+    const val = document.getElementById('karteNummer').value.trim();
+    const warnEl = document.getElementById('karteNummerWarning');
+    const warnTextEl = document.getElementById('karteNummerWarningText');
+    if (!val) { warnEl.style.display = 'none'; return; }
+    const warnings = validateKartennummer(val);
+    if (warnings.length > 0) {
+        warnTextEl.textContent = warnings.join(' ');
+        warnEl.style.display = '';
+    } else {
+        warnEl.style.display = 'none';
+    }
+    delete warnEl.dataset.acknowledged;
+}
+
+// -- Long-Press Handler --
+let longPressTimer = null;
+let longPressTriggered = false;
+let activeTileActions = null;
+
+function onKarteTileClick(e, id) {
+    if (longPressTriggered) { longPressTriggered = false; return; }
+    if (activeTileActions) { hideAllTileActions(); return; }
+    showBarcode(id);
+}
+
+function showTileActions(tileEl) {
+    hideAllTileActions();
+    const actions = tileEl.querySelector('.tile-actions');
+    if (actions) { actions.classList.add('visible'); activeTileActions = actions; }
+}
+
+function hideAllTileActions() {
+    if (activeTileActions) { activeTileActions.classList.remove('visible'); activeTileActions = null; }
+}
+
+document.addEventListener('pointerdown', e => {
+    const tile = e.target.closest('.tile');
+    if (!tile) return;
+    if (e.target.closest('.tile-actions')) return;
+    longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+        longPressTriggered = true;
+        showTileActions(tile);
+    }, 500);
+});
+
+document.addEventListener('pointerup', () => {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+});
+
+document.addEventListener('pointermove', e => {
+    if (longPressTimer && (Math.abs(e.movementX) > 5 || Math.abs(e.movementY) > 5)) {
+        clearTimeout(longPressTimer); longPressTimer = null;
+    }
+});
+
+document.addEventListener('pointercancel', () => {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+});
+
+document.addEventListener('pointerdown', e => {
+    if (activeTileActions && !e.target.closest('.tile-actions')) { hideAllTileActions(); }
+}, true);
+
 // Keyboard
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeBarcodeOverlay(); closeKarteModal(); closeDeleteConfirm(); }
+    if (e.key === 'Escape') { hideAllTileActions(); closeBarcodeOverlay(); closeKarteModal(); closeDeleteConfirm(); }
 });
 
 if (!_redirecting) checkAuth(showApp);
