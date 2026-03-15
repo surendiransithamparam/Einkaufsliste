@@ -1458,6 +1458,33 @@ app.get('/api/haushalt/mitglieder', requireAuth, async (req, res) => {
   }
 });
 
+app.put('/api/haushalt/name', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const name = (req.body.name || '').trim();
+    if (!name || name.length < 2) return res.status(400).json({ error: 'Name muss mindestens 2 Zeichen haben.' });
+
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
+    if (hid == null) return res.status(400).json({ error: 'Du bist in keinem Haushalt.' });
+
+    const check = await db.request()
+      .input('hid', sql.Int, hid)
+      .query('SELECT ErstelltVon FROM Haushalt WHERE Id=@hid');
+    const creatorId = check.recordset[0]?.ErstelltVon;
+    if (creatorId == null || creatorId !== userId) return res.status(403).json({ error: 'Nur der Ersteller kann den Haushalt umbenennen.' });
+
+    await db.request()
+      .input('name', sql.NVarChar, name)
+      .input('hid', sql.Int, hid)
+      .query('UPDATE Haushalt SET Name=@name WHERE Id=@hid');
+    res.json({});
+  } catch (err) {
+    console.error('haushalt rename error:', err);
+    res.status(500).json({ error: 'Interner Fehler.' });
+  }
+});
+
 app.put('/api/haushalt/rolle', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId;
