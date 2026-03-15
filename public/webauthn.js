@@ -21,13 +21,19 @@ const WebAuthnClient = {
       body: JSON.stringify({ geraetename })
     });
     if (!optRes.ok) {
-      const err = await optRes.json();
+      const err = await optRes.json().catch(() => ({}));
       throw new Error(err.error || 'Fehler beim Starten der Registrierung.');
     }
     const options = await optRes.json();
 
     // Browser-Dialog: Fingerabdruck / Face ID
-    const attResp = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
+    let attResp;
+    try {
+      attResp = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
+    } catch (e) {
+      // Re-throw with original name/code preserved for caller to handle
+      throw e;
+    }
 
     const verifyRes = await fetch('/api/webauthn/register-verify', {
       method: 'POST',
@@ -35,7 +41,7 @@ const WebAuthnClient = {
       body: JSON.stringify(attResp)
     });
     if (!verifyRes.ok) {
-      const err = await verifyRes.json();
+      const err = await verifyRes.json().catch(() => ({}));
       throw new Error(err.error || 'Verifizierung fehlgeschlagen.');
     }
     return await verifyRes.json();
