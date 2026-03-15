@@ -1,13 +1,24 @@
 let karten = [];
 let deleteTargetId = null;
 let html5QrScanner = null;
+let logoOverrides = {};
 
 function showApp() {
     showAppBase();
     loadKarten();
 }
 
+async function loadLogoOverrides() {
+    try {
+        const res = await fetch('/api/kundenkarten-logos');
+        if (res.ok) logoOverrides = await res.json();
+    } catch (e) {
+        console.error('Logo overrides laden fehlgeschlagen', e);
+    }
+}
+
 async function loadKarten() {
+    await loadLogoOverrides();
     try {
         const res = await fetch('/api/kundenkarten');
         if (res.status === 401) { showLogin(); return; }
@@ -46,6 +57,9 @@ const STORE_LOGOS = [
 
 function getStoreLogo(name) {
     const lower = name.toLowerCase();
+    // Check DB overrides first
+    if (logoOverrides[lower]) return logoOverrides[lower];
+    // Fallback to favicon mapping
     for (const store of STORE_LOGOS) {
         if (store.keywords.some(kw => lower.includes(kw))) {
             return `https://www.google.com/s2/favicons?domain=${store.domain}&sz=32`;
