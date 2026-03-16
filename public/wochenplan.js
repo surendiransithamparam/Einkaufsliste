@@ -587,10 +587,6 @@ async function loadGerichteList() {
         <div style="margin-bottom:0.75rem">
             ${gerichteCache.map(g => `<div class="rezept-item" style="justify-content:space-between">
                 <span onclick="openGerichtEdit(${g.id})" style="flex:1;cursor:pointer">${esc(g.name)}</span>
-                <div style="display:flex;gap:0.25rem">
-                    <button class="dish-cart-btn" onclick="openGerichtEdit(${g.id})" title="Bearbeiten"><i class="bi bi-pencil"></i></button>
-                    <button class="dish-cart-btn" onclick="deleteGericht(${g.id})" title="Löschen" style="color:var(--red-400)"><i class="bi bi-trash"></i></button>
-                </div>
             </div>`).join('')}
         </div>
         <button class="btn btn-primary" style="width:100%" onclick="openGerichtEdit()">
@@ -604,15 +600,19 @@ async function openGerichtEdit(id) {
         ? '<i class="bi bi-book"></i> Gericht bearbeiten'
         : '<i class="bi bi-book"></i> Neues Gericht';
 
+    const deleteBtn = document.getElementById('gerichtDeleteBtn');
     if (id) {
         const res = await fetch(`/api/gerichte/${id}`);
         if (!res.ok) return;
         const data = await res.json();
         document.getElementById('gerichtEditName').value = data.name;
         renderGerichtZutaten(data.zutaten.length > 0 ? data.zutaten : [{ artikel: '', menge: 1, einheit: 'Stück' }]);
+        deleteBtn.style.display = '';
+        deleteBtn.onclick = () => { closeGerichtEdit(); deleteGericht(id); };
     } else {
         document.getElementById('gerichtEditName').value = '';
         renderGerichtZutaten([{ artikel: '', menge: 1, einheit: 'Stück' }]);
+        deleteBtn.style.display = 'none';
     }
     document.getElementById('gerichtEditOverlay').classList.add('active');
     setTimeout(() => document.getElementById('gerichtEditName').focus(), 200);

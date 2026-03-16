@@ -107,15 +107,11 @@ function renderKarten() {
     }
 
     grid.innerHTML = filtered.map(k => `
-        <div class="tile" style="cursor:pointer;display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem" onclick="onKarteTileClick(event, ${k.id})">
+        <div class="tile" data-id="${k.id}" style="cursor:pointer;display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem" onclick="onKarteTileClick(event, ${k.id})">
             ${storeLogoHtml(k.name, 48)}
             <div style="flex:1;min-width:0">
                 <span style="font-weight:700;font-size:0.95rem;color:var(--gray-800);display:block">${esc(k.name)}</span>
                 ${k.notiz ? `<span style="font-size:0.75rem;color:var(--gray-400);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.notiz)}</span>` : ''}
-            </div>
-            <div class="tile-actions" onclick="event.stopPropagation()">
-                <button class="btn-icon" onclick="openEditKarte(${k.id})" title="Bearbeiten"><i class="bi bi-pencil"></i></button>
-                <button class="btn-icon" onclick="openDeleteConfirm(${k.id})" title="Löschen" style="color:var(--red-500)"><i class="bi bi-trash"></i></button>
             </div>
         </div>
     `).join('');
@@ -166,6 +162,7 @@ function openAddKarte() {
     document.getElementById('karteNummerWarning').style.display = 'none';
     delete document.getElementById('karteNummerWarning').dataset.acknowledged;
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Neue Kundenkarte';
+    document.getElementById('karteModalDeleteBtn').style.display = 'none';
     document.getElementById('karteOverlay').classList.add('active');
     stopScan();
 }
@@ -181,6 +178,9 @@ function openEditKarte(id) {
     document.getElementById('karteNummerWarning').style.display = 'none';
     delete document.getElementById('karteNummerWarning').dataset.acknowledged;
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Karte bearbeiten';
+    const deleteBtn = document.getElementById('karteModalDeleteBtn');
+    deleteBtn.style.display = '';
+    deleteBtn.onclick = () => { closeKarteModal(); openDeleteConfirm(id); };
     document.getElementById('karteOverlay').classList.add('active');
     stopScan();
 }
@@ -347,32 +347,19 @@ function previewKarteValidation() {
 // -- Long-Press Handler --
 let longPressTimer = null;
 let longPressTriggered = false;
-let activeTileActions = null;
 
 function onKarteTileClick(e, id) {
     if (longPressTriggered) { longPressTriggered = false; return; }
-    if (activeTileActions) { hideAllTileActions(); return; }
     showBarcode(id);
-}
-
-function showTileActions(tileEl) {
-    hideAllTileActions();
-    const actions = tileEl.querySelector('.tile-actions');
-    if (actions) { actions.classList.add('visible'); activeTileActions = actions; }
-}
-
-function hideAllTileActions() {
-    if (activeTileActions) { activeTileActions.classList.remove('visible'); activeTileActions = null; }
 }
 
 document.addEventListener('pointerdown', e => {
     const tile = e.target.closest('.tile');
-    if (!tile) return;
-    if (e.target.closest('.tile-actions')) return;
+    if (!tile || !tile.dataset.id) return;
     longPressTimer = setTimeout(() => {
         longPressTimer = null;
         longPressTriggered = true;
-        showTileActions(tile);
+        openEditKarte(parseInt(tile.dataset.id));
     }, 500);
 });
 
@@ -390,13 +377,9 @@ document.addEventListener('pointercancel', () => {
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
 });
 
-document.addEventListener('pointerdown', e => {
-    if (activeTileActions && !e.target.closest('.tile-actions')) { hideAllTileActions(); }
-}, true);
-
 // Keyboard
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { hideAllTileActions(); closeBarcodeOverlay(); closeKarteModal(); closeDeleteConfirm(); }
+    if (e.key === 'Escape') { closeBarcodeOverlay(); closeKarteModal(); closeDeleteConfirm(); }
 });
 
 if (!_redirecting) checkAuth(showApp);
