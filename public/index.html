@@ -175,11 +175,16 @@
                         <input type="date" id="datum">
                     </div>
                 </div>
-                <div class="modal-footer" style="padding:1.25rem 0 0; border-top:none;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
-                    <button type="submit" class="btn btn-primary" id="saveBtn">
-                        <i class="bi bi-check-lg"></i> Hinzufügen
+                <div class="modal-footer" style="padding:1.25rem 0 0; border-top:none; justify-content:space-between;">
+                    <button type="button" class="btn btn-danger" id="modalDeleteBtn" style="display:none">
+                        <i class="bi bi-trash"></i> Löschen
                     </button>
+                    <div style="display:flex;gap:0.5rem">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+                        <button type="submit" class="btn btn-primary" id="saveBtn">
+                            <i class="bi bi-check-lg"></i> Hinzufügen
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
