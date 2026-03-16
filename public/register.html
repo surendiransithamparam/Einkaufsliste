@@ -124,6 +124,19 @@ async function submitRegister(e) {
             successEl.innerHTML = '<i class="bi bi-envelope-check"></i> ' + (data.message || 'Bitte bestätige deine E-Mail-Adresse.');
             successEl.style.display = '';
             btn.style.display = 'none';
+            let seconds = 10;
+            const countdownEl = document.createElement('div');
+            countdownEl.style.cssText = 'color:var(--gray-500);font-size:0.8rem;margin-top:0.5rem';
+            countdownEl.textContent = `Weiterleitung zum Login in ${seconds} Sekunden…`;
+            successEl.after(countdownEl);
+            const interval = setInterval(() => {
+                seconds--;
+                countdownEl.textContent = `Weiterleitung zum Login in ${seconds} Sekunden…`;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    window.location.href = 'index.html';
+                }
+            }, 1000);
         } else if (data?.mailFehler) {
             errEl.textContent = data.message;
             errEl.style.display = '';
