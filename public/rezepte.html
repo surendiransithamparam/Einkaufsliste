@@ -215,9 +215,14 @@
                     <i class="bi bi-plus"></i> Weitere Zutat
                 </button>
             </div>
-            <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1rem">
-                <button class="btn btn-secondary" onclick="closeGerichtEdit()">Abbrechen</button>
-                <button class="btn btn-primary" onclick="saveGericht()"><i class="bi bi-check-lg"></i> Speichern</button>
+            <div style="display:flex;gap:0.5rem;justify-content:space-between;margin-top:1rem">
+                <button class="btn btn-danger" id="gerichtDeleteBtn" style="display:none">
+                    <i class="bi bi-trash"></i> Löschen
+                </button>
+                <div style="display:flex;gap:0.5rem;margin-left:auto">
+                    <button class="btn btn-secondary" onclick="closeGerichtEdit()">Abbrechen</button>
+                    <button class="btn btn-primary" onclick="saveGericht()"><i class="bi bi-check-lg"></i> Speichern</button>
+                </div>
             </div>
         </div>
     </div>

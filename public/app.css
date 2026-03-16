@@ -415,20 +415,6 @@ input:focus, select:focus {
     line-height: 1.25;
     flex: 1;
 }
-.tile-actions {
-    display: none;
-    gap: 0.3rem;
-    flex-shrink: 0;
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: var(--surface);
-    padding: 0.25rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow-md);
-    z-index: 10;
-}
-.tile-actions.visible { display: flex; }
 
 /* Tile body info */
 .tile-info {

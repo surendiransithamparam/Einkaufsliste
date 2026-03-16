@@ -145,9 +145,14 @@
                 <input type="text" id="karteNotiz" placeholder="z.B. Familie" maxlength="500">
             </div>
             <div id="karteError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-bottom:0.75rem"></div>
-            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
-                <button class="btn btn-secondary" onclick="closeKarteModal()">Abbrechen</button>
-                <button class="btn btn-primary" onclick="saveKarte()"><i class="bi bi-check-lg"></i> Speichern</button>
+            <div style="display:flex;gap:0.5rem;justify-content:space-between">
+                <button class="btn btn-danger" id="karteModalDeleteBtn" style="display:none">
+                    <i class="bi bi-trash"></i> Löschen
+                </button>
+                <div style="display:flex;gap:0.5rem;margin-left:auto">
+                    <button class="btn btn-secondary" onclick="closeKarteModal()">Abbrechen</button>
+                    <button class="btn btn-primary" onclick="saveKarte()"><i class="bi bi-check-lg"></i> Speichern</button>
+                </div>
             </div>
         </div>
     </div>

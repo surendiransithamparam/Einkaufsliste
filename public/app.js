@@ -174,6 +174,8 @@ function openModal(id) {
     document.getElementById('einheit').value = 'St\u00FCck';
     document.getElementById('laden').value = '';
     document.getElementById('datum').value = '';
+    const deleteBtn = document.getElementById('modalDeleteBtn');
+    deleteBtn.style.display = 'none';
     if (id !== undefined) {
         const item = items.find(i => i.id === id);
         if (item) {
@@ -185,6 +187,8 @@ function openModal(id) {
             document.getElementById('einheit').value = item.einheit;
             document.getElementById('laden').value = item.laden || '';
             document.getElementById('datum').value = item.datum || '';
+            deleteBtn.style.display = '';
+            deleteBtn.onclick = () => { closeModal(); openDelete(id); };
         }
     }
     document.getElementById('modalOverlay').classList.add('active');
@@ -375,15 +379,11 @@ function renderTile(item) {
         const checkIcon = isGekauft ? 'bi-check-circle-fill' : 'bi-circle';
         const doneBadge = isGekauft ? '<span class="tile-badge done"><i class="bi bi-check-lg"></i> Gekauft</span>' : badgeHtml;
 
-        return `<div class="tile ${tileCls}" onclick="onTileClick(event,${item.id})" style="cursor:pointer">
+        return `<div class="tile ${tileCls}" data-id="${item.id}" onclick="onTileClick(event,${item.id})" style="cursor:pointer">
             <div class="tile-header">
                 <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0">
                     <i class="bi ${checkIcon}" style="font-size:1rem;flex-shrink:0;color:${isGekauft ? 'var(--green-600)' : 'var(--gray-300)'}"></i>
                     <div class="tile-title">${esc(item.artikel)}</div>
-                </div>
-                <div class="tile-actions" onclick="event.stopPropagation()">
-                    <button class="btn btn-secondary btn-icon" onclick="openModal(${item.id})" title="Bearbeiten"><i class="bi bi-pencil"></i></button>
-                    <button class="btn btn-danger btn-icon" onclick="openDelete(${item.id})" title="L\u00F6schen"><i class="bi bi-trash"></i></button>
                 </div>
             </div>
             <div class="tile-info">
@@ -645,39 +645,19 @@ let longPressTriggered = false;
 
 function onTileClick(e, id) {
     if (longPressTriggered) { longPressTriggered = false; return; }
-    if (activeTileActions) { hideAllTileActions(); return; }
     toggleGekauft(id);
 }
 
-// -- Long-press for tile actions --
+// -- Long-press to open edit modal --
 let longPressTimer = null;
-let activeTileActions = null;
-
-function showTileActions(tileEl) {
-    hideAllTileActions();
-    const actions = tileEl.querySelector('.tile-actions');
-    if (actions) {
-        actions.classList.add('visible');
-        activeTileActions = actions;
-    }
-}
-
-function hideAllTileActions() {
-    if (activeTileActions) {
-        activeTileActions.classList.remove('visible');
-        activeTileActions = null;
-    }
-}
 
 document.addEventListener('pointerdown', e => {
     const tile = e.target.closest('.tile');
-    if (!tile) return;
-    // Ignore if tapping on already-visible actions
-    if (e.target.closest('.tile-actions')) return;
+    if (!tile || !tile.dataset.id) return;
     longPressTimer = setTimeout(() => {
         longPressTimer = null;
         longPressTriggered = true;
-        showTileActions(tile);
+        openModal(parseInt(tile.dataset.id));
     }, 500);
 });
 
@@ -695,16 +675,9 @@ document.addEventListener('pointercancel', () => {
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
 });
 
-// Hide actions when tapping elsewhere
-document.addEventListener('pointerdown', e => {
-    if (activeTileActions && !e.target.closest('.tile-actions')) {
-        hideAllTileActions();
-    }
-}, true);
-
 // -- Keyboard --
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeDelete(); closeReactivate(); closeHaushalt(); closeRezept(); hideAllTileActions(); }
+    if (e.key === 'Escape') { closeModal(); closeDelete(); closeReactivate(); closeHaushalt(); closeRezept(); }
 });
 
 // -- PWA: Service Worker --
