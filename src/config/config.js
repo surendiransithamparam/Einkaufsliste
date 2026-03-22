@@ -4,7 +4,7 @@ const path = require('path');
 let config = {};
 try {
   // Try to load from project root
-  config = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config.json'), 'utf8'));
+  config = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'config.json'), 'utf8'));
 } catch {
   // console.warn('config.json not found or invalid, using env vars / defaults');
 }

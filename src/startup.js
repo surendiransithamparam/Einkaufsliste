@@ -206,7 +206,7 @@ async function startup() {
   } catch (err) {
     console.error('Startup error:', err);
     try {
-      const logPath = path.join(__dirname, '..', 'startup-error.txt');
+      const logPath = path.join(process.cwd(), 'startup-error.txt');
       fs.writeFileSync(logPath, `${new Date().toISOString()}\n${err.stack || err}`);
     } catch { /* ignore write errors */ }
   }
