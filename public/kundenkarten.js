@@ -275,7 +275,7 @@ function startScan() {
             document.getElementById('karteNummer').value = decodedText;
             const formatName = decodedResult?.result?.format?.formatName;
             scannedBarcodeFormat = formatName ? mapScanFormatToJsBarcode(formatName) : 'CODE128';
-            toast('Barcode erkannt: ' + decodedText);
+            toast('Erkannt (' + (formatName || 'unbekannt') + '): ' + decodedText);
             stopScan();
         },
         () => {}
