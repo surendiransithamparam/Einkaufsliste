@@ -89,8 +89,8 @@ async function activate(req, res) {
       .input('token', sql.NVarChar, token)
       .query('UPDATE Benutzer SET EmailBestaetigt=1, AktivierungsToken=NULL WHERE AktivierungsToken=@token AND EmailBestaetigt=0');
 
-    const htmlOk = '<html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2 style="color:#22c55e">&#10003; E-Mail bestätigt!</h2><p>Dein Konto ist jetzt aktiv. Du kannst dich anmelden.</p><a href="/">Zur HaushaltPLUS</a></body></html>';
-    const htmlFail = '<html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2 style="color:#ef4444">Link ungültig</h2><p>Dieser Aktivierungslink ist ungültig oder wurde bereits verwendet.</p><a href="/">Zur HaushaltPLUS</a></body></html>';
+    const htmlOk = '<html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2 style="color:#22c55e">&#10003; E-Mail bestätigt!</h2><p>Dein Konto ist jetzt aktiv. Du kannst dich anmelden.</p><a href="/">Zur Haushalt⁺</a></body></html>';
+    const htmlFail = '<html><body style="font-family:sans-serif;text-align:center;padding:3rem"><h2 style="color:#ef4444">Link ungültig</h2><p>Dieser Aktivierungslink ist ungültig oder wurde bereits verwendet.</p><a href="/">Zur Haushalt⁺</a></body></html>';
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(result.rowsAffected[0] > 0 ? htmlOk : htmlFail);
