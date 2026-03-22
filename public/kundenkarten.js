@@ -314,17 +314,7 @@ async function saveKarte() {
     }
 
     const warnEl = document.getElementById('karteNummerWarning');
-    const warnTextEl = document.getElementById('karteNummerWarningText');
-    const warnings = validateKartennummer(kartennummer);
-    if (warnings.length > 0) {
-        warnTextEl.textContent = warnings.join(' ');
-        warnEl.style.display = '';
-        if (!warnEl.dataset.acknowledged) {
-            warnEl.dataset.acknowledged = '1';
-            return;
-        }
-    }
-    if (warnEl) { warnEl.style.display = 'none'; delete warnEl.dataset.acknowledged; }
+    if (warnEl) { warnEl.style.display = 'none'; }
 
     const barcodeFormat = scannedBarcodeFormat || null;
 
