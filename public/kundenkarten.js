@@ -2,6 +2,21 @@ let karten = [];
 let deleteTargetId = null;
 let html5QrScanner = null;
 let logoOverrides = {};
+let scannedBarcodeFormat = null;
+
+// Maps html5-qrcode format names to JsBarcode format names
+const BARCODE_FORMAT_MAP = {
+    'QR_CODE': 'QR_CODE',
+    'EAN_13': 'EAN13',
+    'EAN_8': 'EAN8',
+    'CODE_128': 'CODE128',
+    'CODE_39': 'CODE39',
+    'ITF': 'ITF'
+};
+
+function mapScanFormatToJsBarcode(formatName) {
+    return BARCODE_FORMAT_MAP[formatName] || 'CODE128';
+}
 
 function showApp() {
     showAppBase();
@@ -129,21 +144,38 @@ function showBarcode(id) {
     notizEl.textContent = k.notiz || '';
     notizEl.style.display = k.notiz ? '' : 'none';
 
-    // Generate barcode
+    // Generate barcode in the correct format
     const svg = document.getElementById('barcodeDisplay');
     svg.style.display = '';
     try {
         const cleanNum = k.kartennummer.replace(/\s/g, '');
-        JsBarcode('#barcodeDisplay', cleanNum, {
-            format: 'CODE128',
-            width: 2,
-            height: 80,
-            displayValue: false,
-            margin: 0,
-            background: '#ffffff'
-        });
+        const format = k.barcodeFormat || 'CODE128';
+        if (format === 'QR_CODE') {
+            svg.style.display = 'none';
+        } else {
+            JsBarcode('#barcodeDisplay', cleanNum, {
+                format: format,
+                width: 2,
+                height: 80,
+                displayValue: false,
+                margin: 0,
+                background: '#ffffff'
+            });
+        }
     } catch (e) {
-        svg.style.display = 'none';
+        try {
+            const cleanNum = k.kartennummer.replace(/\s/g, '');
+            JsBarcode('#barcodeDisplay', cleanNum, {
+                format: 'CODE128',
+                width: 2,
+                height: 80,
+                displayValue: false,
+                margin: 0,
+                background: '#ffffff'
+            });
+        } catch (e2) {
+            svg.style.display = 'none';
+        }
     }
 
     overlay.classList.add('active');
@@ -163,6 +195,9 @@ function openAddKarte() {
     delete document.getElementById('karteNummerWarning').dataset.acknowledged;
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Neue Kundenkarte';
     document.getElementById('karteModalDeleteBtn').style.display = 'none';
+    scannedBarcodeFormat = null;
+    const formatSelect = document.getElementById('karteBarcodeFormat');
+    if (formatSelect) formatSelect.value = '';
     document.getElementById('karteOverlay').classList.add('active');
     stopScan();
 }
@@ -178,6 +213,9 @@ function openEditKarte(id) {
     document.getElementById('karteNummerWarning').style.display = 'none';
     delete document.getElementById('karteNummerWarning').dataset.acknowledged;
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Karte bearbeiten';
+    scannedBarcodeFormat = k.barcodeFormat || null;
+    const formatSelect = document.getElementById('karteBarcodeFormat');
+    if (formatSelect) formatSelect.value = k.barcodeFormat || '';
     const deleteBtn = document.getElementById('karteModalDeleteBtn');
     deleteBtn.style.display = '';
     deleteBtn.onclick = () => { closeKarteModal(); openDeleteConfirm(id); };
@@ -211,8 +249,12 @@ function startScan() {
             Html5QrcodeSupportedFormats.ITF,
             Html5QrcodeSupportedFormats.QR_CODE
         ]},
-        (decodedText) => {
+        (decodedText, decodedResult) => {
             document.getElementById('karteNummer').value = decodedText;
+            const formatName = decodedResult?.result?.format?.formatName;
+            scannedBarcodeFormat = formatName ? mapScanFormatToJsBarcode(formatName) : 'CODE128';
+            const formatSelect = document.getElementById('karteBarcodeFormat');
+            if (formatSelect) formatSelect.value = scannedBarcodeFormat;
             toast('Barcode erkannt: ' + decodedText);
             stopScan();
         },
@@ -260,12 +302,15 @@ async function saveKarte() {
     }
     if (warnEl) { warnEl.style.display = 'none'; delete warnEl.dataset.acknowledged; }
 
+    const formatSelect = document.getElementById('karteBarcodeFormat');
+    const barcodeFormat = (formatSelect && formatSelect.value) || scannedBarcodeFormat || null;
+
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/kundenkarten/${id}` : '/api/kundenkarten';
     const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, kartennummer, notiz })
+        body: JSON.stringify({ name, kartennummer, notiz, barcodeFormat })
     });
 
     if (res.ok) {

@@ -9,12 +9,12 @@ async function getAll(req, res) {
     let result;
     if (hid != null) {
       result = await db.request().input('hid', sql.Int, hid)
-        .query('SELECT Id, Name, Kartennummer, Notiz, ErstelltAm FROM Kundenkarte WHERE HaushaltId=@hid ORDER BY Name');
+        .query('SELECT Id, Name, Kartennummer, Notiz, BarcodeFormat, ErstelltAm FROM Kundenkarte WHERE HaushaltId=@hid ORDER BY Name');
     } else {
       result = await db.request().input('uid', sql.Int, userId)
-        .query('SELECT Id, Name, Kartennummer, Notiz, ErstelltAm FROM Kundenkarte WHERE BenutzerId=@uid AND HaushaltId IS NULL ORDER BY Name');
+        .query('SELECT Id, Name, Kartennummer, Notiz, BarcodeFormat, ErstelltAm FROM Kundenkarte WHERE BenutzerId=@uid AND HaushaltId IS NULL ORDER BY Name');
     }
-    res.json(result.recordset.map(r => ({ id: r.Id, name: r.Name, kartennummer: r.Kartennummer, notiz: r.Notiz || '', erstelltAm: r.ErstelltAm })));
+    res.json(result.recordset.map(r => ({ id: r.Id, name: r.Name, kartennummer: r.Kartennummer, notiz: r.Notiz || '', barcodeFormat: r.BarcodeFormat || null, erstelltAm: r.ErstelltAm })));
   } catch (e) {
     console.error('Kundenkarten GET Fehler:', e);
     res.status(500).json({ error: 'Interner Fehler.' });
@@ -27,15 +27,16 @@ async function create(req, res) {
     const db = await getPool();
     if (!await canWrite(userId, db)) return res.status(403).json({ error: 'Keine Schreibrechte.' });
     const hid = await getHaushaltId(userId, db);
-    const { name, kartennummer, notiz } = req.body;
+    const { name, kartennummer, notiz, barcodeFormat } = req.body;
     if (!name || !kartennummer) return res.status(400).json({ error: 'Name und Kartennummer erforderlich.' });
     const result = await db.request()
       .input('name', sql.NVarChar, name.trim())
       .input('kartennummer', sql.NVarChar, kartennummer.trim())
       .input('notiz', sql.NVarChar, (notiz || '').trim() || null)
+      .input('barcodeFormat', sql.NVarChar, (barcodeFormat || '').trim() || null)
       .input('uid', sql.Int, userId)
       .input('hid', sql.Int, hid)
-      .query('INSERT INTO Kundenkarte (Name, Kartennummer, Notiz, BenutzerId, HaushaltId) OUTPUT INSERTED.Id, INSERTED.ErstelltAm VALUES (@name, @kartennummer, @notiz, @uid, @hid)');
+      .query('INSERT INTO Kundenkarte (Name, Kartennummer, Notiz, BarcodeFormat, BenutzerId, HaushaltId) OUTPUT INSERTED.Id, INSERTED.ErstelltAm VALUES (@name, @kartennummer, @notiz, @barcodeFormat, @uid, @hid)');
     const row = result.recordset[0];
     res.json({ id: row.Id, erstelltAm: row.ErstelltAm });
   } catch (e) {
@@ -51,7 +52,7 @@ async function update(req, res) {
     const db = await getPool();
     if (!await canWrite(userId, db)) return res.status(403).json({ error: 'Keine Schreibrechte.' });
     const hid = await getHaushaltId(userId, db);
-    const { name, kartennummer, notiz } = req.body;
+    const { name, kartennummer, notiz, barcodeFormat } = req.body;
     if (!name || !kartennummer) return res.status(400).json({ error: 'Name und Kartennummer erforderlich.' });
     const where = hid != null ? 'Id=@id AND HaushaltId=@hid' : 'Id=@id AND BenutzerId=@uid AND HaushaltId IS NULL';
     const result = await db.request()
@@ -59,9 +60,10 @@ async function update(req, res) {
       .input('name', sql.NVarChar, name.trim())
       .input('kartennummer', sql.NVarChar, kartennummer.trim())
       .input('notiz', sql.NVarChar, (notiz || '').trim() || null)
+      .input('barcodeFormat', sql.NVarChar, (barcodeFormat || '').trim() || null)
       .input('uid', sql.Int, userId)
       .input('hid', sql.Int, hid)
-      .query(`UPDATE Kundenkarte SET Name=@name, Kartennummer=@kartennummer, Notiz=@notiz WHERE ${where}`);
+      .query(`UPDATE Kundenkarte SET Name=@name, Kartennummer=@kartennummer, Notiz=@notiz, BarcodeFormat=@barcodeFormat WHERE ${where}`);
     if (result.rowsAffected[0] > 0) res.json({});
     else res.status(404).json({ error: 'Karte nicht gefunden.' });
   } catch (e) {
