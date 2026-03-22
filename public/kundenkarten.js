@@ -144,15 +144,42 @@ function showBarcode(id) {
     notizEl.textContent = k.notiz || '';
     notizEl.style.display = k.notiz ? '' : 'none';
 
-    // Generate barcode in the correct format
+    // Generate barcode or QR code in the correct format
     const svg = document.getElementById('barcodeDisplay');
-    svg.style.display = '';
-    try {
-        const cleanNum = k.kartennummer.replace(/\s/g, '');
-        const format = k.barcodeFormat || 'CODE128';
-        if (format === 'QR_CODE') {
-            svg.style.display = 'none';
-        } else {
+    const qrCanvas = document.getElementById('qrcodeDisplay');
+    const cleanNum = k.kartennummer.replace(/\s/g, '');
+    const format = k.barcodeFormat || 'CODE128';
+
+    if (format === 'QR_CODE') {
+        svg.style.display = 'none';
+        qrCanvas.style.display = '';
+        try {
+            const qr = qrcode(0, 'M');
+            qr.addData(cleanNum);
+            qr.make();
+            const moduleCount = qr.getModuleCount();
+            const cellSize = Math.max(4, Math.floor(200 / moduleCount));
+            const size = moduleCount * cellSize;
+            qrCanvas.width = size;
+            qrCanvas.height = size;
+            const ctx = qrCanvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, size, size);
+            ctx.fillStyle = '#000000';
+            for (let row = 0; row < moduleCount; row++) {
+                for (let col = 0; col < moduleCount; col++) {
+                    if (qr.isDark(row, col)) {
+                        ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+        } catch (e) {
+            qrCanvas.style.display = 'none';
+        }
+    } else {
+        qrCanvas.style.display = 'none';
+        svg.style.display = '';
+        try {
             JsBarcode('#barcodeDisplay', cleanNum, {
                 format: format,
                 width: 2,
@@ -161,20 +188,19 @@ function showBarcode(id) {
                 margin: 0,
                 background: '#ffffff'
             });
-        }
-    } catch (e) {
-        try {
-            const cleanNum = k.kartennummer.replace(/\s/g, '');
-            JsBarcode('#barcodeDisplay', cleanNum, {
-                format: 'CODE128',
-                width: 2,
-                height: 80,
-                displayValue: false,
-                margin: 0,
-                background: '#ffffff'
-            });
-        } catch (e2) {
-            svg.style.display = 'none';
+        } catch (e) {
+            try {
+                JsBarcode('#barcodeDisplay', cleanNum, {
+                    format: 'CODE128',
+                    width: 2,
+                    height: 80,
+                    displayValue: false,
+                    margin: 0,
+                    background: '#ffffff'
+                });
+            } catch (e2) {
+                svg.style.display = 'none';
+            }
         }
     }
 
@@ -196,8 +222,6 @@ function openAddKarte() {
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Neue Kundenkarte';
     document.getElementById('karteModalDeleteBtn').style.display = 'none';
     scannedBarcodeFormat = null;
-    const formatSelect = document.getElementById('karteBarcodeFormat');
-    if (formatSelect) formatSelect.value = '';
     document.getElementById('karteOverlay').classList.add('active');
     stopScan();
 }
@@ -214,8 +238,6 @@ function openEditKarte(id) {
     delete document.getElementById('karteNummerWarning').dataset.acknowledged;
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Karte bearbeiten';
     scannedBarcodeFormat = k.barcodeFormat || null;
-    const formatSelect = document.getElementById('karteBarcodeFormat');
-    if (formatSelect) formatSelect.value = k.barcodeFormat || '';
     const deleteBtn = document.getElementById('karteModalDeleteBtn');
     deleteBtn.style.display = '';
     deleteBtn.onclick = () => { closeKarteModal(); openDeleteConfirm(id); };
@@ -253,8 +275,6 @@ function startScan() {
             document.getElementById('karteNummer').value = decodedText;
             const formatName = decodedResult?.result?.format?.formatName;
             scannedBarcodeFormat = formatName ? mapScanFormatToJsBarcode(formatName) : 'CODE128';
-            const formatSelect = document.getElementById('karteBarcodeFormat');
-            if (formatSelect) formatSelect.value = scannedBarcodeFormat;
             toast('Barcode erkannt: ' + decodedText);
             stopScan();
         },
@@ -302,8 +322,7 @@ async function saveKarte() {
     }
     if (warnEl) { warnEl.style.display = 'none'; delete warnEl.dataset.acknowledged; }
 
-    const formatSelect = document.getElementById('karteBarcodeFormat');
-    const barcodeFormat = (formatSelect && formatSelect.value) || scannedBarcodeFormat || null;
+    const barcodeFormat = scannedBarcodeFormat || null;
 
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/kundenkarten/${id}` : '/api/kundenkarten';
