@@ -171,6 +171,11 @@ async function startup() {
           LogoUrl NVARCHAR(1000) NULL
       )`);
 
+    // Ensure BarcodeFormat column on Kundenkarte (for existing databases)
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id=OBJECT_ID('Kundenkarte') AND name='BarcodeFormat')
+      ALTER TABLE Kundenkarte ADD BarcodeFormat NVARCHAR(20) NULL`);
+
     // Ensure HaushaltRolle column on Benutzer (for existing databases)
     await db.request().query(`
       IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id=OBJECT_ID('Benutzer') AND name='HaushaltRolle')
