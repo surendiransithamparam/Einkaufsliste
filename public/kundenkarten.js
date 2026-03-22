@@ -7,6 +7,9 @@ let scannedBarcodeFormat = null;
 // Maps html5-qrcode format names to JsBarcode format names
 const BARCODE_FORMAT_MAP = {
     'QR_CODE': 'QR_CODE',
+    'DATA_MATRIX': 'DATA_MATRIX',
+    'AZTEC': 'AZTEC',
+    'PDF_417': 'PDF_417',
     'EAN_13': 'EAN13',
     'EAN_8': 'EAN8',
     'CODE_128': 'CODE128',
@@ -150,7 +153,8 @@ function showBarcode(id) {
     const cleanNum = k.kartennummer.replace(/\s/g, '');
     const format = k.barcodeFormat || 'CODE128';
 
-    if (format === 'QR_CODE') {
+    const is2D = ['QR_CODE', 'DATA_MATRIX', 'AZTEC', 'PDF_417'].includes(format);
+    if (is2D) {
         svg.style.display = 'none';
         qrCanvas.style.display = '';
         try {
@@ -275,7 +279,7 @@ function startScan() {
             document.getElementById('karteNummer').value = decodedText;
             const formatName = decodedResult?.result?.format?.formatName;
             scannedBarcodeFormat = formatName ? mapScanFormatToJsBarcode(formatName) : 'CODE128';
-            toast('Erkannt (' + (formatName || 'unbekannt') + '): ' + decodedText);
+            toast('Barcode erkannt: ' + decodedText);
             stopScan();
         },
         () => {}
