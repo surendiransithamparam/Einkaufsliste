@@ -7,7 +7,7 @@ async function sendActivationEmail(email, username, token, req) {
   const user = config.smtp.user || '';
   const pass = config.smtp.password || '';
   const fromAddr = config.smtp.from || user;
-  const fromName = config.smtp.fromName || 'HaushaltPLUS';
+  const fromName = config.smtp.fromName || 'Haushalt⁺';
 
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   const link = `${baseUrl}/api/auth/aktivieren?token=${encodeURIComponent(token)}`;
@@ -21,7 +21,7 @@ ${link}
 Falls du dich nicht registriert hast, kannst du diese E-Mail ignorieren.
 
 Viele Grüsse
-HaushaltPLUS`;
+Haushalt⁺`;
 
   const transporter = nodemailer.createTransport({
     host, port,
@@ -32,7 +32,7 @@ HaushaltPLUS`;
   await transporter.sendMail({
     from: `"${fromName}" <${fromAddr}>`,
     to: email,
-    subject: 'HaushaltPLUS – E-Mail bestätigen',
+    subject: 'Haushalt⁺ – E-Mail bestätigen',
     text: body
   });
 }
@@ -43,7 +43,7 @@ async function sendResetEmail(email, username, token, req) {
   const user = config.smtp.user || '';
   const pass = config.smtp.password || '';
   const fromAddr = config.smtp.from || user;
-  const fromName = config.smtp.fromName || 'HaushaltPLUS';
+  const fromName = config.smtp.fromName || 'Haushalt⁺';
 
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   const link = `${baseUrl}/reset.html?token=${encodeURIComponent(token)}`;
@@ -59,7 +59,7 @@ Der Link ist 1 Stunde gültig.
 Falls du dies nicht angefordert hast, kannst du diese E-Mail ignorieren.
 
 Viele Grüsse
-HaushaltPLUS`;
+Haushalt⁺`;
 
   const transporter = nodemailer.createTransport({
     host, port,
@@ -70,7 +70,7 @@ HaushaltPLUS`;
   await transporter.sendMail({
     from: `"${fromName}" <${fromAddr}>`,
     to: email,
-    subject: 'HaushaltPLUS – Passwort zurücksetzen',
+    subject: 'Haushalt⁺ – Passwort zurücksetzen',
     text: body
   });
 }
