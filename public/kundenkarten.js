@@ -222,8 +222,6 @@ function openAddKarte() {
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Neue Kundenkarte';
     document.getElementById('karteModalDeleteBtn').style.display = 'none';
     scannedBarcodeFormat = null;
-    const formatSelect = document.getElementById('karteBarcodeFormat');
-    if (formatSelect) formatSelect.value = '';
     document.getElementById('karteOverlay').classList.add('active');
     stopScan();
 }
@@ -240,8 +238,6 @@ function openEditKarte(id) {
     delete document.getElementById('karteNummerWarning').dataset.acknowledged;
     document.getElementById('karteModalTitle').innerHTML = '<i class="bi bi-credit-card"></i> Karte bearbeiten';
     scannedBarcodeFormat = k.barcodeFormat || null;
-    const formatSelect = document.getElementById('karteBarcodeFormat');
-    if (formatSelect) formatSelect.value = k.barcodeFormat || '';
     const deleteBtn = document.getElementById('karteModalDeleteBtn');
     deleteBtn.style.display = '';
     deleteBtn.onclick = () => { closeKarteModal(); openDeleteConfirm(id); };
@@ -279,8 +275,6 @@ function startScan() {
             document.getElementById('karteNummer').value = decodedText;
             const formatName = decodedResult?.result?.format?.formatName;
             scannedBarcodeFormat = formatName ? mapScanFormatToJsBarcode(formatName) : 'CODE128';
-            const formatSelect = document.getElementById('karteBarcodeFormat');
-            if (formatSelect) formatSelect.value = scannedBarcodeFormat;
             toast('Barcode erkannt: ' + decodedText);
             stopScan();
         },
@@ -328,8 +322,7 @@ async function saveKarte() {
     }
     if (warnEl) { warnEl.style.display = 'none'; delete warnEl.dataset.acknowledged; }
 
-    const formatSelect = document.getElementById('karteBarcodeFormat');
-    const barcodeFormat = (formatSelect && formatSelect.value) || scannedBarcodeFormat || null;
+    const barcodeFormat = scannedBarcodeFormat || null;
 
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/kundenkarten/${id}` : '/api/kundenkarten';
