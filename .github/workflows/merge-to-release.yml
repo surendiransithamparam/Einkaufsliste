@@ -1,14 +1,16 @@
 name: Merge develop → release
 
 on:
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at 00:00 UTC (01:00 MEZ / 02:00 MESZ)
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
-  create-pr:
+  merge-to-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +30,7 @@ jobs:
           fi
 
       - name: Create Pull Request
+        id: pr
         if: steps.diff.outputs.commits != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -35,10 +38,23 @@ jobs:
           EXISTING=$(gh pr list --base release --head develop --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING" ]; then
             echo "PR #$EXISTING already exists."
+            echo "pr_number=$EXISTING" >> "$GITHUB_OUTPUT"
           else
-            gh pr create \
+            PR_URL=$(gh pr create \
               --title "Release: merge develop → release" \
-              --body "Automated PR to merge all changes from \`develop\` into \`release\`." \
+              --body "Automated weekly PR to merge all changes from \`develop\` into \`release\`." \
               --base release \
-              --head develop
+              --head develop)
+            PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$')
+            echo "Created PR #$PR_NUMBER"
+            echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Merge Pull Request
+        if: steps.diff.outputs.commits != '0' && steps.pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge ${{ steps.pr.outputs.pr_number }} \
+            --merge \
+            --subject "Release: merge develop → release"
