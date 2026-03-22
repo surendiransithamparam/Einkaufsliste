@@ -263,7 +263,7 @@ function startScan() {
     html5QrScanner = new Html5Qrcode('scannerView');
     html5QrScanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 280, height: 100 }, formatsToSupport: [
+        { fps: 10, qrbox: { width: 250, height: 250 }, formatsToSupport: [
             Html5QrcodeSupportedFormats.CODE_128,
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.EAN_8,
