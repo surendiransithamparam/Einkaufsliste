@@ -20,6 +20,7 @@
     <!-- Barcode libraries -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -101,6 +102,7 @@
         <div id="barcodeKarteNotiz" style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:1.5rem"></div>
         <div style="background:#fff;border-radius:12px;padding:1.5rem 2rem;margin-bottom:1rem">
             <svg id="barcodeDisplay"></svg>
+            <canvas id="qrcodeDisplay" style="display:none"></canvas>
         </div>
         <div style="font-size:1.3rem;font-weight:700;letter-spacing:0.1em;color:#fff;font-family:monospace;margin-bottom:2rem" id="barcodeKarteNummer"></div>
         <button class="btn btn-secondary" onclick="closeBarcodeOverlay()" style="color:#fff;border-color:rgba(255,255,255,0.3)">
@@ -149,6 +151,7 @@
                     <option value="CODE128">CODE128</option>
                     <option value="CODE39">CODE39</option>
                     <option value="ITF">ITF</option>
+                    <option value="QR_CODE">QR-Code</option>
                 </select>
                 <div style="font-size:0.7rem;color:var(--gray-400);margin-top:0.25rem">Wird beim Scannen automatisch erkannt</div>
             </div>
