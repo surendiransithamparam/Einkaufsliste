@@ -42,7 +42,7 @@ app.use(session({
 }));
 
 // Serve static files - assumes src/app.js, so public is at ../public
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // --- Health Endpoint ---
 app.get('/api/health', (req, res) => {
