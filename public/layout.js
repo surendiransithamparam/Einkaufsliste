@@ -41,16 +41,17 @@ function injectNavbar(extraMenuHtml) {
 </nav>`;
 }
 
-function injectSidebar() {
+function injectSidebar(extraLinks) {
     const el = document.getElementById('sidebar');
     if (!el) return;
     const page = location.pathname.split('/').pop() || 'index.html';
+    const allLinks = extraLinks ? SIDEBAR_LINKS.concat(extraLinks) : SIDEBAR_LINKS;
     el.outerHTML = `<aside class="sidebar hidden" id="sidebar">
     <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menü ein-/ausblenden" aria-label="Menü ein-/ausblenden">
         <i class="bi bi-list"></i>
     </button>
     <nav class="sidebar-nav" role="navigation" aria-label="Hauptnavigation">
-        ${SIDEBAR_LINKS.map(l =>
+        ${allLinks.map(l =>
             `<a href="${l.href}" class="sidebar-link${page === l.href ? ' active' : ''}"><i class="bi ${l.icon}"></i> <span>${l.label}</span></a>`
         ).join('\n        ')}
     </nav>
@@ -99,7 +100,7 @@ function injectToasts() {
 
 function initLayout(opts) {
     injectNavbar(opts && opts.extraMenu);
-    injectSidebar();
+    injectSidebar(opts && opts.extraSidebarLinks);
     injectLogin(opts && opts.loginIcon);
     injectToasts();
 }

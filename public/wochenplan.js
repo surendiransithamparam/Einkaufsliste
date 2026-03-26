@@ -666,12 +666,15 @@ async function saveGericht() {
         closeGerichtEdit();
         loadGerichteList();
         loadGerichte();
+    } else {
+        toast('Fehler beim Speichern', true);
     }
 }
 
 async function deleteGericht(id) {
     if (!confirm('Gericht wirklich löschen?')) return;
-    await fetch(`/api/gerichte/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/gerichte/${id}`, { method: 'DELETE' });
+    if (!res.ok) { toast('Fehler beim Löschen', true); return; }
     toast('Gericht gelöscht');
     loadGerichteList();
     loadGerichte();
