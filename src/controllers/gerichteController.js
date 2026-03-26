@@ -55,27 +55,35 @@ async function create(req, res) {
     if (name.length < 1) return res.fail(400, 'Name ist erforderlich.');
     if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
 
-    const result = await db.request()
-      .input('name', sql.NVarChar, name)
-      .input('uid', sql.Int, userId)
-      .input('hid', sql.Int, hid)
-      .query('INSERT INTO Gericht (Name, BenutzerId, HaushaltId) OUTPUT INSERTED.Id VALUES (@name, @uid, @hid)');
-    const gerichtId = result.recordset[0].Id;
+    const transaction = new sql.Transaction(db);
+    await transaction.begin();
+    try {
+      const result = await new sql.Request(transaction)
+        .input('name', sql.NVarChar, name)
+        .input('uid', sql.Int, userId)
+        .input('hid', sql.Int, hid)
+        .query('INSERT INTO Gericht (Name, BenutzerId, HaushaltId) OUTPUT INSERTED.Id VALUES (@name, @uid, @hid)');
+      const gerichtId = result.recordset[0].Id;
 
-    if (req.body.zutaten && Array.isArray(req.body.zutaten)) {
-      for (const z of req.body.zutaten) {
-        const artikel = (z.artikel || '').trim();
-        if (!artikel) continue;
-        await db.request()
-          .input('gid', sql.Int, gerichtId)
-          .input('artikel', sql.NVarChar, artikel)
-          .input('menge', sql.Decimal(18, 2), z.menge != null ? z.menge : 1)
-          .input('einheit', sql.NVarChar, z.einheit || 'Stück')
-          .query('INSERT INTO GerichtZutat (GerichtId, Artikel, Menge, Einheit) VALUES (@gid, @artikel, @menge, @einheit)');
+      if (req.body.zutaten && Array.isArray(req.body.zutaten)) {
+        for (const z of req.body.zutaten) {
+          const artikel = (z.artikel || '').trim();
+          if (!artikel) continue;
+          await new sql.Request(transaction)
+            .input('gid', sql.Int, gerichtId)
+            .input('artikel', sql.NVarChar, artikel)
+            .input('menge', sql.Decimal(18, 2), z.menge != null ? z.menge : 1)
+            .input('einheit', sql.NVarChar, z.einheit || 'Stück')
+            .query('INSERT INTO GerichtZutat (GerichtId, Artikel, Menge, Einheit) VALUES (@gid, @artikel, @menge, @einheit)');
+        }
       }
-    }
 
-    res.ok({ id: gerichtId });
+      await transaction.commit();
+      res.ok({ id: gerichtId });
+    } catch (txErr) {
+      await transaction.rollback();
+      throw txErr;
+    }
   } catch (err) {
     console.error('gerichte post error:', err);
     res.fail(500, 'Interner Fehler.');
@@ -101,19 +109,27 @@ async function update(req, res) {
     }
 
     if (req.body.zutaten !== undefined && Array.isArray(req.body.zutaten)) {
-      await db.request()
-        .input('gid', sql.Int, id)
-        .query('DELETE FROM GerichtZutat WHERE GerichtId=@gid');
-
-      for (const z of req.body.zutaten) {
-        const artikel = (z.artikel || '').trim();
-        if (!artikel) continue;
-        await db.request()
+      const transaction = new sql.Transaction(db);
+      await transaction.begin();
+      try {
+        await new sql.Request(transaction)
           .input('gid', sql.Int, id)
-          .input('artikel', sql.NVarChar, artikel)
-          .input('menge', sql.Decimal(18, 2), z.menge != null ? z.menge : 1)
-          .input('einheit', sql.NVarChar, z.einheit || 'Stück')
-          .query('INSERT INTO GerichtZutat (GerichtId, Artikel, Menge, Einheit) VALUES (@gid, @artikel, @menge, @einheit)');
+          .query('DELETE FROM GerichtZutat WHERE GerichtId=@gid');
+
+        for (const z of req.body.zutaten) {
+          const artikel = (z.artikel || '').trim();
+          if (!artikel) continue;
+          await new sql.Request(transaction)
+            .input('gid', sql.Int, id)
+            .input('artikel', sql.NVarChar, artikel)
+            .input('menge', sql.Decimal(18, 2), z.menge != null ? z.menge : 1)
+            .input('einheit', sql.NVarChar, z.einheit || 'Stück')
+            .query('INSERT INTO GerichtZutat (GerichtId, Artikel, Menge, Einheit) VALUES (@gid, @artikel, @menge, @einheit)');
+        }
+        await transaction.commit();
+      } catch (txErr) {
+        await transaction.rollback();
+        throw txErr;
       }
     }
 
