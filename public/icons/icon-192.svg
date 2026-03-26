@@ -7,5 +7,5 @@
     <circle cx="80" cy="68" r="24" fill="#3b82f6"/>
     <polyline points="-30,-30 -5,0 40,-50" stroke-width="34"/>
   </g>
-  <text x="256" y="430" text-anchor="middle" font-family="sans-serif" font-size="68" font-weight="700" fill="rgba(255,255,255,0.85)">Einkauf</text>
+  <text x="256" y="430" text-anchor="middle" font-family="sans-serif" font-size="68" font-weight="700" fill="rgba(255,255,255,0.85)">Haushalt⁺</text>
 </svg>
