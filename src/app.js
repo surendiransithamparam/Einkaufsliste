@@ -38,7 +38,8 @@ app.use(helmet({
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'"]
         }
-    }
+    },
+    referrerPolicy: { policy: 'same-origin' }
 }));
 app.use(responseHelpers);
 
