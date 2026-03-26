@@ -37,7 +37,7 @@ function renderAktionCard(a, showLaden) {
         ${beschreibung}
         <div class="aktion-card-footer">
             <div class="aktion-card-preis">${preisHtml} ${origHtml}</div>
-            <button class="aktion-add-btn" onclick="addToEinkauf('${esc(a.name).replace(/'/g, "\\'")}', '${esc(a.laden).replace(/'/g, "\\'")}', this)" title="Zum Einkauf hinzufügen">
+            <button class="aktion-add-btn" data-aktion-name="${esc(a.name)}" data-aktion-laden="${esc(a.laden)}" title="Zum Einkauf hinzufügen">
                 <i class="bi bi-cart-plus"></i>
             </button>
         </div>
@@ -72,6 +72,7 @@ async function loadAktionenOverview() {
             html += `</div>`;
         }
         container.innerHTML = html;
+        attachAktionHandlers(container);
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red-500)">Fehler beim Laden der Aktionen.</p>';
     }
@@ -101,6 +102,7 @@ async function searchAktionen() {
             return;
         }
         container.innerHTML = `<div class="aktion-grid">${data.map(a => renderAktionCard(a, true)).join('')}</div>`;
+        attachAktionHandlers(container);
     } catch (e) {
         container.innerHTML = '<p style="color:var(--red-500)">Fehler bei der Suche.</p>';
     }
@@ -136,6 +138,12 @@ function toggleStoreGroup(groupId) {
 }
 
 // -- Add Aktion to Einkauf --
+
+function attachAktionHandlers(container) {
+    container.querySelectorAll('.aktion-add-btn[data-aktion-name]').forEach(btn => {
+        btn.onclick = () => addToEinkauf(btn.dataset.aktionName, btn.dataset.aktionLaden, btn);
+    });
+}
 
 async function addToEinkauf(name, laden, btn) {
     btn.disabled = true;

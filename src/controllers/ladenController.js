@@ -5,10 +5,10 @@ async function getAll(req, res) {
     const db = await getPool();
     const result = await db.request()
       .query('SELECT Id, Name FROM Laden ORDER BY Name');
-    res.json(result.recordset.map(r => ({ id: r.Id, name: r.Name })));
+    res.ok(result.recordset.map(r => ({ id: r.Id, name: r.Name })));
   } catch (err) {
     console.error('laden error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 

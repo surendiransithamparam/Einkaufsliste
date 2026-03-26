@@ -1,4 +1,4 @@
-const { getPool, sql } = require('../config/db');
+const { sql } = require('../config/db');
 const { isAdmin, deleteHaushaltCascade } = require('../utils/dbHelpers');
 const { hashPassword } = require('../utils/crypto');
 const { validatePassword } = require('../utils/validation');
@@ -16,8 +16,7 @@ function formatDate(d) {
 
 async function getBenutzer(req, res) {
   try {
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     const result = await db.request().query(`
@@ -25,7 +24,7 @@ async function getBenutzer(req, res) {
       FROM Benutzer b LEFT JOIN Haushalt h ON b.HaushaltId=h.Id
       ORDER BY b.Id`);
 
-    res.json(result.recordset.map(r => ({
+    res.ok(result.recordset.map(r => ({
       id: r.Id,
       benutzername: r.Benutzername,
       email: r.Email || '',
@@ -36,15 +35,14 @@ async function getBenutzer(req, res) {
     })));
   } catch (err) {
     console.error('admin benutzer get error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function updateBenutzer(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     if (req.body.emailBestaetigt !== undefined) {
@@ -65,28 +63,27 @@ async function updateBenutzer(req, res) {
         .input('id', sql.Int, id)
         .query('UPDATE Benutzer SET PasswordHash=@hash WHERE Id=@id');
     }
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('admin benutzer put error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function deleteBenutzer(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
-    if (id === userId) return res.status(400).json({ error: 'Du kannst dich nicht selbst löschen.' });
+    if (id === userId) return res.fail(400, 'Du kannst dich nicht selbst löschen.');
 
     await db.request()
       .input('id', sql.Int, id)
       .query('DELETE FROM Benutzer WHERE Id=@id');
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('admin benutzer delete error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
@@ -94,8 +91,7 @@ async function deleteBenutzer(req, res) {
 
 async function getHaushalte(req, res) {
   try {
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     const result = await db.request().query(`
@@ -104,7 +100,7 @@ async function getHaushalte(req, res) {
       FROM Haushalt h LEFT JOIN Benutzer b ON h.ErstelltVon=b.Id
       ORDER BY h.Id`);
 
-    res.json(result.recordset.map(r => ({
+    res.ok(result.recordset.map(r => ({
       id: r.Id,
       name: r.Name,
       code: r.Code,
@@ -113,15 +109,14 @@ async function getHaushalte(req, res) {
     })));
   } catch (err) {
     console.error('admin haushalte get error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function getHaushaltMitglieder(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     let erstelltVon = null;
@@ -136,7 +131,7 @@ async function getHaushaltMitglieder(req, res) {
       .input('hid', sql.Int, id)
       .query('SELECT Id, Benutzername, HaushaltRolle FROM Benutzer WHERE HaushaltId=@hid');
 
-    res.json(result.recordset.map(r => ({
+    res.ok(result.recordset.map(r => ({
       id: r.Id,
       benutzername: r.Benutzername,
       rolle: r.HaushaltRolle,
@@ -144,15 +139,14 @@ async function getHaushaltMitglieder(req, res) {
     })));
   } catch (err) {
     console.error('admin haushalte mitglieder error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function updateHaushalt(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     if (req.body.name !== undefined) {
@@ -161,10 +155,10 @@ async function updateHaushalt(req, res) {
         .input('id', sql.Int, id)
         .query('UPDATE Haushalt SET Name=@name WHERE Id=@id');
     }
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('admin haushalte put error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
@@ -172,24 +166,23 @@ async function updateHaushaltMitglied(req, res) {
   try {
     const hid = parseInt(req.params.hid);
     const uid = parseInt(req.params.uid);
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     if (req.body.rolle !== undefined) {
       const rolle = (req.body.rolle || '').trim();
       if (rolle !== 'admin' && rolle !== 'schreibend' && rolle !== 'lesend')
-        return res.status(400).json({ error: 'Ungültige Rolle.' });
+        return res.fail(400, 'Ungültige Rolle.');
       await db.request()
         .input('rolle', sql.NVarChar, rolle)
         .input('uid', sql.Int, uid)
         .input('hid', sql.Int, hid)
         .query('UPDATE Benutzer SET HaushaltRolle=@rolle WHERE Id=@uid AND HaushaltId=@hid');
     }
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('admin haushalte mitglieder put error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
@@ -197,8 +190,7 @@ async function removeHaushaltMitglied(req, res) {
   try {
     const hid = parseInt(req.params.hid);
     const uid = parseInt(req.params.uid);
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     await db.request()
@@ -213,18 +205,17 @@ async function removeHaushaltMitglied(req, res) {
       await deleteHaushaltCascade(hid, db);
     }
 
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('admin haushalte mitglieder delete error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function deleteHaushalt(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     await db.request()
@@ -232,10 +223,10 @@ async function deleteHaushalt(req, res) {
       .query("UPDATE Benutzer SET HaushaltId=NULL, HaushaltRolle='schreibend' WHERE HaushaltId=@hid");
 
     await deleteHaushaltCascade(id, db);
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('admin haushalte delete error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
@@ -243,82 +234,79 @@ async function deleteHaushalt(req, res) {
 
 async function createLaden(req, res) {
   try {
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     const name = (req.body.name || '').trim();
-    if (!name) return res.status(400).json({ error: 'Name darf nicht leer sein.' });
+    if (!name) return res.fail(400, 'Name darf nicht leer sein.');
 
     const dup = await db.request()
       .input('name', sql.NVarChar, name)
       .query('SELECT Id FROM Laden WHERE LOWER(Name)=LOWER(@name)');
-    if (dup.recordset.length > 0) return res.status(400).json({ error: 'Laden mit diesem Namen existiert bereits.' });
+    if (dup.recordset.length > 0) return res.fail(400, 'Laden mit diesem Namen existiert bereits.');
 
     const result = await db.request()
       .input('name', sql.NVarChar, name)
       .query('INSERT INTO Laden (Name, Sortierung) VALUES (@name, 0); SELECT SCOPE_IDENTITY() AS id');
-    res.json({ id: result.recordset[0].id, name });
+    res.ok({ id: result.recordset[0].id, name });
   } catch (err) {
     console.error('admin laden post error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function updateLaden(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     const name = (req.body.name || '').trim();
-    if (!name) return res.status(400).json({ error: 'Name darf nicht leer sein.' });
+    if (!name) return res.fail(400, 'Name darf nicht leer sein.');
 
     const dup = await db.request()
       .input('name', sql.NVarChar, name)
       .input('id', sql.Int, id)
       .query('SELECT Id FROM Laden WHERE LOWER(Name)=LOWER(@name) AND Id<>@id');
-    if (dup.recordset.length > 0) return res.status(400).json({ error: 'Laden mit diesem Namen existiert bereits.' });
+    if (dup.recordset.length > 0) return res.fail(400, 'Laden mit diesem Namen existiert bereits.');
 
     await db.request()
       .input('name', sql.NVarChar, name)
       .input('id', sql.Int, id)
       .query('UPDATE Laden SET Name=@name WHERE Id=@id');
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('admin laden put error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function deleteLaden(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
 
     const laden = await db.request()
       .input('id', sql.Int, id)
       .query('SELECT Name FROM Laden WHERE Id=@id');
-    if (laden.recordset.length === 0) return res.status(404).json({ error: 'Laden nicht gefunden.' });
+    if (laden.recordset.length === 0) return res.fail(404, 'Laden nicht gefunden.');
 
     const ladenName = laden.recordset[0].Name;
     const articles = await db.request()
       .input('name', sql.NVarChar, ladenName)
       .query('SELECT COUNT(*) AS cnt FROM Artikel WHERE Laden=@name');
     if (articles.recordset[0].cnt > 0) {
-      return res.status(400).json({ error: `Laden kann nicht gelöscht werden – ${articles.recordset[0].cnt} Artikel verknüpft.` });
+      return res.fail(400, `Laden kann nicht gelöscht werden – ${articles.recordset[0].cnt} Artikel verknüpft.`);
     }
 
     await db.request()
       .input('id', sql.Int, id)
       .query('DELETE FROM Laden WHERE Id=@id');
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('admin laden delete error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
@@ -326,8 +314,7 @@ async function deleteLaden(req, res) {
 
 async function getKundenkartenLogos(req, res) {
   try {
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
     const result = await db.request()
       .query(`SELECT storeName, logoUrl FROM (
@@ -339,21 +326,20 @@ async function getKundenkartenLogos(req, res) {
                 FROM KundenkartenLogo l2
                 WHERE NOT EXISTS (SELECT 1 FROM Kundenkarte k2 WHERE LOWER(k2.Name) = LOWER(l2.StoreName))
               ) AS combined ORDER BY storeName`);
-    res.json(result.recordset.map(r => ({ storeName: r.storeName, logoUrl: r.logoUrl || null })));
+    res.ok(result.recordset.map(r => ({ storeName: r.storeName, logoUrl: r.logoUrl || null })));
   } catch (err) {
     console.error('admin kundenkarten-logos get error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function updateKundenkartenLogo(req, res) {
   try {
-    const userId = req.session.userId;
-    const db = await getPool();
+    const { userId, db } = req.ctx;
     if (!await isAdmin(userId, db)) return res.status(403).json({});
     const storeName = (req.body.storeName || '').trim();
     const logoUrl = (req.body.logoUrl || '').trim() || null;
-    if (!storeName) return res.status(400).json({ error: 'StoreName erforderlich.' });
+    if (!storeName) return res.fail(400, 'StoreName erforderlich.');
     const existing = await db.request()
       .input('name', sql.NVarChar, storeName)
       .query('SELECT Id FROM KundenkartenLogo WHERE LOWER(StoreName)=LOWER(@name)');
@@ -368,10 +354,10 @@ async function updateKundenkartenLogo(req, res) {
         .input('url', sql.NVarChar, logoUrl)
         .query('INSERT INTO KundenkartenLogo (StoreName, LogoUrl) VALUES (@name, @url)');
     }
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('admin kundenkarten-logos put error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
