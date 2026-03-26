@@ -235,9 +235,6 @@
 }
 
 @media (min-width: 769px) {
-    .plan-grid {
-        grid-template-columns: 1fr;
-    }
     .meal-modal-overlay { align-items: center; }
     .meal-modal { border-radius: var(--radius); }
 }

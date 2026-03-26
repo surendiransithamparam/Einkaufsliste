@@ -202,6 +202,20 @@ async function startup() {
       }
     }
 
+    // Performance indexes
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_Benutzer_Email')
+      CREATE INDEX IX_Benutzer_Email ON Benutzer(Email)`);
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_Artikel_HaushaltId')
+      CREATE INDEX IX_Artikel_HaushaltId ON Artikel(HaushaltId)`);
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_Artikel_BenutzerId')
+      CREATE INDEX IX_Artikel_BenutzerId ON Artikel(BenutzerId)`);
+    await db.request().query(`
+      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_Haushalt_Code')
+      CREATE INDEX IX_Haushalt_Code ON Haushalt(Code)`);
+
     console.log('Database initialized successfully');
   } catch (err) {
     console.error('Startup error:', err);

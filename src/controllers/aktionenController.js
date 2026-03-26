@@ -1,5 +1,4 @@
-const { getPool, sql } = require('../config/db');
-const { getHaushaltId } = require('../utils/dbHelpers');
+const { sql } = require('../config/db');
 const { fetchAllAktionen, matchAktion, resetCache } = require('../services/aktionenScraper');
 
 async function search(req, res) {
@@ -15,18 +14,16 @@ async function search(req, res) {
     if (laden) {
       filtered = filtered.filter(a => a.laden.toLowerCase() === laden.toLowerCase());
     }
-    res.json(filtered.slice(0, 50));
+    res.ok(filtered.slice(0, 50));
   } catch (err) {
     console.error('aktionen error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function match(req, res) {
   try {
-    const userId = req.session.userId;
-    const db = await getPool();
-    const hid = await getHaushaltId(userId, db);
+    const { userId, hid, db } = req.ctx;
 
     let artikelResult;
     if (hid != null) {
@@ -49,10 +46,10 @@ async function match(req, res) {
       }
     }
 
-    res.json(matches);
+    res.ok(matches);
   } catch (err) {
     console.error('aktionen match error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
@@ -64,10 +61,10 @@ async function alle(req, res) {
       if (!byLaden[a.laden]) byLaden[a.laden] = [];
       byLaden[a.laden].push(a);
     }
-    res.json({ total: aktionen.length, byLaden });
+    res.ok({ total: aktionen.length, byLaden });
   } catch (err) {
     console.error('aktionen alle error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
@@ -75,10 +72,10 @@ async function refresh(req, res) {
   try {
     resetCache();
     const aktionen = await fetchAllAktionen();
-    res.json({ total: aktionen.length });
+    res.ok({ total: aktionen.length });
   } catch (err) {
     console.error('aktionen refresh error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 

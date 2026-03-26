@@ -24,6 +24,43 @@ function esc(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function debounce(fn, ms) {
+    let timer;
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+
+// -- Shared constants & date utilities --
+const TAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+const TAGE_KURZ = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+function getMonday(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    date.setDate(diff);
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
+function formatDateFull(str) {
+    if (!str) return '';
+    const [y, m, d] = str.split('-');
+    return `${d}.${m}.${y}`;
+}
+
+function formatDateShort(d) {
+    return `${d.getDate()}.${d.getMonth() + 1}.`;
+}
+
+function mondayStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function mapEinheit(e) {
+    const map = { 'g': 'g', 'kg': 'kg', 'ml': 'ml', 'dl': 'ml', 'l': 'Liter', 'EL': 'Stück', 'TL': 'Stück', 'Prise': 'Stück', 'Bund': 'Bund' };
+    return map[e] || 'Stück';
+}
+
 // -- Auth --
 async function checkAuth(onSuccess) {
     try {

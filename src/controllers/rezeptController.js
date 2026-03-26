@@ -39,10 +39,10 @@ async function suche(req, res) {
       } catch {}
     }));
 
-    res.json(allResults);
+    res.ok(allResults);
   } catch (err) {
     console.error('rezept suche error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
@@ -53,12 +53,12 @@ async function zutaten(req, res) {
     try {
       parsedUrl = new URL(url);
     } catch {
-      return res.status(400).json({ error: 'URL nicht erlaubt.' });
+      return res.fail(400, 'URL nicht erlaubt.');
     }
 
     if ((parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') ||
         !allowedRecipeHosts.has(parsedUrl.hostname)) {
-      return res.status(400).json({ error: 'URL nicht erlaubt.' });
+      return res.fail(400, 'URL nicht erlaubt.');
     }
 
     const response = await fetch(url, {
@@ -79,7 +79,7 @@ async function zutaten(req, res) {
             if (!text) continue;
             parseZutat(text, zutatenList);
           }
-          return res.json(zutatenList);
+          return res.ok(zutatenList);
         }
       } catch {}
     }
@@ -94,10 +94,10 @@ async function zutaten(req, res) {
       zutatenList.push({ menge, einheit, artikel });
     }
 
-    res.json(zutatenList);
+    res.ok(zutatenList);
   } catch (err) {
     console.error('rezept zutaten error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
