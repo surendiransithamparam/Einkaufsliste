@@ -85,7 +85,7 @@ function showAppBase() {
     if (sidebar) sidebar.classList.remove('hidden');
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) logoutBtn.style.display = '';
-    // Show admin link in sidebar for admins
+    // Show admin link in sidebar and bottom nav for admins
     if (currentUser && currentUser.isAdmin) {
         const nav = document.querySelector('.sidebar-nav');
         if (nav && !document.getElementById('adminSidebarLink')) {
@@ -95,6 +95,16 @@ function showAppBase() {
             link.className = 'sidebar-link';
             link.innerHTML = '<i class="bi bi-shield-lock"></i> <span>Admin</span>';
             nav.appendChild(link);
+        }
+        const bottomNav = document.getElementById('bottomNav');
+        if (bottomNav && !document.getElementById('adminBottomLink')) {
+            const page = location.pathname.split('/').pop() || 'index.html';
+            const link = document.createElement('a');
+            link.id = 'adminBottomLink';
+            link.href = 'admin.html';
+            link.className = 'bottom-nav-item' + (page === 'admin.html' ? ' active' : '');
+            link.innerHTML = '<i class="bi bi-shield-lock"></i><span>Admin</span>';
+            bottomNav.appendChild(link);
         }
     }
 }

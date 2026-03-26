@@ -120,13 +120,15 @@ function applyDarkThemeColor() {
     }
 }
 
-function injectBottomNav() {
+function injectBottomNav(extraLinks) {
     const page = location.pathname.split('/').pop() || 'index.html';
+    const allLinks = extraLinks ? SIDEBAR_LINKS.concat(extraLinks) : SIDEBAR_LINKS;
     const nav = document.createElement('nav');
     nav.className = 'bottom-nav';
+    nav.id = 'bottomNav';
     nav.setAttribute('role', 'navigation');
     nav.setAttribute('aria-label', 'Hauptnavigation');
-    nav.innerHTML = SIDEBAR_LINKS.map(l =>
+    nav.innerHTML = allLinks.map(l =>
         `<a href="${l.href}" class="bottom-nav-item${page === l.href ? ' active' : ''}"><i class="bi ${l.icon}"></i><span>${l.label}</span></a>`
     ).join('');
     document.body.appendChild(nav);
@@ -137,7 +139,7 @@ function initLayout(opts) {
     applyDarkThemeColor();
     injectNavbar(opts && opts.extraMenu);
     injectSidebar(opts && opts.extraSidebarLinks);
-    injectBottomNav();
+    injectBottomNav(opts && opts.extraSidebarLinks);
     injectLogin(opts && opts.loginIcon);
     injectToasts();
 }
