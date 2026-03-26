@@ -5,6 +5,11 @@
     --primary-600: #3b82f6;
     --primary-700: #2563eb;
 
+    /* Legacy aliases for cached JS files */
+    --green-600: var(--primary-600);
+    --green-700: var(--primary-700);
+    --green-50: var(--primary-50);
+
     /* Status colors */
     --red-500: #ef4444;
     --red-50: rgba(239,68,68,0.08);

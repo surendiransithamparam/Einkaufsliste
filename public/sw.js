@@ -1,4 +1,4 @@
-const CACHE_NAME = 'haushalt-plus-v1';
+const CACHE_NAME = 'haushalt-plus-v2';
 const ASSETS = [
     './',
     './index.html',
@@ -16,6 +16,7 @@ const ASSETS = [
     './app.js',
     './shared.js',
     './layout.js',
+    './bugreport.js',
     './webauthn.js',
     './lib/simplewebauthn-browser.min.js',
     './rezepte.js',
@@ -26,8 +27,7 @@ const ASSETS = [
     './manifest.json',
     './icons/icon-192.svg',
     './icons/icon-512.svg',
-    'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
-    'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap'
+    'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
 ];
 
 // Install: cache all assets
