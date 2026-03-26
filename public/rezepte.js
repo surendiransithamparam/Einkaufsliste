@@ -359,11 +359,13 @@ async function saveGericht() {
         body: JSON.stringify({ name, zutaten })
     });
     if (res.ok) { toast(id ? 'Aktualisiert' : 'Gespeichert'); closeGerichtEdit(); loadGerichteList(); renderEigene(); }
+    else { toast('Fehler beim Speichern', true); }
 }
 
 async function deleteGericht(id) {
     if (!confirm('Gericht wirklich löschen?')) return;
-    await fetch(`/api/gerichte/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/gerichte/${id}`, { method: 'DELETE' });
+    if (!res.ok) { toast('Fehler beim Löschen', true); return; }
     toast('Gelöscht'); loadGerichteList(); renderEigene();
 }
 
