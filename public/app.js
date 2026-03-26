@@ -23,12 +23,6 @@ async function loadItems() {
 
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 
-// Formats a "YYYY-MM-DD" string to "DD.MM.YYYY" (full date with year)
-function formatDate(d) {
-    const [y, m, day] = d.split('-');
-    return `${day}.${m}.${y}`;
-}
-
 function daysUntil(d) {
     if (!d) return null;
     const today = new Date(); today.setHours(0,0,0,0);
@@ -85,7 +79,7 @@ async function toggleGekauft(id) {
         document.getElementById('reactivateName').textContent = `\u00AB${item.artikel}\u00BB`;
         const dateInfo = document.getElementById('reactivateDateInfo');
         if (item.datum) {
-            dateInfo.innerHTML = `<i class="bi bi-calendar3"></i> Aktuelles Datum: <strong>${formatDate(item.datum)}</strong>`;
+            dateInfo.innerHTML = `<i class="bi bi-calendar3"></i> Aktuelles Datum: <strong>${formatDateFull(item.datum)}</strong>`;
         } else {
             dateInfo.innerHTML = `<i class="bi bi-calendar3"></i> Kein Datum gesetzt`;
         }
@@ -348,7 +342,7 @@ function renderTile(item) {
 
         // Date label
         let dateLabel, dateClass;
-        const dateFormatted = item.datum ? formatDate(item.datum) + ' \u00B7 ' : '';
+        const dateFormatted = item.datum ? formatDateFull(item.datum) + ' \u00B7 ' : '';
         if (!item.datum) {
             dateLabel = 'Kein Datum';
             dateClass = '';
@@ -458,11 +452,14 @@ async function searchRezept() {
     }
 
     results.innerHTML = '<div style="font-size:0.8rem;font-weight:600;color:var(--gray-500);margin-bottom:0.4rem">Rezepte</div>' +
-        data.map(r => `<div class="rezept-item" onclick="loadZutaten(${esc(JSON.stringify(r.url))},${esc(JSON.stringify(r.name))})">
+        data.map(r => `<div class="rezept-item" data-url="${esc(r.url)}" data-name="${esc(r.name)}">
             <i class="bi bi-journal-text" style="color:var(--green-600)"></i>
             <span>${esc(r.name)}</span>
             <i class="bi bi-chevron-right" style="color:var(--gray-400);margin-left:auto;font-size:0.75rem"></i>
         </div>`).join('');
+    results.querySelectorAll('.rezept-item[data-url]').forEach(el => {
+        el.onclick = () => loadZutaten(el.dataset.url, el.dataset.name);
+    });
 }
 
 async function loadZutaten(url, name) {
@@ -529,11 +526,6 @@ async function addZutaten() {
     toast(`${bulk.length} Zutaten hinzugef\u00FCgt`);
     closeRezept();
     renderList();
-}
-
-function mapEinheit(e) {
-    const map = { 'g': 'g', 'kg': 'kg', 'ml': 'ml', 'dl': 'ml', 'l': 'Liter', 'EL': 'Stück', 'TL': 'Stück', 'Prise': 'Stück', 'Bund': 'Bund' };
-    return map[e] || 'Stück';
 }
 
 // -- Aktionen --

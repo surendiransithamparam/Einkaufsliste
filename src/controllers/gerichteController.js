@@ -1,11 +1,8 @@
-const { getPool, sql } = require('../config/db');
-const { getHaushaltId, canWrite } = require('../utils/dbHelpers');
+const { sql } = require('../config/db');
 
 async function getAll(req, res) {
   try {
-    const userId = req.session.userId;
-    const db = await getPool();
-    const hid = await getHaushaltId(userId, db);
+    const { userId, hid, db } = req.ctx;
 
     const where = hid != null ? 'HaushaltId=@hid' : 'BenutzerId=@uid AND HaushaltId IS NULL';
     const request = db.request();
@@ -13,19 +10,17 @@ async function getAll(req, res) {
     else request.input('uid', sql.Int, userId);
 
     const result = await request.query(`SELECT Id, Name, ErstelltAm FROM Gericht WHERE ${where} ORDER BY Name`);
-    res.json(result.recordset.map(r => ({ id: r.Id, name: r.Name })));
+    res.ok(result.recordset.map(r => ({ id: r.Id, name: r.Name })));
   } catch (err) {
     console.error('gerichte get error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function getById(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
-    const hid = await getHaushaltId(userId, db);
+    const { userId, hid, db } = req.ctx;
 
     const where = hid != null ? 'g.HaushaltId=@hid' : 'g.BenutzerId=@uid AND g.HaushaltId IS NULL';
     const request = db.request().input('id', sql.Int, id);
@@ -33,14 +28,14 @@ async function getById(req, res) {
     else request.input('uid', sql.Int, userId);
 
     const result = await request.query(`SELECT g.Id, g.Name FROM Gericht g WHERE g.Id=@id AND ${where}`);
-    if (result.recordset.length === 0) return res.status(404).json({});
+    if (result.recordset.length === 0) return res.fail(404, 'Nicht gefunden');
 
     const gericht = result.recordset[0];
     const zResult = await db.request()
       .input('gid', sql.Int, id)
       .query('SELECT Id, Artikel, Menge, Einheit FROM GerichtZutat WHERE GerichtId=@gid ORDER BY Id');
 
-    res.json({
+    res.ok({
       id: gericht.Id,
       name: gericht.Name,
       zutaten: zResult.recordset.map(z => ({
@@ -49,19 +44,16 @@ async function getById(req, res) {
     });
   } catch (err) {
     console.error('gerichte get by id error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function create(req, res) {
   try {
-    const userId = req.session.userId;
+    const { userId, hid, canWrite, db } = req.ctx;
     const name = (req.body.name || '').trim();
-    if (name.length < 1) return res.status(400).json({ error: 'Name ist erforderlich.' });
-
-    const db = await getPool();
-    if (!await canWrite(userId, db)) return res.status(403).json({});
-    const hid = await getHaushaltId(userId, db);
+    if (name.length < 1) return res.fail(400, 'Name ist erforderlich.');
+    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
 
     const result = await db.request()
       .input('name', sql.NVarChar, name)
@@ -83,20 +75,18 @@ async function create(req, res) {
       }
     }
 
-    res.json({ id: gerichtId });
+    res.ok({ id: gerichtId });
   } catch (err) {
     console.error('gerichte post error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function update(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
-    if (!await canWrite(userId, db)) return res.status(403).json({});
-    const hid = await getHaushaltId(userId, db);
+    const { userId, hid, canWrite, db } = req.ctx;
+    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
 
     const where = hid != null ? 'Id=@id AND HaushaltId=@hid' : 'Id=@id AND BenutzerId=@uid';
 
@@ -107,7 +97,7 @@ async function update(req, res) {
       if (hid != null) request.input('hid', sql.Int, hid);
       else request.input('uid', sql.Int, userId);
       const result = await request.query(`UPDATE Gericht SET Name=@name WHERE ${where}`);
-      if (result.rowsAffected[0] === 0) return res.status(404).json({});
+      if (result.rowsAffected[0] === 0) return res.fail(404, 'Nicht gefunden');
     }
 
     if (req.body.zutaten !== undefined && Array.isArray(req.body.zutaten)) {
@@ -127,20 +117,18 @@ async function update(req, res) {
       }
     }
 
-    res.json({});
+    res.ok();
   } catch (err) {
     console.error('gerichte put error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 
 async function remove(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    const db = await getPool();
-    if (!await canWrite(userId, db)) return res.status(403).json({});
-    const hid = await getHaushaltId(userId, db);
+    const { userId, hid, canWrite, db } = req.ctx;
+    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
 
     const where = hid != null ? 'Id=@id AND HaushaltId=@hid' : 'Id=@id AND BenutzerId=@uid';
     const request = db.request().input('id', sql.Int, id);
@@ -148,11 +136,11 @@ async function remove(req, res) {
     else request.input('uid', sql.Int, userId);
 
     const result = await request.query(`DELETE FROM Gericht WHERE ${where}`);
-    if (result.rowsAffected[0] > 0) res.json({});
-    else res.status(404).json({});
+    if (result.rowsAffected[0] > 0) res.ok();
+    else res.fail(404, 'Nicht gefunden');
   } catch (err) {
     console.error('gerichte delete error:', err);
-    res.status(500).json({ error: 'Interner Fehler.' });
+    res.fail(500, 'Interner Fehler.');
   }
 }
 

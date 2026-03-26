@@ -6,7 +6,7 @@ const TANKRABATTE_CACHE_TTL = 60 * 60 * 1000;
 async function getTankrabatte(req, res) {
   try {
     if (tankrabatteCache.data && Date.now() - tankrabatteCache.timestamp < TANKRABATTE_CACHE_TTL) {
-      return res.json(tankrabatteCache.data);
+      return res.ok(tankrabatteCache.data);
     }
 
     const [coopPronto, migrol, shell] = await Promise.all([
@@ -25,10 +25,10 @@ async function getTankrabatte(req, res) {
 
     const data = { coopPronto, migrol, shell, avia };
     tankrabatteCache = { data, timestamp: Date.now() };
-    res.json(data);
+    res.ok(data);
   } catch (e) {
     console.error('Tankrabatte Fehler:', e);
-    res.status(500).json({ error: 'Fehler beim Laden der Tankrabatte.' });
+    res.fail(500, 'Fehler beim Laden der Tankrabatte.');
   }
 }
 

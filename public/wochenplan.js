@@ -6,33 +6,13 @@ function showApp() {
 }
 
 // -- Week --
-const TAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
-const TAGE_KURZ = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 let currentMonday = getMonday(new Date());
 let planData = [];
-
-function getMonday(d) {
-    const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    date.setDate(diff);
-    date.setHours(0, 0, 0, 0);
-    return date;
-}
-
-// Formats a Date object to "D.M." (short day.month without year, for week headers)
-function formatDate(d) {
-    return `${d.getDate()}.${d.getMonth() + 1}.`;
-}
-
-function mondayStr() {
-    return `${currentMonday.getFullYear()}-${String(currentMonday.getMonth()+1).padStart(2,'0')}-${String(currentMonday.getDate()).padStart(2,'0')}`;
-}
 
 function updateWeekLabel() {
     const end = new Date(currentMonday);
     end.setDate(end.getDate() + 6);
-    const label = `${formatDate(currentMonday)} \u2013 ${formatDate(end)} ${end.getFullYear()}`;
+    const label = `${formatDateShort(currentMonday)} \u2013 ${formatDateShort(end)} ${end.getFullYear()}`;
     document.getElementById('weekLabel').textContent = label;
 }
 
@@ -50,7 +30,7 @@ function goToday() {
 async function loadPlan() {
     updateWeekLabel();
     try {
-        const res = await fetch(`/api/wochenplan?woche=${mondayStr()}`);
+        const res = await fetch(`/api/wochenplan?woche=${mondayStr(currentMonday)}`);
         if (res.status === 401) { showLogin(); return; }
         planData = await res.json();
     } catch (e) { planData = []; }
@@ -63,12 +43,18 @@ function getMeal(tag, mahlzeit) {
 
 function renderRecipeItem(r) {
     const escaped = esc(r.name);
-    return `<div class="rezept-item" onclick="loadDishZutaten(${esc(JSON.stringify(r.url))},${esc(JSON.stringify(r.name))})">
+    return `<div class="rezept-item" data-dish-url="${esc(r.url)}" data-dish-name="${escaped}">
         <i class="bi bi-journal-text" style="color:var(--green-600)"></i>
         <span>${escaped}</span>
         <a href="${esc(r.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Originalrezept öffnen" style="color:var(--gray-400);font-size:0.85rem;padding:0.2rem;flex-shrink:0"><i class="bi bi-box-arrow-up-right"></i></a>
         <i class="bi bi-chevron-right" style="color:var(--gray-400);margin-left:0;font-size:0.75rem"></i>
     </div>`;
+}
+
+function attachDishHandlers(container) {
+    container.querySelectorAll('.rezept-item[data-dish-url]').forEach(el => {
+        el.onclick = () => loadDishZutaten(el.dataset.dishUrl, el.dataset.dishName);
+    });
 }
 
 function renderGroupedRecipes(recipes) {
@@ -95,12 +81,11 @@ function mealDisplay(meal, tag) {
         if (d.erwachsene > 0) pParts.push(`${d.erwachsene}E`);
         if (d.kinder > 0) pParts.push(`${d.kinder}K`);
         const pLabel = pParts.length ? `<span class="meal-persons-inline">${pParts.join('+')}</span>` : '';
-        const urlParam = d.url ? `,'${esc(d.url).replace(/'/g, "\\'")}'` : (d.eigenId ? `,null,${d.eigenId}` : '');
         const recipeLink = d.url
             ? `<a href="${esc(d.url)}" target="_blank" rel="noopener" class="dish-cart-btn" onclick="event.stopPropagation()" title="Rezept öffnen"><i class="bi bi-box-arrow-up-right"></i></a>`
             : '';
         return `<span class="meal-dish">${esc(d.gericht)}${pLabel}${recipeLink}
-            <button class="dish-cart-btn" onclick="event.stopPropagation();openDishSearch('${esc(d.gericht).replace(/'/g, "\\'")}',${d.erwachsene},${d.kinder},${tag}${urlParam})" title="Zutaten zur Einkaufsliste"><i class="bi bi-cart-plus"></i></button>
+            <button class="dish-cart-btn meal-cart-btn" data-gericht="${esc(d.gericht)}" data-erw="${d.erwachsene}" data-kind="${d.kinder}" data-tag="${tag}" data-url="${d.url ? esc(d.url) : ''}" data-eid="${d.eigenId || ''}" title="Zutaten zur Einkaufsliste"><i class="bi bi-cart-plus"></i></button>
         </span>`;
     }).join('');
 }
@@ -121,7 +106,7 @@ function renderPlan() {
         html += `<div class="day-card ${isToday ? 'today' : ''}">
             <div class="day-header">
                 <span>${TAGE[i]}</span>
-                <span class="day-date">${formatDate(date)}</span>
+                <span class="day-date">${formatDateShort(date)}</span>
             </div>
             <div class="meals">
                 <div class="meal-slot" onclick="openMealInput(${i},'mittag')">
@@ -142,6 +127,14 @@ function renderPlan() {
         </div>`;
     }
     grid.innerHTML = html;
+    grid.querySelectorAll('.meal-cart-btn[data-gericht]').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            const url = btn.dataset.url || undefined;
+            const eid = btn.dataset.eid ? parseInt(btn.dataset.eid) : undefined;
+            openDishSearch(btn.dataset.gericht, parseInt(btn.dataset.erw), parseInt(btn.dataset.kind), parseInt(btn.dataset.tag), url, eid);
+        };
+    });
 }
 
 // -- Meal Input Modal --
@@ -271,7 +264,7 @@ async function saveMeal() {
     const rezept = JSON.stringify(dishes);
     const res = await fetch('/api/wochenplan', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ woche: mondayStr(), tag: editTag, mahlzeit: editMahlzeit, rezept })
+        body: JSON.stringify({ woche: mondayStr(currentMonday), tag: editTag, mahlzeit: editMahlzeit, rezept })
     });
     if (!res.ok) { toast('Fehler beim Speichern', true); return; }
     closeMealInput();
@@ -373,6 +366,7 @@ async function openDishSearch(gericht, erw, kind, tag, url, eigenId) {
     }
 
     body.innerHTML = html;
+    attachDishHandlers(body);
 }
 
 async function loadEigenesGericht(id) {
@@ -419,6 +413,7 @@ async function manualDishSearch() {
         return;
     }
     body.innerHTML = renderGroupedRecipes(recipes);
+    attachDishHandlers(body);
 }
 
 async function loadDishZutaten(url, name) {
@@ -449,11 +444,6 @@ async function loadDishZutaten(url, name) {
             <i class="bi bi-cart-plus"></i> Zur Einkaufsliste hinzuf\u00FCgen
         </button>`;
     body.dataset.zutaten = JSON.stringify(zutaten);
-}
-
-function mapEinheit(e) {
-    const map = { 'g': 'g', 'kg': 'kg', 'ml': 'ml', 'dl': 'ml', 'l': 'Liter', 'EL': 'Stück', 'TL': 'Stück', 'Prise': 'Stück', 'Bund': 'Bund' };
-    return map[e] || 'Stück';
 }
 
 async function addDishZutaten() {
