@@ -171,7 +171,7 @@
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
         <div class="login-header">
-            <i class="bi bi-shield-lock" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <i class="bi bi-shield-lock" style="font-size:2.5rem;color:var(--primary-600)"></i>
             <h1 style="font-size:1.5rem;margin-top:0.5rem">Admin</h1>
         </div>
         <form onsubmit="submitAuth(event)">
@@ -403,7 +403,7 @@ async function openHaushaltDetail(id, name) {
     tbody.innerHTML = members.map(m => {
         const rolleLabel = m.isErsteller ? 'Admin (Ersteller)' : m.rolle;
         return '<tr>' +
-            '<td><i class="bi bi-person-fill" style="color:var(--green-600)"></i> ' + esc(m.benutzername) + '</td>' +
+            '<td><i class="bi bi-person-fill" style="color:var(--primary-600)"></i> ' + esc(m.benutzername) + '</td>' +
             '<td>' + (m.isErsteller
                 ? '<span class="badge badge-blue">Admin</span>'
                 : '<select onchange="changeHaushaltRolle(' + id + ',' + m.id + ',this.value)" style="font-size:0.75rem;padding:0.15rem 0.3rem;border-radius:4px;border:1px solid var(--gray-200)">' +
@@ -579,7 +579,7 @@ function renderKkLogos() {
         const src = getLogoSrc(item);
         const logoHtml = src
             ? `<img src="${esc(src)}" alt="" style="width:24px;height:24px;border-radius:4px;object-fit:contain;background:#fff" onerror="this.style.display='none'">`
-            : '<i class="bi bi-credit-card" style="color:var(--green-600)"></i>';
+            : '<i class="bi bi-credit-card" style="color:var(--primary-600)"></i>';
         const sourceLabel = item.logoUrl
             ? '<span class="badge badge-blue">Benutzerdefiniert</span>'
             : (getFaviconUrl(item.storeName) ? '<span class="badge badge-green">Favicon</span>' : '<span class="badge badge-red">Kein Logo</span>');
