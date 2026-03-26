@@ -64,7 +64,7 @@ function injectLogin(icon) {
     el.outerHTML = `<div id="loginScreen" class="login-screen">
     <div class="login-card">
         <div class="login-header">
-            <i class="bi ${icon || 'bi-house-door-fill'}" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <i class="bi ${icon || 'bi-house-door-fill'}" style="font-size:2.5rem;color:var(--primary-600)"></i>
             <h1 style="font-size:1.5rem;margin-top:0.5rem">Haushalt<sup>+</sup></h1>
             <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Anmelden</p>
         </div>
@@ -98,9 +98,46 @@ function injectToasts() {
     }
 }
 
+function injectFonts() {
+    const preconnect1 = document.createElement('link');
+    preconnect1.rel = 'preconnect';
+    preconnect1.href = 'https://fonts.googleapis.com';
+    document.head.insertBefore(preconnect1, document.head.firstChild);
+    const preconnect2 = document.createElement('link');
+    preconnect2.rel = 'preconnect';
+    preconnect2.href = 'https://fonts.gstatic.com';
+    preconnect2.crossOrigin = 'anonymous';
+    document.head.insertBefore(preconnect2, preconnect1.nextSibling);
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap';
+    document.head.appendChild(link);
+}
+
+function applyDarkThemeColor() {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#16213e');
+    }
+}
+
+function injectBottomNav() {
+    const page = location.pathname.split('/').pop() || 'index.html';
+    const nav = document.createElement('nav');
+    nav.className = 'bottom-nav';
+    nav.setAttribute('role', 'navigation');
+    nav.setAttribute('aria-label', 'Hauptnavigation');
+    nav.innerHTML = SIDEBAR_LINKS.map(l =>
+        `<a href="${l.href}" class="bottom-nav-item${page === l.href ? ' active' : ''}"><i class="bi ${l.icon}"></i><span>${l.label}</span></a>`
+    ).join('');
+    document.body.appendChild(nav);
+}
+
 function initLayout(opts) {
+    injectFonts();
+    applyDarkThemeColor();
     injectNavbar(opts && opts.extraMenu);
     injectSidebar(opts && opts.extraSidebarLinks);
+    injectBottomNav();
     injectLogin(opts && opts.loginIcon);
     injectToasts();
 }
