@@ -7,6 +7,7 @@ async function showApp() {
 }
 
 // -- Data --
+const debouncedRenderList = debounce(() => renderList(), 200);
 let items = [];
 let deleteTargetId = null;
 
@@ -206,11 +207,12 @@ async function saveItem(e) {
         const numId = parseInt(editId);
         const item = items.find(i => i.id === numId);
         const updated = { ...item, ...data };
-        await fetch(`/api/artikel/${numId}`, {
+        const res = await fetch(`/api/artikel/${numId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updated)
         });
+        if (!res.ok) { toast('Fehler beim Speichern', true); return; }
         const idx = items.findIndex(i => i.id === numId);
         if (idx >= 0) items[idx] = updated;
         toast(`\u00AB${data.artikel}\u00BB aktualisiert`);
@@ -220,6 +222,7 @@ async function saveItem(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
+        if (!res.ok) { toast('Fehler beim Speichern', true); return; }
         const result = await res.json();
         data.id = result.id;
         data.erstelltAm = result.erstelltAm;

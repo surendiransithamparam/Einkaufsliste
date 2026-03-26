@@ -15,6 +15,7 @@ const ASSETS = [
     './app.css',
     './app.js',
     './shared.js',
+    './layout.js',
     './webauthn.js',
     './lib/simplewebauthn-browser.min.js',
     './rezepte.js',

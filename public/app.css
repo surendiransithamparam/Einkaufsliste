@@ -728,11 +728,23 @@ input:focus, select:focus {
 /* -- App wrapper (hidden when not logged in) -- */
 .app-content.hidden { display: none; }
 
+/* -- Login form -- */
+.login-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.btn-login { width: 100%; padding: 0.7rem; font-size: 0.95rem; }
+.auth-message { display: none; font-size: 0.8rem; font-weight: 500; }
+.auth-error { color: var(--red-500); }
+.auth-success { color: var(--green-600); }
+
+/* -- Utility classes -- */
+.section-header { font-size: 0.75rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; margin-bottom: 0.4rem; }
+.status-error { color: var(--red-500); font-size: 0.85rem; }
+.status-empty { color: var(--gray-500); font-size: 0.85rem; }
+.status-loading { color: var(--gray-400); font-size: 0.85rem; }
+
 /* -- Responsive -- */
 @media (min-width: 769px) {
     .modal-overlay { align-items: center; padding: 1rem; }
     .modal { border-radius: var(--radius); }
-    .navbar-brand .short-label { display: none; }
     .app-content { margin-left: 200px; }
 }
 
@@ -741,9 +753,7 @@ input:focus, select:focus {
     .fab { display: flex; }
     .filter-bar { flex-direction: column; gap: 0.5rem; }
     .filter-bar select, .filter-bar input[type="text"] { min-width: 100%; }
-    .navbar-brand .full-label { display: none; }
     .container { padding: 0.75rem 0.5rem; padding-bottom: 6rem; }
-    .btn-nav.desktop-only { display: none; }
     .tile-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.5rem; }
     .gekauft-grid.open { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.5rem; }
     .tile { padding: 0.6rem 0.75rem; }
