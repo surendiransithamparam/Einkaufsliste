@@ -16,7 +16,7 @@
 <div class="login-screen visible" style="position:relative">
     <div class="login-card">
         <div class="login-header">
-            <i class="bi bi-person-plus" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <i class="bi bi-person-plus" style="font-size:2.5rem;color:var(--primary-600)"></i>
             <h1 style="font-size:1.5rem;margin-top:0.5rem">Registrieren</h1>
             <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Neues Konto erstellen</p>
         </div>
@@ -46,7 +46,7 @@
                 </div>
                 <div id="pol-match" style="font-size:0.78rem;display:none"><i class="bi bi-x-circle"></i> Passwörter stimmen überein</div>
                 <div id="regError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
-                <div id="regSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                <div id="regSuccess" style="display:none;color:var(--primary-600);font-size:0.8rem;font-weight:500"></div>
                 <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem" id="regBtn">
                     <i class="bi bi-person-plus"></i> Konto erstellen
                 </button>
@@ -70,14 +70,14 @@ function checkPasswordPolicy() {
     ];
     rules.forEach(r => {
         const el = document.getElementById(r.id);
-        el.style.color = r.ok ? 'var(--green-600)' : 'var(--red-500)';
+        el.style.color = r.ok ? 'var(--primary-600)' : 'var(--red-500)';
         el.querySelector('i').className = r.ok ? 'bi bi-check-circle-fill' : 'bi bi-x-circle';
     });
     const matchEl = document.getElementById('pol-match');
     if (confirm.length > 0) {
         matchEl.style.display = '';
         const ok = pass === confirm && pass.length > 0;
-        matchEl.style.color = ok ? 'var(--green-600)' : 'var(--red-500)';
+        matchEl.style.color = ok ? 'var(--primary-600)' : 'var(--red-500)';
         matchEl.querySelector('i').className = ok ? 'bi bi-check-circle-fill' : 'bi bi-x-circle';
     } else {
         matchEl.style.display = 'none';

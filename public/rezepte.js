@@ -32,7 +32,7 @@ async function searchRecipes() {
         html += `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem">Eigene Gerichte</div>
         <div class="recipe-grid" style="margin-bottom:1rem">
             ${ownMatches.map(g => `<div class="recipe-card" data-plan-name="${esc(g.name)}" data-plan-url="" data-plan-eid="${g.id}">
-                <i class="bi bi-book" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
+                <i class="bi bi-book" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(g.name)}</span>
                 <span class="source-badge">Eigenes</span>
                 ${favBtnHtml(g.name, null, null, g.id)}
@@ -53,7 +53,7 @@ async function searchRecipes() {
         html += `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem;margin-top:0.75rem">${esc(source)}</div>
         <div class="recipe-grid">
             ${items.map(r => `<div class="recipe-card" data-plan-name="${esc(r.name)}" data-plan-url="${esc(r.url)}" data-plan-eid="">
-                <i class="bi bi-journal-text" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
+                <i class="bi bi-journal-text" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(r.name)}</span>
                 <span class="source-badge">${esc(source)}</span>
                 <a href="${esc(r.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Originalrezept öffnen" style="color:var(--gray-400);font-size:0.85rem;flex-shrink:0;padding:0.2rem"><i class="bi bi-box-arrow-up-right"></i></a>
@@ -142,7 +142,7 @@ function renderFavoriten() {
     el.innerHTML = `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem"><i class="bi bi-star-fill" style="color:var(--yellow-500, #eab308)"></i> Favoriten</div>
     <div class="recipe-grid" style="margin-bottom:1rem">
         ${favoritenCache.map(f => `<div class="recipe-card" data-plan-name="${esc(f.name)}" data-plan-url="${f.url ? esc(f.url) : ''}" data-plan-eid="${f.eigenGerichtId || ''}">
-                ${f.eigenGerichtId ? '<i class="bi bi-book" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>' : '<i class="bi bi-journal-text" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>'}
+                ${f.eigenGerichtId ? '<i class="bi bi-book" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>' : '<i class="bi bi-journal-text" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>'}
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(f.name)}</span>
                 ${f.quelle ? `<span class="source-badge">${esc(f.quelle)}</span>` : ''}
                 ${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Rezept öffnen" style="color:var(--gray-400);font-size:0.85rem;flex-shrink:0;padding:0.2rem"><i class="bi bi-box-arrow-up-right"></i></a>` : ''}
@@ -170,7 +170,7 @@ function renderEigene() {
         el.innerHTML = `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem">Eigene Gerichte</div>
         <div class="recipe-grid">
             ${gerichteCache.map(g => `<div class="recipe-card" data-plan-name="${esc(g.name)}" data-plan-url="" data-plan-eid="${g.id}">
-                <i class="bi bi-book" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
+                <i class="bi bi-book" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(g.name)}</span>
                 ${favBtnHtml(g.name, null, null, g.id)}
                 <i class="bi bi-calendar-plus" style="color:var(--gray-400);font-size:0.9rem;flex-shrink:0"></i>
