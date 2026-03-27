@@ -23,9 +23,48 @@
 </head>
 <body>
 
-<!-- Layout placeholders (injected by layout.js) -->
-<nav id="navbar"></nav>
-<aside id="sidebar"></aside>
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="navbar-left">
+        <a href="index.html" class="btn-nav btn-nav-icon" title="Startseite" aria-label="Startseite"><i class="bi bi-house-door-fill"></i></a>
+    </div>
+    <div class="navbar-center">
+        <span class="navbar-brand">Haushalt<sup>+</sup></span>
+    </div>
+    <div class="navbar-right">
+        <div class="nav-dropdown" id="navDropdown">
+            <button class="btn-nav btn-nav-icon" onclick="toggleNavDropdown(event)" title="Menü" aria-label="Menü">
+                <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <div class="nav-dropdown-menu" id="navDropdownMenu">
+                <button onclick="logout();closeNavDropdown()" id="logoutBtn" style="display:none">
+                    <i class="bi bi-box-arrow-left"></i> Abmelden
+                </button>
+                <button onclick="openBugReport();closeNavDropdown()">
+                    <i class="bi bi-bug"></i> Bug melden
+                </button>
+                <a href="about.html" style="text-decoration:none">
+                    <i class="bi bi-info-circle"></i> Über
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Sidebar -->
+<aside class="sidebar hidden" id="sidebar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menü ein-/ausblenden" aria-label="Menü">
+        <i class="bi bi-list"></i>
+    </button>
+    <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link active"><i class="bi bi-cart3"></i> <span>Einkauf</span></a>
+        <a href="wochenplan.html" class="sidebar-link"><i class="bi bi-calendar-week"></i> <span>Woche</span></a>
+        <a href="rezepte.html" class="sidebar-link"><i class="bi bi-book"></i> <span>Rezepte</span></a>
+        <a href="tankrabatte.html" class="sidebar-link"><i class="bi bi-tag"></i> <span>Aktionen</span></a>
+        <a href="kundenkarten.html" class="sidebar-link"><i class="bi bi-credit-card"></i> <span>Karten</span></a>
+        <a href="profil.html" class="sidebar-link"><i class="bi bi-person"></i> <span>Profil</span></a>
+    </nav>
+</aside>
 
 <div id="appContent" class="app-content hidden">
 
@@ -49,7 +88,7 @@
     <div class="card">
         <div class="card-body" style="padding:0.75rem 1rem">
             <div class="filter-bar">
-                <input type="text" id="searchInput" placeholder="Artikel suchen…" oninput="debouncedRenderList()">
+                <input type="text" id="searchInput" placeholder="Artikel suchen…" oninput="renderList()">
                 <select id="filterLaden" onchange="renderList()">
                     <option value="">Alle Läden</option>
                 </select>
@@ -223,16 +262,45 @@
 
 </div><!-- /app-content -->
 
-<!-- Login Screen (injected by layout.js) -->
-<div id="loginScreen"></div>
+<!-- Login Screen -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="bi bi-cart3" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <h1 style="font-size:1.5rem;margin-top:0.5rem">Haushalt<sup>+</sup></h1>
+            <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Anmelden</p>
+        </div>
+        <form onsubmit="submitAuth(event)">
+            <div style="display:flex;flex-direction:column;gap:0.75rem">
+                <div>
+                    <label for="authUser">Benutzername</label>
+                    <input type="text" id="authUser" required autocomplete="username" placeholder="Benutzername">
+                </div>
+                <div>
+                    <label for="authPass">Passwort</label>
+                    <input type="password" id="authPass" required autocomplete="current-password" placeholder="Passwort">
+                </div>
+                <div id="authError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                <div id="authSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem">
+                    <i class="bi bi-box-arrow-in-right"></i> Anmelden
+                </button>
+                <a href="register.html" class="btn btn-secondary" style="width:100%;padding:0.7rem;font-size:0.95rem;text-decoration:none;text-align:center">
+                    <i class="bi bi-person-plus"></i> Registrieren
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-container" id="toasts"></div>
 
 <script src="lib/simplewebauthn-browser.min.js"></script>
 <script src="webauthn.js"></script>
 <script src="shared.js"></script>
-<script src="layout.js"></script>
 <script src="bugreport.js"></script>
 <script src="app.js"></script>
-<script>initLayout({ loginIcon: 'bi-cart3' });</script>
 
 </body>
 </html>

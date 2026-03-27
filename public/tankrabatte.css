@@ -24,7 +24,7 @@
 }
 
 .anbieter-badge {
-    background: var(--primary-600);
+    background: var(--green-600);
     color: white;
     font-size: 0.7rem;
     font-weight: 700;
@@ -53,8 +53,8 @@
 }
 
 .gutschein-rabatt {
-    background: var(--primary-50);
-    color: var(--primary-600);
+    background: var(--green-50);
+    color: var(--green-600);
     font-weight: 700;
     font-size: 0.85rem;
     padding: 0.3rem 0.5rem;
@@ -86,7 +86,7 @@
     align-self: center;
 }
 .gutschein-link a {
-    color: var(--primary-600);
+    color: var(--green-600);
     font-size: 1rem;
     text-decoration: none;
 }

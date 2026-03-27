@@ -11,16 +11,16 @@ const {
 
 async function registerOptions(req, res) {
   try {
-    if (isRateLimited(req, 'webauthn_register', 10, 60)) return res.fail(429, 'Zu viele Versuche.');
+    if (isRateLimited(req, 'webauthn_register', 10, 60)) return res.status(429).json({ error: 'Zu viele Versuche.' });
     const { geraetename } = req.body;
-    if (!geraetename || geraetename.trim().length < 1) return res.fail(400, 'Gerätename erforderlich.');
+    if (!geraetename || geraetename.trim().length < 1) return res.status(400).json({ error: 'Gerätename erforderlich.' });
 
     const db = await getPool();
     const userResult = await db.request()
       .input('userId', sql.Int, req.session.userId)
       .query('SELECT Id, Benutzername FROM Benutzer WHERE Id=@userId');
     const user = userResult.recordset[0];
-    if (!user) return res.fail(401, 'Nicht authentifiziert.');
+    if (!user) return res.status(401).json({ error: 'Nicht authentifiziert.' });
 
     const existing = await db.request()
       .input('userId', sql.Int, req.session.userId)
@@ -53,20 +53,20 @@ async function registerOptions(req, res) {
       geraetename: geraetename.trim()
     };
 
-    res.ok(options);
+    res.json(options);
   } catch (e) {
     console.error('WebAuthn register-options Fehler:', e);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function registerVerify(req, res) {
   try {
     const challengeData = req.session.webauthnChallenge;
-    if (!challengeData) return res.fail(400, 'Keine Challenge vorhanden.');
+    if (!challengeData) return res.status(400).json({ error: 'Keine Challenge vorhanden.' });
     if (Date.now() > challengeData.expires) {
       delete req.session.webauthnChallenge;
-      return res.fail(400, 'Challenge abgelaufen. Bitte erneut versuchen.');
+      return res.status(400).json({ error: 'Challenge abgelaufen. Bitte erneut versuchen.' });
     }
 
     const waCfg = getWebauthnConfig(req);
@@ -79,7 +79,7 @@ async function registerVerify(req, res) {
 
     if (!verification.verified || !verification.registrationInfo) {
       delete req.session.webauthnChallenge;
-      return res.fail(400, 'Verifizierung fehlgeschlagen.');
+      return res.status(400).json({ error: 'Verifizierung fehlgeschlagen.' });
     }
 
     const { credential } = verification.registrationInfo;
@@ -87,7 +87,7 @@ async function registerVerify(req, res) {
     if (!credential || !credential.publicKey) {
       console.error('WebAuthn register-verify: credential oder publicKey fehlt', verification.registrationInfo);
       delete req.session.webauthnChallenge;
-      return res.fail(400, 'Registrierung fehlgeschlagen: Credential-Daten unvollständig.');
+      return res.status(400).json({ error: 'Registrierung fehlgeschlagen: Credential-Daten unvollständig.' });
     }
 
     const db = await getPool();
@@ -102,18 +102,18 @@ async function registerVerify(req, res) {
               VALUES (@benutzerId, @credentialId, @publicKey, @counter, @geraetename, @transports)`);
 
     delete req.session.webauthnChallenge;
-    res.ok({ verifiziert: true, credentialId: credential.id });
+    res.json({ verifiziert: true, credentialId: credential.id });
   } catch (e) {
     console.error('WebAuthn register-verify Fehler:', e);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function loginOptions(req, res) {
   try {
-    if (isRateLimited(req, 'webauthn_login', 10, 60)) return res.fail(429, 'Zu viele Versuche.');
+    if (isRateLimited(req, 'webauthn_login', 10, 60)) return res.status(429).json({ error: 'Zu viele Versuche.' });
     const { benutzername } = req.body;
-    if (!benutzername) return res.fail(400, 'Benutzername erforderlich.');
+    if (!benutzername) return res.status(400).json({ error: 'Benutzername erforderlich.' });
 
     const db = await getPool();
     const userResult = await db.request()
@@ -158,24 +158,24 @@ async function loginOptions(req, res) {
       webauthnUserId: userId
     };
 
-    res.ok(options);
+    res.json(options);
   } catch (e) {
     console.error('WebAuthn login-options Fehler:', e);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function loginVerify(req, res) {
   try {
     const challengeData = req.session.webauthnChallenge;
-    if (!challengeData) return res.fail(400, 'Keine Challenge vorhanden.');
+    if (!challengeData) return res.status(400).json({ error: 'Keine Challenge vorhanden.' });
     if (Date.now() > challengeData.expires) {
       delete req.session.webauthnChallenge;
-      return res.fail(400, 'Challenge abgelaufen. Bitte erneut versuchen.');
+      return res.status(400).json({ error: 'Challenge abgelaufen. Bitte erneut versuchen.' });
     }
     if (!challengeData.webauthnUserId) {
       delete req.session.webauthnChallenge;
-      return res.fail(400, 'Anmeldung fehlgeschlagen.');
+      return res.status(400).json({ error: 'Anmeldung fehlgeschlagen.' });
     }
 
     const db = await getPool();
@@ -186,7 +186,7 @@ async function loginVerify(req, res) {
 
     if (credResult.recordset.length === 0) {
       delete req.session.webauthnChallenge;
-      return res.fail(400, 'Anmeldung fehlgeschlagen.');
+      return res.status(400).json({ error: 'Anmeldung fehlgeschlagen.' });
     }
 
     const cred = credResult.recordset[0];
@@ -207,7 +207,7 @@ async function loginVerify(req, res) {
 
     if (!verification.verified) {
       delete req.session.webauthnChallenge;
-      return res.fail(400, 'Anmeldung fehlgeschlagen.');
+      return res.status(400).json({ error: 'Anmeldung fehlgeschlagen.' });
     }
 
     const userResult = await db.request()
@@ -217,11 +217,11 @@ async function loginVerify(req, res) {
     const user = userResult.recordset[0];
     if (!user) {
       delete req.session.webauthnChallenge;
-      return res.fail(400, 'Anmeldung fehlgeschlagen.');
+      return res.status(400).json({ error: 'Anmeldung fehlgeschlagen.' });
     }
     if (!user.EmailBestaetigt) {
       delete req.session.webauthnChallenge;
-      return res.fail(403, 'Konto nicht aktiviert.');
+      return res.status(403).json({ error: 'Konto nicht aktiviert.' });
     }
 
     await db.request()
@@ -233,10 +233,10 @@ async function loginVerify(req, res) {
     req.session.userName = user.Benutzername;
 
     delete req.session.webauthnChallenge;
-    res.ok({ verifiziert: true, benutzer: { id: user.Id, benutzername: user.Benutzername } });
+    res.json({ verifiziert: true, benutzer: { id: user.Id, benutzername: user.Benutzername } });
   } catch (e) {
     console.error('WebAuthn login-verify Fehler:', e);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
@@ -246,14 +246,14 @@ async function listCredentials(req, res) {
     const result = await db.request()
       .input('userId', sql.Int, req.session.userId)
       .query('SELECT Id, Geraetename, ErstelltAm FROM WebAuthnCredential WHERE BenutzerId=@userId ORDER BY ErstelltAm DESC');
-    res.ok(result.recordset.map(r => ({
+    res.json(result.recordset.map(r => ({
       id: r.Id,
       geraetename: r.Geraetename,
       erstelltAm: r.ErstelltAm
     })));
   } catch (e) {
     console.error('WebAuthn credentials list Fehler:', e);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
@@ -264,11 +264,11 @@ async function deleteCredential(req, res) {
       .input('id', sql.Int, parseInt(req.params.id))
       .input('userId', sql.Int, req.session.userId)
       .query('DELETE FROM WebAuthnCredential WHERE Id=@id AND BenutzerId=@userId');
-    if (result.rowsAffected[0] === 0) return res.fail(404, 'Gerät nicht gefunden.');
-    res.ok({ erfolg: true });
+    if (result.rowsAffected[0] === 0) return res.status(404).json({ error: 'Gerät nicht gefunden.' });
+    res.json({ erfolg: true });
   } catch (e) {
     console.error('WebAuthn credential delete Fehler:', e);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 

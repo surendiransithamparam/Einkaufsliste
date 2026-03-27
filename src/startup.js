@@ -9,10 +9,6 @@ const adminPassword = config.adminPassword || '';
 async function startup() {
   try {
     const db = await getPool();
-    if (!db) {
-      console.warn('No database connection configured – skipping database initialization.');
-      return;
-    }
 
     // Ensure all base tables exist
     await db.request().query(`
@@ -205,20 +201,6 @@ async function startup() {
         console.log('Admin-Passwort aktualisiert');
       }
     }
-
-    // Performance indexes
-    await db.request().query(`
-      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_Benutzer_Email')
-      CREATE INDEX IX_Benutzer_Email ON Benutzer(Email)`);
-    await db.request().query(`
-      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_Artikel_HaushaltId')
-      CREATE INDEX IX_Artikel_HaushaltId ON Artikel(HaushaltId)`);
-    await db.request().query(`
-      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_Artikel_BenutzerId')
-      CREATE INDEX IX_Artikel_BenutzerId ON Artikel(BenutzerId)`);
-    await db.request().query(`
-      IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='IX_Haushalt_Code')
-      CREATE INDEX IX_Haushalt_Code ON Haushalt(Code)`);
 
     console.log('Database initialized successfully');
   } catch (err) {

@@ -4,18 +4,18 @@ const config = require('../config/config');
 async function createBugReport(req, res) {
   try {
     if (isRateLimited(req, 'bugreport', 3, 600))
-      return res.fail(429, 'Zu viele Meldungen. Bitte warte einige Minuten.');
+      return res.status(429).json({ error: 'Zu viele Meldungen. Bitte warte einige Minuten.' });
 
     const { token, owner, repo } = config.github;
     if (!token || !owner || !repo)
-      return res.fail(503, 'Bug-Report ist nicht konfiguriert.');
+      return res.status(503).json({ error: 'Bug-Report ist nicht konfiguriert.' });
 
     const { titel, beschreibung, schritte, kontakt } = req.body;
 
     if (!titel || !titel.trim() || titel.trim().length > 100)
-      return res.fail(400, 'Titel ist erforderlich (max. 100 Zeichen).');
+      return res.status(400).json({ error: 'Titel ist erforderlich (max. 100 Zeichen).' });
     if (!beschreibung || !beschreibung.trim() || beschreibung.trim().length > 2000)
-      return res.fail(400, 'Beschreibung ist erforderlich (max. 2000 Zeichen).');
+      return res.status(400).json({ error: 'Beschreibung ist erforderlich (max. 2000 Zeichen).' });
 
     const parts = [`## Beschreibung\n\n${beschreibung.trim()}`];
     if (schritte && schritte.trim()) parts.push(`## Schritte zum Reproduzieren\n\n${schritte.trim()}`);
@@ -44,14 +44,14 @@ async function createBugReport(req, res) {
     if (!ghRes.ok) {
       const errText = await ghRes.text();
       console.error('GitHub API error:', ghRes.status, errText);
-      return res.fail(502, 'Fehler beim Erstellen des Bug-Reports.');
+      return res.status(502).json({ error: 'Fehler beim Erstellen des Bug-Reports.' });
     }
 
     const issue = await ghRes.json();
-    res.ok({ success: true, issueNumber: issue.number });
+    res.json({ success: true, issueNumber: issue.number });
   } catch (err) {
     console.error('bugreport error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 

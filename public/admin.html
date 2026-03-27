@@ -27,8 +27,47 @@
 </head>
 <body>
 
-<nav id="navbar"></nav>
-<aside id="sidebar"></aside>
+<nav class="navbar">
+    <div class="navbar-left">
+        <a href="index.html" class="btn-nav btn-nav-icon" title="Startseite" aria-label="Startseite"><i class="bi bi-house-door-fill"></i></a>
+    </div>
+    <div class="navbar-center">
+        <span class="navbar-brand">Haushalt<sup>+</sup></span>
+    </div>
+    <div class="navbar-right">
+        <div class="nav-dropdown" id="navDropdown">
+            <button class="btn-nav btn-nav-icon" onclick="toggleNavDropdown(event)" title="Menü" aria-label="Menü">
+                <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <div class="nav-dropdown-menu" id="navDropdownMenu">
+                <button onclick="logout();closeNavDropdown()" id="logoutBtn" style="display:none">
+                    <i class="bi bi-box-arrow-left"></i> Abmelden
+                </button>
+                <button onclick="openBugReport();closeNavDropdown()">
+                    <i class="bi bi-bug"></i> Bug melden
+                </button>
+                <a href="about.html" style="text-decoration:none">
+                    <i class="bi bi-info-circle"></i> Über
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<aside class="sidebar hidden" id="sidebar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menü ein-/ausblenden" aria-label="Menü">
+        <i class="bi bi-list"></i>
+    </button>
+    <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link"><i class="bi bi-cart3"></i> <span>Einkauf</span></a>
+        <a href="wochenplan.html" class="sidebar-link"><i class="bi bi-calendar-week"></i> <span>Woche</span></a>
+        <a href="rezepte.html" class="sidebar-link"><i class="bi bi-book"></i> <span>Rezepte</span></a>
+        <a href="tankrabatte.html" class="sidebar-link"><i class="bi bi-tag"></i> <span>Aktionen</span></a>
+        <a href="kundenkarten.html" class="sidebar-link"><i class="bi bi-credit-card"></i> <span>Karten</span></a>
+        <a href="profil.html" class="sidebar-link"><i class="bi bi-person"></i> <span>Profil</span></a>
+        <a href="admin.html" class="sidebar-link active"><i class="bi bi-shield-lock"></i> <span>Admin</span></a>
+    </nav>
+</aside>
 
 <div id="appContent" class="app-content hidden">
 <div class="container">
@@ -171,7 +210,7 @@
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
         <div class="login-header">
-            <i class="bi bi-shield-lock" style="font-size:2.5rem;color:var(--primary-600)"></i>
+            <i class="bi bi-shield-lock" style="font-size:2.5rem;color:var(--green-600)"></i>
             <h1 style="font-size:1.5rem;margin-top:0.5rem">Admin</h1>
         </div>
         <form onsubmit="submitAuth(event)">
@@ -193,12 +232,11 @@
     </div>
 </div>
 
-<script src="shared.js"></script>
-<script src="layout.js"></script>
+<div class="toast-container" id="toasts"></div>
+
 <script src="bugreport.js"></script>
-<script>initLayout({ loginIcon: 'bi-shield-lock', extraSidebarLinks: [{ href: 'admin.html', icon: 'bi-shield-lock', label: 'Admin' }] });</script>
 <script>
-currentUser = null;
+let currentUser = null;
 let users = [];
 
 async function checkAuth() {
@@ -294,14 +332,12 @@ function renderUsers() {
         <td>
             <div class="admin-actions">
                 ${!u.emailBestaetigt ? `<button onclick="toggleActivation(${u.id},true)" title="Aktivieren"><i class="bi bi-check-circle"></i></button>` : `<button onclick="toggleActivation(${u.id},false)" title="Deaktivieren"><i class="bi bi-x-circle"></i></button>`}
-                <button data-resetpw="${u.id}" data-name="${esc(u.benutzername)}" title="Passwort ändern"><i class="bi bi-key"></i></button>
+                <button onclick="openResetPw(${u.id},'${esc(u.benutzername).replace(/'/g,"\\'")}')" title="Passwort ändern"><i class="bi bi-key"></i></button>
                 ${!u.isAdmin ? `<button onclick="toggleAdmin(${u.id},true)" title="Zum Admin machen"><i class="bi bi-shield-plus"></i></button>` : `<button onclick="toggleAdmin(${u.id},false)" title="Admin entfernen"><i class="bi bi-shield-minus"></i></button>`}
-                <button class="danger" data-deluser="${u.id}" data-name="${esc(u.benutzername)}" title="Löschen"><i class="bi bi-trash"></i></button>
+                <button class="danger" onclick="deleteUser(${u.id},'${esc(u.benutzername).replace(/'/g,"\\'")}')" title="Löschen"><i class="bi bi-trash"></i></button>
             </div>
         </td>
     </tr>`).join('');
-    tbody.querySelectorAll('[data-resetpw]').forEach(b => { b.onclick = () => openResetPw(parseInt(b.dataset.resetpw), b.dataset.name); });
-    tbody.querySelectorAll('[data-deluser]').forEach(b => { b.onclick = () => deleteUser(parseInt(b.dataset.deluser), b.dataset.name); });
 }
 
 async function toggleActivation(id, val) {
@@ -381,15 +417,12 @@ function renderHaushalte() {
         <td>${h.mitglieder}</td>
         <td>
             <div class="admin-actions">
-                <button data-hdetail="${h.id}" data-name="${esc(h.name)}" title="Mitglieder anzeigen"><i class="bi bi-people"></i></button>
-                <button data-hrename="${h.id}" data-name="${esc(h.name)}" title="Umbenennen"><i class="bi bi-pencil"></i></button>
-                <button class="danger" data-hdel="${h.id}" data-name="${esc(h.name)}" title="Löschen"><i class="bi bi-trash"></i></button>
+                <button onclick="openHaushaltDetail(${h.id},'${esc(h.name).replace(/'/g,"\\'")}')" title="Mitglieder anzeigen"><i class="bi bi-people"></i></button>
+                <button onclick="renameHaushalt(${h.id},'${esc(h.name).replace(/'/g,"\\'")}')" title="Umbenennen"><i class="bi bi-pencil"></i></button>
+                <button class="danger" onclick="deleteHaushalt(${h.id},'${esc(h.name).replace(/'/g,"\\'")}')" title="Löschen"><i class="bi bi-trash"></i></button>
             </div>
         </td>
     </tr>`).join('');
-    tbody.querySelectorAll('[data-hdetail]').forEach(b => { b.onclick = () => openHaushaltDetail(parseInt(b.dataset.hdetail), b.dataset.name); });
-    tbody.querySelectorAll('[data-hrename]').forEach(b => { b.onclick = () => renameHaushalt(parseInt(b.dataset.hrename), b.dataset.name); });
-    tbody.querySelectorAll('[data-hdel]').forEach(b => { b.onclick = () => deleteHaushalt(parseInt(b.dataset.hdel), b.dataset.name); });
 }
 
 async function openHaushaltDetail(id, name) {
@@ -403,7 +436,7 @@ async function openHaushaltDetail(id, name) {
     tbody.innerHTML = members.map(m => {
         const rolleLabel = m.isErsteller ? 'Admin (Ersteller)' : m.rolle;
         return '<tr>' +
-            '<td><i class="bi bi-person-fill" style="color:var(--primary-600)"></i> ' + esc(m.benutzername) + '</td>' +
+            '<td><i class="bi bi-person-fill" style="color:var(--green-600)"></i> ' + esc(m.benutzername) + '</td>' +
             '<td>' + (m.isErsteller
                 ? '<span class="badge badge-blue">Admin</span>'
                 : '<select onchange="changeHaushaltRolle(' + id + ',' + m.id + ',this.value)" style="font-size:0.75rem;padding:0.15rem 0.3rem;border-radius:4px;border:1px solid var(--gray-200)">' +
@@ -413,10 +446,9 @@ async function openHaushaltDetail(id, name) {
                   '</select>') +
             '</td>' +
             '<td><div class="admin-actions">' +
-                '<button class="danger" data-rmmember data-hid="' + id + '" data-uid="' + m.id + '" data-name="' + esc(m.benutzername) + '" title="Entfernen"><i class="bi bi-person-x"></i></button>' +
+                '<button class="danger" onclick="removeMember(' + id + ',' + m.id + ',\'' + esc(m.benutzername).replace(/'/g,"\\'") + '\')" title="Entfernen"><i class="bi bi-person-x"></i></button>' +
             '</div></td></tr>';
     }).join('');
-    tbody.querySelectorAll('[data-rmmember]').forEach(b => { b.onclick = () => removeMember(parseInt(b.dataset.hid), parseInt(b.dataset.uid), b.dataset.name); });
 }
 
 function closeHaushaltDetail() {
@@ -476,13 +508,11 @@ function renderLaden() {
         <td><strong>${esc(l.name)}</strong></td>
         <td>
             <div class="admin-actions">
-                <button data-lrename="${l.id}" data-name="${esc(l.name)}" title="Umbenennen"><i class="bi bi-pencil"></i></button>
-                <button class="danger" data-ldel="${l.id}" data-name="${esc(l.name)}" title="Löschen"><i class="bi bi-trash"></i></button>
+                <button onclick="renameLaden(${l.id},'${esc(l.name).replace(/'/g,"\\'")}')" title="Umbenennen"><i class="bi bi-pencil"></i></button>
+                <button class="danger" onclick="deleteLaden(${l.id},'${esc(l.name).replace(/'/g,"\\'")}')" title="Löschen"><i class="bi bi-trash"></i></button>
             </div>
         </td>
     </tr>`).join('');
-    tbody.querySelectorAll('[data-lrename]').forEach(b => { b.onclick = () => renameLaden(parseInt(b.dataset.lrename), b.dataset.name); });
-    tbody.querySelectorAll('[data-ldel]').forEach(b => { b.onclick = () => deleteLaden(parseInt(b.dataset.ldel), b.dataset.name); });
 }
 
 async function addLaden() {
@@ -579,7 +609,7 @@ function renderKkLogos() {
         const src = getLogoSrc(item);
         const logoHtml = src
             ? `<img src="${esc(src)}" alt="" style="width:24px;height:24px;border-radius:4px;object-fit:contain;background:#fff" onerror="this.style.display='none'">`
-            : '<i class="bi bi-credit-card" style="color:var(--primary-600)"></i>';
+            : '<i class="bi bi-credit-card" style="color:var(--green-600)"></i>';
         const sourceLabel = item.logoUrl
             ? '<span class="badge badge-blue">Benutzerdefiniert</span>'
             : (getFaviconUrl(item.storeName) ? '<span class="badge badge-green">Favicon</span>' : '<span class="badge badge-red">Kein Logo</span>');
@@ -589,12 +619,11 @@ function renderKkLogos() {
             <td>${sourceLabel}</td>
             <td>
                 <div class="admin-actions">
-                    <button data-kklogo="${esc(item.storeName)}" title="Logo bearbeiten"><i class="bi bi-pencil"></i></button>
+                    <button onclick="openKkLogoModal('${esc(item.storeName).replace(/'/g,"\\'")}')" title="Logo bearbeiten"><i class="bi bi-pencil"></i></button>
                 </div>
             </td>
         </tr>`;
     }).join('');
-    tbody.querySelectorAll('[data-kklogo]').forEach(b => { b.onclick = () => openKkLogoModal(b.dataset.kklogo); });
 }
 
 function openKkLogoModal(storeName) {
