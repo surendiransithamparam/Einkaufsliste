@@ -8,17 +8,17 @@ const { isRateLimited } = require('../middleware/rateLimit');
 async function register(req, res) {
   try {
     if (isRateLimited(req, 'register', 5, 300))
-      return res.fail(429, 'Zu viele Versuche. Bitte warte einige Minuten.');
+      return res.status(429).json({ error: 'Zu viele Versuche. Bitte warte einige Minuten.' });
 
     const { benutzername, passwort, email } = req.body;
     const username = (benutzername || '').trim();
     const password = passwort || '';
     const emailAddr = (email || '').trim();
 
-    if (username.length < 2) return res.fail(400, 'Benutzername muss mindestens 2 Zeichen haben.');
+    if (username.length < 2) return res.status(400).json({ error: 'Benutzername muss mindestens 2 Zeichen haben.' });
     const pwError = validatePassword(password);
-    if (pwError) return res.fail(400, pwError);
-    if (emailAddr.length < 5 || !emailAddr.includes('@')) return res.fail(400, 'Bitte eine gültige E-Mail-Adresse eingeben.');
+    if (pwError) return res.status(400).json({ error: pwError });
+    if (emailAddr.length < 5 || !emailAddr.includes('@')) return res.status(400).json({ error: 'Bitte eine gültige E-Mail-Adresse eingeben.' });
 
     const db = await getPool();
 
@@ -26,7 +26,7 @@ async function register(req, res) {
       .input('name', sql.NVarChar, username)
       .query('SELECT COUNT(*) AS cnt FROM Benutzer WHERE Benutzername=@name');
     if (check.recordset[0].cnt > 0)
-      return res.fail(409, 'Benutzername ist bereits vergeben.');
+      return res.status(409).json({ error: 'Benutzername ist bereits vergeben.' });
 
     const token = crypto.randomBytes(32).toString('base64url');
 
@@ -41,20 +41,20 @@ async function register(req, res) {
       await sendActivationEmail(emailAddr, username, token, req);
     } catch (ex) {
       console.error('Aktivierungsmail konnte nicht gesendet werden', ex);
-      return res.ok({ benutzername: username, mailFehler: true, message: 'Konto erstellt, aber Aktivierungsmail konnte nicht gesendet werden. Bitte kontaktiere den Administrator.' });
+      return res.json({ benutzername: username, mailFehler: true, message: 'Konto erstellt, aber Aktivierungsmail konnte nicht gesendet werden. Bitte kontaktiere den Administrator.' });
     }
 
-    res.ok({ benutzername: username, aktivierung: true, message: 'Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.' });
+    res.json({ benutzername: username, aktivierung: true, message: 'Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.' });
   } catch (err) {
     console.error('register error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function login(req, res) {
   try {
     if (isRateLimited(req, 'login', 10, 60))
-      return res.fail(429, 'Zu viele Anmeldeversuche. Bitte warte eine Minute.');
+      return res.status(429).json({ error: 'Zu viele Anmeldeversuche. Bitte warte eine Minute.' });
 
     const { benutzername, passwort } = req.body;
     const username = (benutzername || '').trim();
@@ -70,14 +70,14 @@ async function login(req, res) {
     const row = result.recordset[0];
     if (!verifyPassword(password, row.PasswordHash)) return res.status(401).json({});
     if (!row.EmailBestaetigt)
-      return res.fail(403, 'E-Mail-Adresse noch nicht bestätigt. Bitte prüfe dein Postfach.');
+      return res.status(403).json({ error: 'E-Mail-Adresse noch nicht bestätigt. Bitte prüfe dein Postfach.' });
 
     req.session.userId = row.Id;
     req.session.userName = username;
-    res.ok({ benutzername: username });
+    res.json({ benutzername: username });
   } catch (err) {
     console.error('login error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
@@ -109,7 +109,7 @@ async function resendActivation(req, res) {
       .query('SELECT Id, Email, AktivierungsToken, Benutzername FROM Benutzer WHERE Benutzername=@name AND EmailBestaetigt=0');
 
     if (result.recordset.length === 0)
-      return res.fail(400, 'Konto nicht gefunden oder bereits aktiviert.');
+      return res.status(400).json({ error: 'Konto nicht gefunden oder bereits aktiviert.' });
 
     const row = result.recordset[0];
     const email = row.Email || '';
@@ -117,29 +117,29 @@ async function resendActivation(req, res) {
     const user = row.Benutzername;
 
     if (!email || !token)
-      return res.fail(400, 'Keine E-Mail oder Token vorhanden.');
+      return res.status(400).json({ error: 'Keine E-Mail oder Token vorhanden.' });
 
     try {
       await sendActivationEmail(email, user, token, req);
-      res.ok({ message: 'Aktivierungsmail erneut gesendet.' });
+      res.json({ message: 'Aktivierungsmail erneut gesendet.' });
     } catch (ex) {
       console.error('Aktivierungsmail konnte nicht gesendet werden', ex);
-      res.fail(400, 'Mail konnte nicht gesendet werden.');
+      res.status(400).json({ error: 'Mail konnte nicht gesendet werden.' });
     }
   } catch (err) {
     console.error('resend error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function requestReset(req, res) {
   try {
     if (isRateLimited(req, 'reset', 5, 300))
-      return res.fail(429, 'Zu viele Versuche. Bitte warte einige Minuten.');
+      return res.status(429).json({ error: 'Zu viele Versuche. Bitte warte einige Minuten.' });
 
     const email = (req.body.email || '').trim();
     if (email.length < 5 || !email.includes('@'))
-      return res.fail(400, 'Bitte eine gültige E-Mail-Adresse eingeben.');
+      return res.status(400).json({ error: 'Bitte eine gültige E-Mail-Adresse eingeben.' });
 
     const db = await getPool();
     const result = await db.request()
@@ -149,7 +149,7 @@ async function requestReset(req, res) {
     const genericMsg = 'Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.';
 
     if (result.recordset.length === 0)
-      return res.ok({ message: genericMsg });
+      return res.json({ message: genericMsg });
 
     const row = result.recordset[0];
     const token = crypto.randomBytes(32).toString('base64url');
@@ -166,10 +166,10 @@ async function requestReset(req, res) {
       console.error('Reset-Mail konnte nicht gesendet werden', ex);
     }
 
-    res.ok({ message: genericMsg });
+    res.json({ message: genericMsg });
   } catch (err) {
     console.error('reset-request error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
@@ -179,7 +179,7 @@ async function performReset(req, res) {
     const password = req.body.passwort || '';
 
     const pwError = validatePassword(password);
-    if (pwError) return res.fail(400, pwError);
+    if (pwError) return res.status(400).json({ error: pwError });
 
     const db = await getPool();
     const find = await db.request()
@@ -188,7 +188,7 @@ async function performReset(req, res) {
       .query('SELECT Id FROM Benutzer WHERE ResetToken=@token AND ResetTokenExpiry>@now');
 
     if (find.recordset.length === 0)
-      return res.fail(400, 'Link ungültig oder abgelaufen.');
+      return res.status(400).json({ error: 'Link ungültig oder abgelaufen.' });
 
     const userId = find.recordset[0].Id;
     await db.request()
@@ -196,17 +196,17 @@ async function performReset(req, res) {
       .input('uid', sql.Int, userId)
       .query('UPDATE Benutzer SET PasswordHash=@hash, ResetToken=NULL, ResetTokenExpiry=NULL, EmailBestaetigt=1 WHERE Id=@uid');
 
-    res.ok({ message: 'Passwort wurde zurückgesetzt. Du kannst dich jetzt anmelden.' });
+    res.json({ message: 'Passwort wurde zurückgesetzt. Du kannst dich jetzt anmelden.' });
   } catch (err) {
     console.error('reset error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function logout(req, res) {
     req.session.destroy(() => {
         res.clearCookie('einkauf_auth');
-        res.ok();
+        res.json({});
     });
 }
 
@@ -219,7 +219,7 @@ async function getMe(req, res) {
           .query(`SELECT b.Benutzername, h.Id, h.Name, h.Code, b.Email, b.IsAdmin, b.HaushaltRolle, h.ErstelltVon
                   FROM Benutzer b LEFT JOIN Haushalt h ON b.HaushaltId=h.Id
                   WHERE b.Id=@uid`);
-
+    
         if (result.recordset.length === 0) return res.status(401).json({});
         const row = result.recordset[0];
         const haushaltRolle = row.HaushaltRolle || 'schreibend';
@@ -231,8 +231,8 @@ async function getMe(req, res) {
           rolle: haushaltRolle,
           isErsteller: haushaltErstelltVon != null && haushaltErstelltVon === userId
         } : null;
-
-        res.ok({
+    
+        res.json({
           benutzername: row.Benutzername,
           haushalt,
           email: row.Email || '',
@@ -240,7 +240,7 @@ async function getMe(req, res) {
         });
       } catch (err) {
         console.error('me error:', err);
-        res.fail(500, 'Interner Fehler.');
+        res.status(500).json({ error: 'Interner Fehler.' });
       }
 }
 
@@ -253,10 +253,10 @@ async function updateProfile(req, res) {
           .input('email', sql.NVarChar, email || null)
           .input('uid', sql.Int, userId)
           .query('UPDATE Benutzer SET Email=@email WHERE Id=@uid');
-        res.ok();
+        res.json({});
       } catch (err) {
         console.error('profil error:', err);
-        res.fail(500, 'Interner Fehler.');
+        res.status(500).json({ error: 'Interner Fehler.' });
       }
 }
 
@@ -265,27 +265,27 @@ async function changePassword(req, res) {
         const userId = req.session.userId;
         const oldPassword = req.body.altesPasswort || '';
         const newPassword = req.body.neuesPasswort || '';
-
+    
         const pwError = validatePassword(newPassword);
-        if (pwError) return res.fail(400, pwError);
-
+        if (pwError) return res.status(400).json({ error: pwError });
+    
         const db = await getPool();
         const result = await db.request()
           .input('uid', sql.Int, userId)
           .query('SELECT PasswordHash FROM Benutzer WHERE Id=@uid');
-        if (result.recordset.length === 0) return res.fail(404, 'Benutzer nicht gefunden.');
-
+        if (result.recordset.length === 0) return res.status(404).json({ error: 'Benutzer nicht gefunden.' });
+    
         if (!verifyPassword(oldPassword, result.recordset[0].PasswordHash))
-          return res.fail(400, 'Aktuelles Passwort ist falsch.');
-
+          return res.status(400).json({ error: 'Aktuelles Passwort ist falsch.' });
+    
         await db.request()
           .input('hash', sql.NVarChar, hashPassword(newPassword))
           .input('uid', sql.Int, userId)
           .query('UPDATE Benutzer SET PasswordHash=@hash WHERE Id=@uid');
-        res.ok({ message: 'Passwort geändert.' });
+        res.json({ message: 'Passwort geändert.' });
       } catch (err) {
         console.error('change-password error:', err);
-        res.fail(500, 'Interner Fehler.');
+        res.status(500).json({ error: 'Interner Fehler.' });
       }
 }
 

@@ -1,8 +1,11 @@
-const { sql } = require('../config/db');
+const { getPool, sql } = require('../config/db');
+const { getHaushaltId, canWrite } = require('../utils/dbHelpers');
 
 async function getAll(req, res) {
   try {
-    const { userId, hid, db } = req.ctx;
+    const userId = req.session.userId;
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
 
     let result;
     if (hid != null) {
@@ -26,17 +29,19 @@ async function getAll(req, res) {
       erstelltAm: r.ErstelltAm ? r.ErstelltAm.toISOString() : '',
       von: r.Benutzername || null
     }));
-    res.ok(items);
+    res.json(items);
   } catch (err) {
     console.error('artikel get error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function create(req, res) {
   try {
-    const { userId, hid, canWrite, db } = req.ctx;
-    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({});
+    const hid = await getHaushaltId(userId, db);
 
     const { artikel, menge, einheit, laden, datum } = req.body;
     const result = await db.request()
@@ -50,20 +55,22 @@ async function create(req, res) {
       .query('INSERT INTO Artikel (Artikel, Menge, Einheit, Laden, Datum, BenutzerId, HaushaltId) OUTPUT INSERTED.Id, INSERTED.ErstelltAm VALUES (@artikel, @menge, @einheit, @laden, @datum, @uid, @hid)');
 
     const row = result.recordset[0];
-    res.ok({ id: row.Id, erstelltAm: row.ErstelltAm.toISOString() });
+    res.json({ id: row.Id, erstelltAm: row.ErstelltAm.toISOString() });
   } catch (err) {
     console.error('artikel post error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function bulkCreate(req, res) {
   try {
-    const { userId, hid, canWrite, db } = req.ctx;
-    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({});
+    const hid = await getHaushaltId(userId, db);
 
     const { artikel } = req.body;
-    if (!Array.isArray(artikel) || artikel.length === 0) return res.fail(400, 'artikel array required');
+    if (!Array.isArray(artikel) || artikel.length === 0) return res.status(400).json({ error: 'artikel array required' });
 
     const results = [];
     const transaction = new sql.Transaction(db);
@@ -87,18 +94,20 @@ async function bulkCreate(req, res) {
       await transaction.rollback();
       throw txErr;
     }
-    res.ok({ inserted: results });
+    res.json({ inserted: results });
   } catch (err) {
     console.error('artikel bulk post error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function update(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const { userId, hid, canWrite, db } = req.ctx;
-    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({});
+    const hid = await getHaushaltId(userId, db);
 
     const { artikel, menge, einheit, laden, datum, gekauft } = req.body;
     const where = hid != null ? 'Id=@id AND HaushaltId=@hid' : 'Id=@id AND BenutzerId=@uid';
@@ -114,18 +123,20 @@ async function update(req, res) {
     else request.input('uid', sql.Int, userId);
 
     const result = await request.query(`UPDATE Artikel SET Artikel=@artikel, Menge=@menge, Einheit=@einheit, Laden=@laden, Datum=@datum, Gekauft=@gekauft WHERE ${where}`);
-    if (result.rowsAffected[0] > 0) res.ok();
-    else res.fail(404, 'Nicht gefunden');
+    if (result.rowsAffected[0] > 0) res.json({});
+    else res.status(404).json({});
   } catch (err) {
     console.error('artikel put error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function deleteGekauft(req, res) {
   try {
-    const { userId, hid, canWrite, db } = req.ctx;
-    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({});
+    const hid = await getHaushaltId(userId, db);
 
     const where = hid != null ? 'Gekauft=1 AND HaushaltId=@hid' : 'Gekauft=1 AND BenutzerId=@uid';
     const request = db.request();
@@ -133,18 +144,20 @@ async function deleteGekauft(req, res) {
     else request.input('uid', sql.Int, userId);
 
     const result = await request.query(`DELETE FROM Artikel WHERE ${where}`);
-    res.ok({ deleted: result.rowsAffected[0] });
+    res.json({ deleted: result.rowsAffected[0] });
   } catch (err) {
     console.error('artikel delete gekauft error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function remove(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const { userId, hid, canWrite, db } = req.ctx;
-    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({});
+    const hid = await getHaushaltId(userId, db);
 
     const where = hid != null ? 'Id=@id AND HaushaltId=@hid' : 'Id=@id AND BenutzerId=@uid';
     const request = db.request().input('id', sql.Int, id);
@@ -152,11 +165,11 @@ async function remove(req, res) {
     else request.input('uid', sql.Int, userId);
 
     const result = await request.query(`DELETE FROM Artikel WHERE ${where}`);
-    if (result.rowsAffected[0] > 0) res.ok();
-    else res.fail(404, 'Nicht gefunden');
+    if (result.rowsAffected[0] > 0) res.json({});
+    else res.status(404).json({});
   } catch (err) {
     console.error('artikel delete error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 

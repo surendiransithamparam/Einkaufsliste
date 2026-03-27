@@ -1,4 +1,5 @@
-const { sql } = require('../config/db');
+const { getPool, sql } = require('../config/db');
+const { getHaushaltId } = require('../utils/dbHelpers');
 const { fetchAllAktionen, matchAktion, resetCache } = require('../services/aktionenScraper');
 
 async function search(req, res) {
@@ -14,16 +15,18 @@ async function search(req, res) {
     if (laden) {
       filtered = filtered.filter(a => a.laden.toLowerCase() === laden.toLowerCase());
     }
-    res.ok(filtered.slice(0, 50));
+    res.json(filtered.slice(0, 50));
   } catch (err) {
     console.error('aktionen error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function match(req, res) {
   try {
-    const { userId, hid, db } = req.ctx;
+    const userId = req.session.userId;
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
 
     let artikelResult;
     if (hid != null) {
@@ -46,10 +49,10 @@ async function match(req, res) {
       }
     }
 
-    res.ok(matches);
+    res.json(matches);
   } catch (err) {
     console.error('aktionen match error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
@@ -61,10 +64,10 @@ async function alle(req, res) {
       if (!byLaden[a.laden]) byLaden[a.laden] = [];
       byLaden[a.laden].push(a);
     }
-    res.ok({ total: aktionen.length, byLaden });
+    res.json({ total: aktionen.length, byLaden });
   } catch (err) {
     console.error('aktionen alle error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
@@ -72,10 +75,10 @@ async function refresh(req, res) {
   try {
     resetCache();
     const aktionen = await fetchAllAktionen();
-    res.ok({ total: aktionen.length });
+    res.json({ total: aktionen.length });
   } catch (err) {
     console.error('aktionen refresh error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 

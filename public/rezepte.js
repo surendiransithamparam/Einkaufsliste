@@ -31,8 +31,8 @@ async function searchRecipes() {
     if (ownMatches.length > 0) {
         html += `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem">Eigene Gerichte</div>
         <div class="recipe-grid" style="margin-bottom:1rem">
-            ${ownMatches.map(g => `<div class="recipe-card" data-plan-name="${esc(g.name)}" data-plan-url="" data-plan-eid="${g.id}">
-                <i class="bi bi-book" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>
+            ${ownMatches.map(g => `<div class="recipe-card" onclick="openAddToPlan('${esc(g.name).replace(/'/g,"\\'")}', null, ${g.id})">
+                <i class="bi bi-book" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(g.name)}</span>
                 <span class="source-badge">Eigenes</span>
                 ${favBtnHtml(g.name, null, null, g.id)}
@@ -52,8 +52,8 @@ async function searchRecipes() {
     for (const [source, items] of Object.entries(grouped)) {
         html += `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem;margin-top:0.75rem">${esc(source)}</div>
         <div class="recipe-grid">
-            ${items.map(r => `<div class="recipe-card" data-plan-name="${esc(r.name)}" data-plan-url="${esc(r.url)}" data-plan-eid="">
-                <i class="bi bi-journal-text" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>
+            ${items.map(r => `<div class="recipe-card" onclick="openAddToPlan(${esc(JSON.stringify(r.name))},${esc(JSON.stringify(r.url))})">
+                <i class="bi bi-journal-text" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(r.name)}</span>
                 <span class="source-badge">${esc(source)}</span>
                 <a href="${esc(r.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Originalrezept öffnen" style="color:var(--gray-400);font-size:0.85rem;flex-shrink:0;padding:0.2rem"><i class="bi bi-box-arrow-up-right"></i></a>
@@ -64,7 +64,6 @@ async function searchRecipes() {
     }
 
     container.innerHTML = html;
-    attachRecipeCardHandlers(container);
 }
 
 // -- Favoriten --
@@ -116,23 +115,11 @@ async function toggleFavorit(name, url, quelle, eigenGerichtId, btn) {
 
 function favBtnHtml(name, url, quelle, eigenGerichtId) {
     const isFav = isFavorit(url, eigenGerichtId);
-    return `<button class="dish-cart-btn fav-btn" data-fav-name="${esc(name)}" data-fav-url="${url ? esc(url) : ''}" data-fav-quelle="${quelle ? esc(quelle) : ''}" data-fav-eid="${eigenGerichtId || ''}" title="${isFav ? 'Favorit entfernen' : 'Als Favorit speichern'}" style="color:${isFav ? 'var(--yellow-500, #eab308)' : 'var(--gray-400)'};font-size:0.95rem;flex-shrink:0"><i class="bi bi-star${isFav ? '-fill' : ''}"></i></button>`;
-}
-
-function attachFavHandlers(container) {
-    container.querySelectorAll('.fav-btn[data-fav-name]').forEach(btn => {
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            toggleFavorit(btn.dataset.favName, btn.dataset.favUrl || null, btn.dataset.favQuelle || null, btn.dataset.favEid ? parseInt(btn.dataset.favEid) : null, btn);
-        };
-    });
-}
-
-function attachRecipeCardHandlers(container) {
-    container.querySelectorAll('.recipe-card[data-plan-name]').forEach(el => {
-        el.onclick = () => openAddToPlan(el.dataset.planName, el.dataset.planUrl || null, el.dataset.planEid ? parseInt(el.dataset.planEid) : null);
-    });
-    attachFavHandlers(container);
+    const nameEsc = esc(name).replace(/'/g, "\\'");
+    const urlEsc = url ? `'${esc(url).replace(/'/g, "\\'")}'` : 'null';
+    const quelleEsc = quelle ? `'${esc(quelle).replace(/'/g, "\\'")}'` : 'null';
+    const eidParam = eigenGerichtId || 'null';
+    return `<button class="dish-cart-btn fav-btn" onclick="event.stopPropagation();toggleFavorit('${nameEsc}',${urlEsc},${quelleEsc},${eidParam},this)" title="${isFav ? 'Favorit entfernen' : 'Als Favorit speichern'}" style="color:${isFav ? 'var(--yellow-500, #eab308)' : 'var(--gray-400)'};font-size:0.95rem;flex-shrink:0"><i class="bi bi-star${isFav ? '-fill' : ''}"></i></button>`;
 }
 
 function renderFavoriten() {
@@ -141,16 +128,20 @@ function renderFavoriten() {
     if (favoritenCache.length === 0) { el.innerHTML = ''; return; }
     el.innerHTML = `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem"><i class="bi bi-star-fill" style="color:var(--yellow-500, #eab308)"></i> Favoriten</div>
     <div class="recipe-grid" style="margin-bottom:1rem">
-        ${favoritenCache.map(f => `<div class="recipe-card" data-plan-name="${esc(f.name)}" data-plan-url="${f.url ? esc(f.url) : ''}" data-plan-eid="${f.eigenGerichtId || ''}">
-                ${f.eigenGerichtId ? '<i class="bi bi-book" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>' : '<i class="bi bi-journal-text" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>'}
+        ${favoritenCache.map(f => {
+            const nameEsc = esc(f.name).replace(/'/g, "\\'");
+            const urlParam = f.url ? `'${esc(f.url).replace(/'/g, "\\'")}'` : 'null';
+            const eidParam = f.eigenGerichtId || 'null';
+            return `<div class="recipe-card" onclick="openAddToPlan('${nameEsc}', ${urlParam}, ${eidParam})">
+                ${f.eigenGerichtId ? '<i class="bi bi-book" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>' : '<i class="bi bi-journal-text" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>'}
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(f.name)}</span>
                 ${f.quelle ? `<span class="source-badge">${esc(f.quelle)}</span>` : ''}
                 ${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Rezept öffnen" style="color:var(--gray-400);font-size:0.85rem;flex-shrink:0;padding:0.2rem"><i class="bi bi-box-arrow-up-right"></i></a>` : ''}
                 ${favBtnHtml(f.name, f.url, f.quelle, f.eigenGerichtId)}
                 <i class="bi bi-calendar-plus" style="color:var(--gray-400);font-size:0.9rem;flex-shrink:0"></i>
-            </div>`).join('')}
+            </div>`;
+        }).join('')}
     </div>`;
-    attachRecipeCardHandlers(el);
 }
 
 // -- Eigene Gerichte Anzeige --
@@ -169,24 +160,40 @@ function renderEigene() {
         if (gerichteCache.length === 0) { el.innerHTML = ''; return; }
         el.innerHTML = `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem">Eigene Gerichte</div>
         <div class="recipe-grid">
-            ${gerichteCache.map(g => `<div class="recipe-card" data-plan-name="${esc(g.name)}" data-plan-url="" data-plan-eid="${g.id}">
-                <i class="bi bi-book" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>
+            ${gerichteCache.map(g => `<div class="recipe-card" onclick="openAddToPlan('${esc(g.name).replace(/'/g,"\\'")}', null, ${g.id})">
+                <i class="bi bi-book" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(g.name)}</span>
                 ${favBtnHtml(g.name, null, null, g.id)}
                 <i class="bi bi-calendar-plus" style="color:var(--gray-400);font-size:0.9rem;flex-shrink:0"></i>
             </div>`).join('')}
         </div>`;
-        attachRecipeCardHandlers(el);
     });
 }
 
 // -- Zum Wochenplan hinzufügen --
+const TAGE_KURZ = ['Mo','Di','Mi','Do','Fr','Sa','So'];
 let planMonday = getMonday(new Date());
 let selectedDay = null;
 let selectedMeal = 'mittag';
 let addRecipeName = '';
 let addRecipeUrl = null;
 let addRecipeEigenId = null;
+
+function getMonday(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    date.setDate(diff);
+    date.setHours(0,0,0,0);
+    return date;
+}
+
+// Formats a Date object to "D.M." (short day.month without year, for week headers)
+function formatDate(d) { return `${d.getDate()}.${d.getMonth()+1}.`; }
+
+function mondayStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 function openAddToPlan(name, url, eigenId) {
     addRecipeName = name;
@@ -216,7 +223,7 @@ function changePlanWeek(dir) {
 function updatePlanWeekLabel() {
     const end = new Date(planMonday);
     end.setDate(end.getDate() + 6);
-    document.getElementById('planWeekLabel').textContent = `${formatDateShort(planMonday)} – ${formatDateShort(end)} ${end.getFullYear()}`;
+    document.getElementById('planWeekLabel').textContent = `${formatDate(planMonday)} – ${formatDate(end)} ${end.getFullYear()}`;
 }
 
 function renderDayPicker() {
@@ -227,7 +234,7 @@ function renderDayPicker() {
         d.setDate(d.getDate() + i);
         html += `<button class="day-pick-btn ${i === selectedDay ? 'selected' : ''}" onclick="selectDay(${i})">
             ${TAGE_KURZ[i]}
-            <span class="day-date">${formatDateShort(d)}</span>
+            <span class="day-date">${formatDate(d)}</span>
         </button>`;
     }
     picker.innerHTML = html;
@@ -278,7 +285,7 @@ async function confirmAddToPlan() {
     });
 
     if (res.ok) {
-        // TAGE from shared.js
+        const TAGE = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
         toast(`${addRecipeName} → ${TAGE[selectedDay]} ${selectedMeal === 'mittag' ? 'Mittag' : 'Abend'}`);
         closeAddToPlan();
     } else {
@@ -359,13 +366,11 @@ async function saveGericht() {
         body: JSON.stringify({ name, zutaten })
     });
     if (res.ok) { toast(id ? 'Aktualisiert' : 'Gespeichert'); closeGerichtEdit(); loadGerichteList(); renderEigene(); }
-    else { toast('Fehler beim Speichern', true); }
 }
 
 async function deleteGericht(id) {
     if (!confirm('Gericht wirklich löschen?')) return;
-    const res = await fetch(`/api/gerichte/${id}`, { method: 'DELETE' });
-    if (!res.ok) { toast('Fehler beim Löschen', true); return; }
+    await fetch(`/api/gerichte/${id}`, { method: 'DELETE' });
     toast('Gelöscht'); loadGerichteList(); renderEigene();
 }
 

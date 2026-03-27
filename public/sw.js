@@ -1,4 +1,4 @@
-const CACHE_NAME = 'haushalt-plus-v2';
+const CACHE_NAME = 'haushalt-plus-v1';
 const ASSETS = [
     './',
     './index.html',
@@ -15,8 +15,6 @@ const ASSETS = [
     './app.css',
     './app.js',
     './shared.js',
-    './layout.js',
-    './bugreport.js',
     './webauthn.js',
     './lib/simplewebauthn-browser.min.js',
     './rezepte.js',
