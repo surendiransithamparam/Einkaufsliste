@@ -1,9 +1,12 @@
-const { sql } = require('../config/db');
+const { getPool, sql } = require('../config/db');
+const { getHaushaltId, canWrite } = require('../utils/dbHelpers');
 
 async function getAll(req, res) {
   try {
     const woche = req.query.woche;
-    const { userId, hid, db } = req.ctx;
+    const userId = req.session.userId;
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
 
     const where = hid != null ? 'HaushaltId=@hid' : 'BenutzerId=@uid AND HaushaltId IS NULL';
     const request = db.request().input('woche', sql.DateTime2, new Date(woche));
@@ -11,19 +14,21 @@ async function getAll(req, res) {
     else request.input('uid', sql.Int, userId);
 
     const result = await request.query(`SELECT Id, Tag, Mahlzeit, Rezept, Erwachsene, Kinder FROM Wochenplan WHERE Woche=@woche AND ${where} ORDER BY Tag, Mahlzeit`);
-    res.ok(result.recordset.map(r => ({
+    res.json(result.recordset.map(r => ({
       id: r.Id, tag: r.Tag, mahlzeit: r.Mahlzeit, rezept: r.Rezept, erwachsene: r.Erwachsene, kinder: r.Kinder
     })));
   } catch (err) {
     console.error('wochenplan get error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function upsert(req, res) {
   try {
-    const { userId, hid, canWrite, db } = req.ctx;
-    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({});
+    const hid = await getHaushaltId(userId, db);
 
     const { woche, tag, mahlzeit, rezept, erwachsene, kinder } = req.body;
     const mergeOn = hid != null
@@ -43,18 +48,20 @@ async function upsert(req, res) {
               ON ${mergeOn}
               WHEN MATCHED THEN UPDATE SET Rezept=@rezept, Erwachsene=@erw, Kinder=@kind
               WHEN NOT MATCHED THEN INSERT (Woche,Tag,Mahlzeit,Rezept,Erwachsene,Kinder,BenutzerId,HaushaltId) VALUES (@woche,@tag,@mahlzeit,@rezept,@erw,@kind,@uid,@hid);`);
-    res.ok();
+    res.json({});
   } catch (err) {
     console.error('wochenplan post error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function remove(req, res) {
   try {
     const id = parseInt(req.params.id);
-    const { userId, hid, canWrite, db } = req.ctx;
-    if (!canWrite) return res.fail(403, 'Keine Schreibberechtigung');
+    const userId = req.session.userId;
+    const db = await getPool();
+    if (!await canWrite(userId, db)) return res.status(403).json({});
+    const hid = await getHaushaltId(userId, db);
 
     const where = hid != null ? 'Id=@id AND HaushaltId=@hid' : 'Id=@id AND BenutzerId=@uid';
     const request = db.request().input('id', sql.Int, id);
@@ -62,10 +69,10 @@ async function remove(req, res) {
     else request.input('uid', sql.Int, userId);
 
     await request.query(`DELETE FROM Wochenplan WHERE ${where}`);
-    res.ok();
+    res.json({});
   } catch (err) {
     console.error('wochenplan delete error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 

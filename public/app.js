@@ -1,20 +1,12 @@
 // -- App-specific auth --
 async function showApp() {
     showAppBase();
-    // Show skeleton tiles while loading
-    const grid = document.getElementById('tileGrid');
-    if (grid && !items.length) {
-        grid.innerHTML = Array.from({length: 6}, () =>
-            '<div class="skeleton-tile"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text medium"></div><div class="skeleton skeleton-text short"></div></div>'
-        ).join('');
-    }
     await loadStores();
     loadItems();
     loadAktionenMatches();
 }
 
 // -- Data --
-const debouncedRenderList = debounce(() => renderList(), 200);
 let items = [];
 let deleteTargetId = null;
 
@@ -30,6 +22,12 @@ async function loadItems() {
 }
 
 function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+// Formats a "YYYY-MM-DD" string to "DD.MM.YYYY" (full date with year)
+function formatDate(d) {
+    const [y, m, day] = d.split('-');
+    return `${day}.${m}.${y}`;
+}
 
 function daysUntil(d) {
     if (!d) return null;
@@ -87,7 +85,7 @@ async function toggleGekauft(id) {
         document.getElementById('reactivateName').textContent = `\u00AB${item.artikel}\u00BB`;
         const dateInfo = document.getElementById('reactivateDateInfo');
         if (item.datum) {
-            dateInfo.innerHTML = `<i class="bi bi-calendar3"></i> Aktuelles Datum: <strong>${formatDateFull(item.datum)}</strong>`;
+            dateInfo.innerHTML = `<i class="bi bi-calendar3"></i> Aktuelles Datum: <strong>${formatDate(item.datum)}</strong>`;
         } else {
             dateInfo.innerHTML = `<i class="bi bi-calendar3"></i> Kein Datum gesetzt`;
         }
@@ -214,12 +212,11 @@ async function saveItem(e) {
         const numId = parseInt(editId);
         const item = items.find(i => i.id === numId);
         const updated = { ...item, ...data };
-        const res = await fetch(`/api/artikel/${numId}`, {
+        await fetch(`/api/artikel/${numId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updated)
         });
-        if (!res.ok) { toast('Fehler beim Speichern', true); return; }
         const idx = items.findIndex(i => i.id === numId);
         if (idx >= 0) items[idx] = updated;
         toast(`\u00AB${data.artikel}\u00BB aktualisiert`);
@@ -229,7 +226,6 @@ async function saveItem(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (!res.ok) { toast('Fehler beim Speichern', true); return; }
         const result = await res.json();
         data.id = result.id;
         data.erstelltAm = result.erstelltAm;
@@ -332,7 +328,7 @@ function renderList() {
     if (offene.length === 0) {
         grid.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon"><i class="bi bi-check-circle" style="color:var(--primary-600)"></i></div>
+                <div class="empty-icon"><i class="bi bi-check-circle" style="color:var(--green-600)"></i></div>
                 <div class="empty-title">Alles erledigt!</div>
                 <div class="empty-text">Alle Artikel wurden gekauft.</div>
             </div>`;
@@ -352,7 +348,7 @@ function renderTile(item) {
 
         // Date label
         let dateLabel, dateClass;
-        const dateFormatted = item.datum ? formatDateFull(item.datum) + ' \u00B7 ' : '';
+        const dateFormatted = item.datum ? formatDate(item.datum) + ' \u00B7 ' : '';
         if (!item.datum) {
             dateLabel = 'Kein Datum';
             dateClass = '';
@@ -386,7 +382,7 @@ function renderTile(item) {
         return `<div class="tile ${tileCls}" data-id="${item.id}" onclick="onTileClick(event,${item.id})" style="cursor:pointer">
             <div class="tile-header">
                 <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0">
-                    <i class="bi ${checkIcon}" style="font-size:1rem;flex-shrink:0;color:${isGekauft ? 'var(--primary-600)' : 'var(--gray-300)'}"></i>
+                    <i class="bi ${checkIcon}" style="font-size:1rem;flex-shrink:0;color:${isGekauft ? 'var(--green-600)' : 'var(--gray-300)'}"></i>
                     <div class="tile-title">${esc(item.artikel)}</div>
                 </div>
             </div>
@@ -462,21 +458,18 @@ async function searchRezept() {
     }
 
     results.innerHTML = '<div style="font-size:0.8rem;font-weight:600;color:var(--gray-500);margin-bottom:0.4rem">Rezepte</div>' +
-        data.map(r => `<div class="rezept-item" data-url="${esc(r.url)}" data-name="${esc(r.name)}">
-            <i class="bi bi-journal-text" style="color:var(--primary-600)"></i>
+        data.map(r => `<div class="rezept-item" onclick="loadZutaten(${esc(JSON.stringify(r.url))},${esc(JSON.stringify(r.name))})">
+            <i class="bi bi-journal-text" style="color:var(--green-600)"></i>
             <span>${esc(r.name)}</span>
             <i class="bi bi-chevron-right" style="color:var(--gray-400);margin-left:auto;font-size:0.75rem"></i>
         </div>`).join('');
-    results.querySelectorAll('.rezept-item[data-url]').forEach(el => {
-        el.onclick = () => loadZutaten(el.dataset.url, el.dataset.name);
-    });
 }
 
 async function loadZutaten(url, name) {
     const container = document.getElementById('rezeptZutaten');
     container.innerHTML = '<p style="color:var(--gray-400);font-size:0.85rem">Zutaten werden geladen...</p>';
     document.getElementById('rezeptResults').innerHTML = `<div style="font-size:0.85rem;color:var(--gray-500);margin-bottom:0.5rem">
-        <i class="bi bi-journal-text" style="color:var(--primary-600)"></i> <strong>${esc(name)}</strong>
+        <i class="bi bi-journal-text" style="color:var(--green-600)"></i> <strong>${esc(name)}</strong>
     </div>`;
 
     const res = await fetch(`/api/rezept/zutaten?url=${encodeURIComponent(url)}`);
@@ -536,6 +529,11 @@ async function addZutaten() {
     toast(`${bulk.length} Zutaten hinzugef\u00FCgt`);
     closeRezept();
     renderList();
+}
+
+function mapEinheit(e) {
+    const map = { 'g': 'g', 'kg': 'kg', 'ml': 'ml', 'dl': 'ml', 'l': 'Liter', 'EL': 'Stück', 'TL': 'Stück', 'Prise': 'Stück', 'Bund': 'Bund' };
+    return map[e] || 'Stück';
 }
 
 // -- Aktionen --

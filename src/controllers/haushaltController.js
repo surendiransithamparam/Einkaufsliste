@@ -1,14 +1,16 @@
-const { sql } = require('../config/db');
+const { getPool, sql } = require('../config/db');
 const { generateCode } = require('../utils/crypto');
-const { deleteHaushaltCascade } = require('../utils/dbHelpers');
+const { getHaushaltId, deleteHaushaltCascade } = require('../utils/dbHelpers');
 
 async function create(req, res) {
   try {
-    const { userId, hid: existingHid, db } = req.ctx;
+    const userId = req.session.userId;
     const name = (req.body.name || '').trim();
-    if (name.length < 2) return res.fail(400, 'Name muss mindestens 2 Zeichen haben.');
+    if (name.length < 2) return res.status(400).json({ error: 'Name muss mindestens 2 Zeichen haben.' });
 
-    if (existingHid != null) return res.fail(400, 'Du bist bereits in einem Haushalt.');
+    const db = await getPool();
+    const existingHid = await getHaushaltId(userId, db);
+    if (existingHid != null) return res.status(400).json({ error: 'Du bist bereits in einem Haushalt.' });
 
     const code = generateCode();
     const result = await db.request()
@@ -28,24 +30,26 @@ async function create(req, res) {
       .input('uid', sql.Int, userId)
       .query('UPDATE Artikel SET HaushaltId=@hid WHERE BenutzerId=@uid AND HaushaltId IS NULL');
 
-    res.ok({ id: haushaltId, name, code });
+    res.json({ id: haushaltId, name, code });
   } catch (err) {
     console.error('haushalt create error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function join(req, res) {
   try {
-    const { userId, hid: existingHid, db } = req.ctx;
+    const userId = req.session.userId;
     const code = (req.body.code || '').trim().toUpperCase();
 
-    if (existingHid != null) return res.fail(400, 'Du bist bereits in einem Haushalt. Zuerst verlassen.');
+    const db = await getPool();
+    const existingHid = await getHaushaltId(userId, db);
+    if (existingHid != null) return res.status(400).json({ error: 'Du bist bereits in einem Haushalt. Zuerst verlassen.' });
 
     const find = await db.request()
       .input('code', sql.NVarChar, code)
       .query('SELECT Id, Name FROM Haushalt WHERE Code=@code');
-    if (find.recordset.length === 0) return res.fail(404, 'Haushalt nicht gefunden.');
+    if (find.recordset.length === 0) return res.status(404).json({ error: 'Haushalt nicht gefunden.' });
 
     const haushaltId = find.recordset[0].Id;
     const haushaltName = find.recordset[0].Name;
@@ -60,16 +64,18 @@ async function join(req, res) {
       .input('uid', sql.Int, userId)
       .query('UPDATE Artikel SET HaushaltId=@hid WHERE BenutzerId=@uid AND HaushaltId IS NULL');
 
-    res.ok({ id: haushaltId, name: haushaltName });
+    res.json({ id: haushaltId, name: haushaltName });
   } catch (err) {
     console.error('haushalt join error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function leave(req, res) {
   try {
-    const { userId, hid, db } = req.ctx;
+    const userId = req.session.userId;
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
 
     await db.request()
       .input('uid', sql.Int, userId)
@@ -88,17 +94,19 @@ async function leave(req, res) {
       }
     }
 
-    res.ok();
+    res.json({});
   } catch (err) {
     console.error('haushalt leave error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function getMitglieder(req, res) {
   try {
-    const { hid, db } = req.ctx;
-    if (hid == null) return res.ok([]);
+    const userId = req.session.userId;
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
+    if (hid == null) return res.json([]);
 
     let erstelltVon = null;
     const hvResult = await db.request()
@@ -118,47 +126,51 @@ async function getMitglieder(req, res) {
       rolle: r.HaushaltRolle,
       isErsteller: erstelltVon != null && r.Id === erstelltVon
     }));
-    res.ok(members);
+    res.json(members);
   } catch (err) {
     console.error('mitglieder error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function rename(req, res) {
   try {
-    const { userId, hid, db } = req.ctx;
+    const userId = req.session.userId;
     const name = (req.body.name || '').trim();
-    if (!name || name.length < 2) return res.fail(400, 'Name muss mindestens 2 Zeichen haben.');
+    if (!name || name.length < 2) return res.status(400).json({ error: 'Name muss mindestens 2 Zeichen haben.' });
 
-    if (hid == null) return res.fail(400, 'Du bist in keinem Haushalt.');
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
+    if (hid == null) return res.status(400).json({ error: 'Du bist in keinem Haushalt.' });
 
     const check = await db.request()
       .input('hid', sql.Int, hid)
       .query('SELECT ErstelltVon FROM Haushalt WHERE Id=@hid');
     const creatorId = check.recordset[0]?.ErstelltVon;
-    if (creatorId == null || creatorId !== userId) return res.fail(403, 'Nur der Ersteller kann den Haushalt umbenennen.');
+    if (creatorId == null || creatorId !== userId) return res.status(403).json({ error: 'Nur der Ersteller kann den Haushalt umbenennen.' });
 
     await db.request()
       .input('name', sql.NVarChar, name)
       .input('hid', sql.Int, hid)
       .query('UPDATE Haushalt SET Name=@name WHERE Id=@hid');
-    res.ok();
+    res.json({});
   } catch (err) {
     console.error('haushalt rename error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
 async function updateRolle(req, res) {
   try {
-    const { userId, hid, db } = req.ctx;
+    const userId = req.session.userId;
     const targetUserId = req.body.userId;
     const rolle = (req.body.rolle || '').trim();
     if (rolle !== 'schreibend' && rolle !== 'lesend')
-      return res.fail(400, 'Ungültige Rolle.');
+      return res.status(400).json({ error: 'Ungültige Rolle.' });
 
-    if (hid == null) return res.fail(400, 'Du bist in keinem Haushalt.');
+    const db = await getPool();
+    const hid = await getHaushaltId(userId, db);
+    if (hid == null) return res.status(400).json({ error: 'Du bist in keinem Haushalt.' });
 
     const check = await db.request()
       .input('hid', sql.Int, hid)
@@ -167,18 +179,18 @@ async function updateRolle(req, res) {
     if (creatorId == null || creatorId !== userId) return res.status(403).json({});
 
     if (targetUserId === userId)
-      return res.fail(400, 'Du kannst deine eigene Rolle nicht ändern.');
+      return res.status(400).json({ error: 'Du kannst deine eigene Rolle nicht ändern.' });
 
     const update = await db.request()
       .input('rolle', sql.NVarChar, rolle)
       .input('tid', sql.Int, targetUserId)
       .input('hid', sql.Int, hid)
       .query('UPDATE Benutzer SET HaushaltRolle=@rolle WHERE Id=@tid AND HaushaltId=@hid');
-    if (update.rowsAffected[0] > 0) res.ok();
-    else res.fail(404, 'Nicht gefunden');
+    if (update.rowsAffected[0] > 0) res.json({});
+    else res.status(404).json({});
   } catch (err) {
     console.error('rolle error:', err);
-    res.fail(500, 'Interner Fehler.');
+    res.status(500).json({ error: 'Interner Fehler.' });
   }
 }
 
