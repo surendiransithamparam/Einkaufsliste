@@ -9,6 +9,10 @@ const adminPassword = config.adminPassword || '';
 async function startup() {
   try {
     const db = await getPool();
+    if (!db) {
+      console.warn('No database connection configured – skipping database initialization.');
+      return;
+    }
 
     // Ensure all base tables exist
     await db.request().query(`
