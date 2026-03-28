@@ -1,4 +1,4 @@
-const CACHE_NAME = 'haushalt-plus-v2';
+const CACHE_NAME = 'haushalt-plus-v3';
 const ASSETS = [
     './',
     './index.html',
