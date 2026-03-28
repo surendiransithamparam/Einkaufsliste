@@ -11,6 +11,7 @@ let items = [];
 let deleteTargetId = null;
 
 async function loadItems() {
+    document.getElementById('tileGrid').innerHTML = Array(6).fill('<div class="skeleton skeleton-tile"></div>').join('');
     try {
         const res = await fetch('/api/artikel');
         if (res.status === 401) { showLogin(); return; }
@@ -328,7 +329,7 @@ function renderList() {
     if (offene.length === 0) {
         grid.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon"><i class="bi bi-check-circle" style="color:var(--green-600)"></i></div>
+                <div class="empty-icon"><i class="bi bi-check-circle" style="color:var(--primary-600)"></i></div>
                 <div class="empty-title">Alles erledigt!</div>
                 <div class="empty-text">Alle Artikel wurden gekauft.</div>
             </div>`;
@@ -382,7 +383,7 @@ function renderTile(item) {
         return `<div class="tile ${tileCls}" data-id="${item.id}" onclick="onTileClick(event,${item.id})" style="cursor:pointer">
             <div class="tile-header">
                 <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0">
-                    <i class="bi ${checkIcon}" style="font-size:1rem;flex-shrink:0;color:${isGekauft ? 'var(--green-600)' : 'var(--gray-300)'}"></i>
+                    <i class="bi ${checkIcon}" style="font-size:1rem;flex-shrink:0;color:${isGekauft ? 'var(--primary-600)' : 'var(--gray-300)'}"></i>
                     <div class="tile-title">${esc(item.artikel)}</div>
                 </div>
             </div>
@@ -459,7 +460,7 @@ async function searchRezept() {
 
     results.innerHTML = '<div style="font-size:0.8rem;font-weight:600;color:var(--gray-500);margin-bottom:0.4rem">Rezepte</div>' +
         data.map(r => `<div class="rezept-item" onclick="loadZutaten(${esc(JSON.stringify(r.url))},${esc(JSON.stringify(r.name))})">
-            <i class="bi bi-journal-text" style="color:var(--green-600)"></i>
+            <i class="bi bi-journal-text" style="color:var(--primary-600)"></i>
             <span>${esc(r.name)}</span>
             <i class="bi bi-chevron-right" style="color:var(--gray-400);margin-left:auto;font-size:0.75rem"></i>
         </div>`).join('');
@@ -469,7 +470,7 @@ async function loadZutaten(url, name) {
     const container = document.getElementById('rezeptZutaten');
     container.innerHTML = '<p style="color:var(--gray-400);font-size:0.85rem">Zutaten werden geladen...</p>';
     document.getElementById('rezeptResults').innerHTML = `<div style="font-size:0.85rem;color:var(--gray-500);margin-bottom:0.5rem">
-        <i class="bi bi-journal-text" style="color:var(--green-600)"></i> <strong>${esc(name)}</strong>
+        <i class="bi bi-journal-text" style="color:var(--primary-600)"></i> <strong>${esc(name)}</strong>
     </div>`;
 
     const res = await fetch(`/api/rezept/zutaten?url=${encodeURIComponent(url)}`);

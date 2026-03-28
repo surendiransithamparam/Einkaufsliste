@@ -2,23 +2,27 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2563eb">
     <title>Haushalt+</title>
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
     <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<a href="#mainContent" class="skip-to-content">Zum Inhalt springen</a>
 
 <div class="login-screen" style="position:relative">
-    <div class="login-card">
+    <div class="login-card" id="mainContent">
 
         <!-- Step 1: E-Mail eingeben (kein Token in URL) -->
         <div id="requestView">
             <div class="login-header">
-                <i class="bi bi-key" style="font-size:2.5rem;color:var(--green-600)"></i>
+                <i class="bi bi-key" style="font-size:2.5rem;color:var(--primary-600)"></i>
                 <h1 style="font-size:1.5rem;margin-top:0.5rem">Passwort vergessen</h1>
                 <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Gib deine E-Mail-Adresse ein</p>
             </div>
@@ -28,8 +32,8 @@
                         <label for="resetEmail">E-Mail</label>
                         <input type="email" id="resetEmail" required placeholder="name@beispiel.ch">
                     </div>
-                    <div id="requestError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
-                    <div id="requestSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                    <div id="requestError" role="alert" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                    <div id="requestSuccess" style="display:none;color:var(--primary-600);font-size:0.8rem;font-weight:500"></div>
                     <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem" id="requestBtn">
                         <i class="bi bi-envelope"></i> Link senden
                     </button>
@@ -43,7 +47,7 @@
         <!-- Step 2: Neues Passwort setzen (Token in URL) -->
         <div id="resetView" style="display:none">
             <div class="login-header">
-                <i class="bi bi-key" style="font-size:2.5rem;color:var(--green-600)"></i>
+                <i class="bi bi-key" style="font-size:2.5rem;color:var(--primary-600)"></i>
                 <h1 style="font-size:1.5rem;margin-top:0.5rem">Neues Passwort</h1>
                 <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Wähle ein neues Passwort</p>
             </div>
@@ -64,8 +68,8 @@
                         <input type="password" id="newPassConfirm" required autocomplete="new-password" placeholder="Passwort wiederholen" oninput="checkPasswordPolicy()">
                     </div>
                     <div id="pol-match" style="font-size:0.78rem;display:none"><i class="bi bi-x-circle"></i> Passwörter stimmen überein</div>
-                    <div id="resetError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
-                    <div id="resetSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                    <div id="resetError" role="alert" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                    <div id="resetSuccess" style="display:none;color:var(--primary-600);font-size:0.8rem;font-weight:500"></div>
                     <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem" id="resetBtn">
                         <i class="bi bi-check-lg"></i> Passwort speichern
                     </button>
@@ -125,14 +129,14 @@ function checkPasswordPolicy() {
     ];
     rules.forEach(r => {
         const el = document.getElementById(r.id);
-        el.style.color = r.ok ? 'var(--green-600)' : 'var(--red-500)';
+        el.style.color = r.ok ? 'var(--primary-600)' : 'var(--red-500)';
         el.querySelector('i').className = r.ok ? 'bi bi-check-circle-fill' : 'bi bi-x-circle';
     });
     const matchEl = document.getElementById('pol-match');
     if (conf.length > 0) {
         matchEl.style.display = '';
         const ok = pass === conf && pass.length > 0;
-        matchEl.style.color = ok ? 'var(--green-600)' : 'var(--red-500)';
+        matchEl.style.color = ok ? 'var(--primary-600)' : 'var(--red-500)';
         matchEl.querySelector('i').className = ok ? 'bi bi-check-circle-fill' : 'bi bi-x-circle';
     } else {
         matchEl.style.display = 'none';
@@ -168,7 +172,7 @@ async function submitReset(e) {
 
     if (res.ok) {
         successEl.innerHTML = '<i class="bi bi-check-circle"></i> ' + (data?.message || 'Passwort zurückgesetzt.') +
-            ' <a href="index.html" style="color:var(--green-600);text-decoration:underline">Zum Login</a>';
+            ' <a href="index.html" style="color:var(--primary-600);text-decoration:underline">Zum Login</a>';
         successEl.style.display = '';
         btn.style.display = 'none';
     } else {

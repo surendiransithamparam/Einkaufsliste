@@ -79,10 +79,10 @@ async function submitAuth(e) {
         else if (res.status === 403) {
             const data = await res.json().catch(() => null);
             errEl.innerHTML = esc(data?.error || 'Konto nicht aktiviert.') +
-                ` <a href="#" onclick="resendActivation('${esc(user).replace(/'/g, "&#39;")}');return false" style="color:var(--green-600);text-decoration:underline">Aktivierungsmail erneut senden</a>`;
+                ` <a href="#" onclick="resendActivation('${esc(user).replace(/'/g, "&#39;")}');return false" style="color:var(--primary-600);text-decoration:underline">Aktivierungsmail erneut senden</a>`;
             errEl.style.display = '';
         }
-        else { errEl.innerHTML = 'Benutzername oder Passwort falsch. <a href="reset.html" style="color:var(--green-600);text-decoration:underline">Passwort vergessen?</a>'; errEl.style.display = ''; }
+        else { errEl.innerHTML = 'Benutzername oder Passwort falsch. <a href="reset.html" style="color:var(--primary-600);text-decoration:underline">Passwort vergessen?</a>'; errEl.style.display = ''; }
     } catch (err) {
         errEl.textContent = 'Netzwerkfehler \u2013 bitte Verbindung pr\u00FCfen und erneut versuchen.';
         errEl.style.display = '';
@@ -121,6 +121,7 @@ function toast(msg, isError) {
     const el = document.createElement('div');
     el.className = isError ? 'toast error' : 'toast success';
     el.textContent = msg;
+    if (isError) el.setAttribute('role', 'alert');
     document.getElementById('toasts').appendChild(el);
     setTimeout(() => el.remove(), 2500);
 }
@@ -147,7 +148,7 @@ function checkProfilPwPolicy() {
     rules.forEach(r => {
         const el = document.getElementById(r.id);
         if (el) {
-            el.style.color = r.ok ? 'var(--green-600)' : 'var(--red-500)';
+            el.style.color = r.ok ? 'var(--primary-600)' : 'var(--red-500)';
             el.querySelector('i').className = r.ok ? 'bi bi-check-circle-fill' : 'bi bi-x-circle';
         }
     });
@@ -156,7 +157,7 @@ function checkProfilPwPolicy() {
         if (conf.length > 0) {
             matchEl.style.display = '';
             const ok = pass === conf && pass.length > 0;
-            matchEl.style.color = ok ? 'var(--green-600)' : 'var(--red-500)';
+            matchEl.style.color = ok ? 'var(--primary-600)' : 'var(--red-500)';
             matchEl.querySelector('i').className = ok ? 'bi bi-check-circle-fill' : 'bi bi-x-circle';
         } else {
             matchEl.style.display = 'none';
@@ -258,7 +259,7 @@ async function openHaushalt() {
                 <div style="font-size:0.8rem;font-weight:600;color:var(--gray-500);margin-bottom:0.4rem">Mitglieder</div>
                 ${members.map(m => {
                     const rolleLabel = m.isErsteller ? 'Admin' : m.rolle === 'schreibend' ? 'Bearbeiten' : 'Nur lesen';
-                    const rolleColor = m.isErsteller ? 'var(--green-600)' : m.rolle === 'lesend' ? 'var(--gray-400)' : 'var(--blue-500, #3b82f6)';
+                    const rolleColor = m.isErsteller ? 'var(--primary-600)' : m.rolle === 'lesend' ? 'var(--gray-400)' : 'var(--primary-600)';
                     const rolleIcon = m.isErsteller ? 'bi-shield-fill-check' : m.rolle === 'lesend' ? 'bi-eye' : 'bi-pencil-fill';
                     let rolleHtml = '<span style="font-size:0.7rem;color:' + rolleColor + ';font-weight:600;display:flex;align-items:center;gap:0.2rem"><i class="bi ' + rolleIcon + '"></i> ' + rolleLabel + '</span>';
                     if (isErsteller && !m.isErsteller) {
@@ -268,7 +269,7 @@ async function openHaushalt() {
                             '</select>';
                     }
                     return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;font-size:0.9rem;justify-content:space-between">' +
-                        '<div style="display:flex;align-items:center;gap:0.4rem"><i class="bi bi-person-fill" style="color:var(--green-600)"></i> ' + esc(m.benutzername) + '</div>' +
+                        '<div style="display:flex;align-items:center;gap:0.4rem"><i class="bi bi-person-fill" style="color:var(--primary-600)"></i> ' + esc(m.benutzername) + '</div>' +
                         rolleHtml + '</div>';
                 }).join('')}
             </div>
@@ -335,7 +336,7 @@ async function loadHaushaltSection() {
                 <div style="font-size:0.8rem;font-weight:600;color:var(--gray-500);margin-bottom:0.4rem">Mitglieder</div>
                 ${members.map(m => {
                     const rolleLabel = m.isErsteller ? 'Admin' : m.rolle === 'schreibend' ? 'Bearbeiten' : 'Nur lesen';
-                    const rolleColor = m.isErsteller ? 'var(--green-600)' : m.rolle === 'lesend' ? 'var(--gray-400)' : 'var(--blue-500, #3b82f6)';
+                    const rolleColor = m.isErsteller ? 'var(--primary-600)' : m.rolle === 'lesend' ? 'var(--gray-400)' : 'var(--primary-600)';
                     const rolleIcon = m.isErsteller ? 'bi-shield-fill-check' : m.rolle === 'lesend' ? 'bi-eye' : 'bi-pencil-fill';
                     let rolleHtml = '<span style="font-size:0.7rem;color:' + rolleColor + ';font-weight:600;display:flex;align-items:center;gap:0.2rem"><i class="bi ' + rolleIcon + '"></i> ' + rolleLabel + '</span>';
                     if (isErsteller && !m.isErsteller) {
@@ -345,7 +346,7 @@ async function loadHaushaltSection() {
                             '</select>';
                     }
                     return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;font-size:0.9rem;justify-content:space-between">' +
-                        '<div style="display:flex;align-items:center;gap:0.4rem"><i class="bi bi-person-fill" style="color:var(--green-600)"></i> ' + esc(m.benutzername) + '</div>' +
+                        '<div style="display:flex;align-items:center;gap:0.4rem"><i class="bi bi-person-fill" style="color:var(--primary-600)"></i> ' + esc(m.benutzername) + '</div>' +
                         rolleHtml + '</div>';
                 }).join('')}
             </div>
