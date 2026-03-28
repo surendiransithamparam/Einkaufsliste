@@ -1,8 +1,8 @@
 :root {
-    /* Primary brand color (Teal) */
-    --primary-600: #0D9488;
-    --primary-700: #0F766E;
-    --primary-50: rgba(13,148,136,0.08);
+    /* Primary brand color (Blue) */
+    --primary-600: #3b82f6;
+    --primary-700: #2563eb;
+    --primary-50: rgba(59,130,246,0.08);
 
     /* Semantic colors */
     --color-success: #22c55e;
@@ -75,7 +75,7 @@ body {
     position: sticky;
     top: 0;
     z-index: var(--z-navbar);
-    box-shadow: 0 2px 8px rgba(13,148,136,0.25);
+    box-shadow: 0 2px 8px rgba(59,130,246,0.25);
 }
 .navbar-left { display: flex; align-items: center; }
 .navbar-center { display: flex; align-items: center; justify-content: center; }
@@ -294,7 +294,7 @@ input[type="checkbox"] {
 }
 input:focus, select:focus {
     border-color: var(--primary-600);
-    box-shadow: 0 0 0 3px rgba(13,148,136,0.25);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
 }
 
 /* Visible focus ring for keyboard navigation */
@@ -308,7 +308,7 @@ input:focus, select:focus {
 .fab:focus-visible {
     outline: 2px solid var(--primary-600);
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba(13,148,136,0.2);
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.2);
 }
 .tile:focus-visible {
     outline: 2px solid var(--primary-600);
@@ -672,7 +672,7 @@ input:focus, select:focus {
     color: white;
     border: none;
     font-size: 1.75rem;
-    box-shadow: 0 4px 14px rgba(13,148,136,0.4);
+    box-shadow: 0 4px 14px rgba(59,130,246,0.4);
     cursor: pointer;
     z-index: var(--z-fab);
     align-items: center;
