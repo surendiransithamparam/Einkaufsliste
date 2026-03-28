@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,10 +14,14 @@
     <link rel="apple-touch-icon" href="icons/icon-192.svg">
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
     <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<a href="#mainContent" class="skip-to-content">Zum Inhalt springen</a>
 
 <nav class="navbar">
     <div class="navbar-left">
@@ -61,12 +65,13 @@
 </aside>
 
 <div id="appContent" class="app-content hidden">
-<div class="container" style="max-width:480px;margin:0 auto">
+<div class="container" id="mainContent" style="max-width:480px;margin:0 auto">
+    <h1 class="sr-only">Profil</h1>
 
     <!-- Profil -->
     <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem">
         <h2 style="font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem">
-            <i class="bi bi-person" style="color:var(--green-600)"></i> Profil
+            <i class="bi bi-person" style="color:var(--primary-600)"></i> Profil
         </h2>
         <div style="margin-bottom:0.75rem">
             <label>Benutzername</label>
@@ -84,7 +89,7 @@
     <!-- Haushalt -->
     <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem">
         <h2 style="font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem">
-            <i class="bi bi-people" style="color:var(--green-600)"></i> Haushalt
+            <i class="bi bi-people" style="color:var(--primary-600)"></i> Haushalt
         </h2>
         <div id="haushaltSection"></div>
     </div>
@@ -92,7 +97,7 @@
     <!-- Passwort ändern -->
     <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem">
         <h2 style="font-size:1.1rem;margin-bottom:0;display:flex;align-items:center;gap:0.4rem;cursor:pointer" onclick="togglePasswordSection()">
-            <i class="bi bi-key" style="color:var(--green-600)"></i> Passwort ändern
+            <i class="bi bi-key" style="color:var(--primary-600)"></i> Passwort ändern
             <i class="bi bi-chevron-down" id="pwToggleIcon" style="margin-left:auto;font-size:0.85rem;color:var(--gray-400)"></i>
         </h2>
         <div id="passwordSection" style="display:none;margin-top:1rem">
@@ -116,7 +121,7 @@
             </div>
             <div id="ppol-match" style="font-size:0.78rem;display:none;margin-bottom:0.5rem"><i class="bi bi-x-circle"></i> Passwörter stimmen überein</div>
             <div id="profilPwError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
-            <div id="profilPwSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
+            <div id="profilPwSuccess" style="display:none;color:var(--primary-600);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
             <div style="display:flex;justify-content:flex-end">
                 <button class="btn btn-primary" onclick="changePassword()"><i class="bi bi-key"></i> Passwort ändern</button>
             </div>
@@ -126,7 +131,7 @@
     <!-- Biometrische Anmeldung -->
     <div style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem;margin-bottom:1rem">
         <h2 style="font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem">
-            <i class="bi bi-fingerprint" style="color:var(--green-600)"></i> Biometrische Anmeldung
+            <i class="bi bi-fingerprint" style="color:var(--primary-600)"></i> Biometrische Anmeldung
         </h2>
         <div id="webauthnGeraeteSection" style="display:none;">
             <div id="webauthnGeraeteListe"></div>
@@ -146,7 +151,7 @@
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
         <div class="login-header">
-            <i class="bi bi-person" style="font-size:2.5rem;color:var(--green-600)"></i>
+            <i class="bi bi-person" style="font-size:2.5rem;color:var(--primary-600)"></i>
             <h1 style="font-size:1.5rem;margin-top:0.5rem">Profil</h1>
             <p style="color:var(--gray-500);font-size:0.85rem;margin-top:0.25rem">Anmelden</p>
         </div>
@@ -160,8 +165,8 @@
                     <label for="authPass">Passwort</label>
                     <input type="password" id="authPass" required autocomplete="current-password" placeholder="Passwort">
                 </div>
-                <div id="authError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
-                <div id="authSuccess" style="display:none;color:var(--green-600);font-size:0.8rem;font-weight:500"></div>
+                <div id="authError" role="alert" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500"></div>
+                <div id="authSuccess" style="display:none;color:var(--primary-600);font-size:0.8rem;font-weight:500"></div>
                 <button type="submit" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem">
                     <i class="bi bi-box-arrow-in-right"></i> Anmelden
                 </button>
@@ -174,7 +179,7 @@
 </div>
 
 <!-- Toasts -->
-<div class="toast-container" id="toasts"></div>
+<div class="toast-container" id="toasts" aria-live="polite" role="status"></div>
 
 <script src="lib/simplewebauthn-browser.min.js"></script>
 <script src="webauthn.js"></script>
