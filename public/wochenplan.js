@@ -64,7 +64,7 @@ function getMeal(tag, mahlzeit) {
 function renderRecipeItem(r) {
     const escaped = esc(r.name);
     return `<div class="rezept-item" onclick="loadDishZutaten(${esc(JSON.stringify(r.url))},${esc(JSON.stringify(r.name))})">
-        <i class="bi bi-journal-text" style="color:var(--green-600)"></i>
+        <i class="bi bi-journal-text" style="color:var(--primary-600)"></i>
         <span>${escaped}</span>
         <a href="${esc(r.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Originalrezept öffnen" style="color:var(--gray-400);font-size:0.85rem;padding:0.2rem;flex-shrink:0"><i class="bi bi-box-arrow-up-right"></i></a>
         <i class="bi bi-chevron-right" style="color:var(--gray-400);margin-left:0;font-size:0.75rem"></i>
@@ -332,7 +332,7 @@ async function openDishSearch(gericht, erw, kind, tag, url, eigenId) {
         html += `<div style="margin-bottom:0.75rem">
             <div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.35rem">Eigenes Gericht</div>
             <div class="rezept-item" onclick="loadEigenesGericht(${ownMatch.id})">
-                <i class="bi bi-book" style="color:var(--green-600)"></i>
+                <i class="bi bi-book" style="color:var(--primary-600)"></i>
                 <span>${esc(ownMatch.name)}</span>
                 <i class="bi bi-chevron-right" style="color:var(--gray-400);margin-left:auto;font-size:0.75rem"></i>
             </div>
@@ -345,7 +345,7 @@ async function openDishSearch(gericht, erw, kind, tag, url, eigenId) {
         html += `<div style="margin-bottom:0.75rem">
             <div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.35rem">${ownMatch ? 'Weitere eigene Gerichte' : 'Eigene Gerichte'}</div>
             ${otherOwn.slice(0, 5).map(g => `<div class="rezept-item" onclick="loadEigenesGericht(${g.id})">
-                <i class="bi bi-book" style="color:var(--green-600)"></i>
+                <i class="bi bi-book" style="color:var(--primary-600)"></i>
                 <span>${esc(g.name)}</span>
                 <i class="bi bi-chevron-right" style="color:var(--gray-400);margin-left:auto;font-size:0.75rem"></i>
             </div>`).join('')}

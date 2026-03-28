@@ -32,7 +32,7 @@ async function searchRecipes() {
         html += `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem">Eigene Gerichte</div>
         <div class="recipe-grid" style="margin-bottom:1rem">
             ${ownMatches.map(g => `<div class="recipe-card" onclick="openAddToPlan('${esc(g.name).replace(/'/g,"\\'")}', null, ${g.id})">
-                <i class="bi bi-book" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
+                <i class="bi bi-book" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(g.name)}</span>
                 <span class="source-badge">Eigenes</span>
                 ${favBtnHtml(g.name, null, null, g.id)}
@@ -53,7 +53,7 @@ async function searchRecipes() {
         html += `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem;margin-top:0.75rem">${esc(source)}</div>
         <div class="recipe-grid">
             ${items.map(r => `<div class="recipe-card" onclick="openAddToPlan(${esc(JSON.stringify(r.name))},${esc(JSON.stringify(r.url))})">
-                <i class="bi bi-journal-text" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
+                <i class="bi bi-journal-text" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(r.name)}</span>
                 <span class="source-badge">${esc(source)}</span>
                 <a href="${esc(r.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Originalrezept öffnen" style="color:var(--gray-400);font-size:0.85rem;flex-shrink:0;padding:0.2rem"><i class="bi bi-box-arrow-up-right"></i></a>
@@ -133,7 +133,7 @@ function renderFavoriten() {
             const urlParam = f.url ? `'${esc(f.url).replace(/'/g, "\\'")}'` : 'null';
             const eidParam = f.eigenGerichtId || 'null';
             return `<div class="recipe-card" onclick="openAddToPlan('${nameEsc}', ${urlParam}, ${eidParam})">
-                ${f.eigenGerichtId ? '<i class="bi bi-book" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>' : '<i class="bi bi-journal-text" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>'}
+                ${f.eigenGerichtId ? '<i class="bi bi-book" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>' : '<i class="bi bi-journal-text" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>'}
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(f.name)}</span>
                 ${f.quelle ? `<span class="source-badge">${esc(f.quelle)}</span>` : ''}
                 ${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Rezept öffnen" style="color:var(--gray-400);font-size:0.85rem;flex-shrink:0;padding:0.2rem"><i class="bi bi-box-arrow-up-right"></i></a>` : ''}
@@ -161,7 +161,7 @@ function renderEigene() {
         el.innerHTML = `<div style="font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:0.4rem">Eigene Gerichte</div>
         <div class="recipe-grid">
             ${gerichteCache.map(g => `<div class="recipe-card" onclick="openAddToPlan('${esc(g.name).replace(/'/g,"\\'")}', null, ${g.id})">
-                <i class="bi bi-book" style="color:var(--green-600);font-size:1.1rem;flex-shrink:0"></i>
+                <i class="bi bi-book" style="color:var(--primary-600);font-size:1.1rem;flex-shrink:0"></i>
                 <span style="flex:1;font-size:0.85rem;font-weight:500">${esc(g.name)}</span>
                 ${favBtnHtml(g.name, null, null, g.id)}
                 <i class="bi bi-calendar-plus" style="color:var(--gray-400);font-size:0.9rem;flex-shrink:0"></i>

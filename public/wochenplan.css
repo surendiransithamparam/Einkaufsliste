@@ -26,7 +26,7 @@
     overflow: hidden;
 }
 .day-card.today {
-    box-shadow: 0 0 0 2px var(--green-600), var(--shadow);
+    box-shadow: 0 0 0 2px var(--primary-600), var(--shadow);
 }
 
 .day-header {
@@ -40,8 +40,8 @@
     justify-content: space-between;
 }
 .day-card.today .day-header {
-    background: var(--green-50);
-    color: var(--green-600);
+    background: var(--primary-50);
+    color: var(--primary-600);
 }
 .day-date {
     font-weight: 500;
@@ -111,7 +111,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.4);
-    z-index: 200;
+    z-index: var(--z-modal);
     align-items: flex-end;
     justify-content: center;
     backdrop-filter: blur(4px);
@@ -201,7 +201,7 @@
     transition: color 0.15s;
     flex-shrink: 0;
 }
-.dish-cart-btn:hover { color: var(--green-600); }
+.dish-cart-btn:hover { color: var(--primary-600); }
 
 .rezept-item {
     display: flex;
@@ -215,7 +215,7 @@
     -webkit-tap-highlight-color: transparent;
 }
 .rezept-item:hover { background: var(--gray-100); }
-.rezept-item a:hover { color: var(--green-600); }
+.rezept-item a:hover { color: var(--primary-600); }
 
 .zutat-item {
     display: flex;
@@ -229,7 +229,7 @@
 .zutat-item input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: var(--green-600);
+    accent-color: var(--primary-600);
     cursor: pointer;
     flex-shrink: 0;
 }

@@ -89,9 +89,9 @@ function getStoreLogo(name) {
 function storeLogoHtml(name, size) {
     const logo = getStoreLogo(name);
     if (logo) {
-        return `<img src="${esc(logo)}" alt="" style="width:${size}px;height:${size}px;border-radius:4px;flex-shrink:0" onerror="this.style.display='none';this.nextElementSibling.style.display=''"><i class="bi bi-credit-card" style="color:var(--green-600);font-size:${size > 24 ? '1.5rem' : '1.2rem'};flex-shrink:0;display:none"></i>`;
+        return `<img src="${esc(logo)}" alt="" style="width:${size}px;height:${size}px;border-radius:4px;flex-shrink:0" onerror="this.style.display='none';this.nextElementSibling.style.display=''"><i class="bi bi-credit-card" style="color:var(--primary-600);font-size:${size > 24 ? '1.5rem' : '1.2rem'};flex-shrink:0;display:none"></i>`;
     }
-    return `<i class="bi bi-credit-card" style="color:var(--green-600);font-size:${size > 24 ? '1.5rem' : '1.2rem'};flex-shrink:0"></i>`;
+    return `<i class="bi bi-credit-card" style="color:var(--primary-600);font-size:${size > 24 ? '1.5rem' : '1.2rem'};flex-shrink:0"></i>`;
 }
 
 function renderKarten() {

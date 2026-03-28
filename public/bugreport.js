@@ -6,7 +6,7 @@ function ensureBugReportModal() {
     div.innerHTML = `<div class="modal-overlay" id="bugReportOverlay" onclick="if(event.target===this)closeBugReport()" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;justify-content:center;align-items:flex-end;padding:0">
     <div style="background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:500px;margin:0 auto;max-height:90dvh;overflow-y:auto;padding:1.25rem;animation:slideUp .25s ease">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-            <h2 style="font-size:1.1rem;margin:0;display:flex;align-items:center;gap:0.5rem;color:var(--gray-800)"><i class="bi bi-bug" style="color:var(--green-600)"></i> Bug melden</h2>
+            <h2 style="font-size:1.1rem;margin:0;display:flex;align-items:center;gap:0.5rem;color:var(--gray-800)"><i class="bi bi-bug" style="color:var(--primary-600)"></i> Bug melden</h2>
             <button onclick="closeBugReport()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400);padding:0.25rem"><i class="bi bi-x-lg"></i></button>
         </div>
         <p style="font-size:0.82rem;color:var(--gray-500);margin-bottom:1rem">Deine Meldung wird anonym als GitHub Issue erstellt.</p>
@@ -20,7 +20,7 @@ function ensureBugReportModal() {
             <label for="bugKontakt" style="font-size:0.82rem;font-weight:600;color:var(--gray-700);display:block;margin-bottom:0.25rem">Kontakt (optional)</label>
             <input type="email" id="bugKontakt" placeholder="E-Mail für Rückfragen" style="width:100%;padding:0.6rem;border:1px solid var(--gray-200);border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:0.75rem;box-sizing:border-box">
             <div id="bugError" style="display:none;color:var(--red-500);font-size:0.8rem;font-weight:500;margin-bottom:0.5rem"></div>
-            <button type="submit" id="bugSubmitBtn" style="width:100%;padding:0.7rem;background:var(--green-600);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem">
+            <button type="submit" id="bugSubmitBtn" style="width:100%;padding:0.7rem;background:var(--primary-600);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem">
                 <i class="bi bi-send"></i> Absenden
             </button>
         </form>
