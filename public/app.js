@@ -403,6 +403,16 @@ function renderTile(item) {
 }
 
 // -- Grouped rendering --
+let collapsedStoreGroups = {};
+
+function toggleStoreGroup(groupId) {
+    collapsedStoreGroups[groupId] = !collapsedStoreGroups[groupId];
+    const container = document.getElementById('store-group-' + groupId);
+    const arrow = document.querySelector(`.store-group-header[data-group="${groupId}"] .store-toggle`);
+    if (container) container.style.display = collapsedStoreGroups[groupId] ? 'none' : '';
+    if (arrow) arrow.style.transform = collapsedStoreGroups[groupId] ? 'rotate(-90deg)' : '';
+}
+
 function renderGrouped(list) {
     const groups = {};
     list.forEach(item => {
@@ -420,13 +430,18 @@ function renderGrouped(list) {
     let html = '';
     keys.forEach(key => {
         const storeName = key || 'Kein Laden';
+        const groupId = (key || '__none__').replace(/'/g, "\\'");
         const icon = `<i class="bi ${key ? 'bi-shop' : 'bi-question-circle'}"></i>`;
-        html += `<div class="store-group-header">
+        const collapsed = collapsedStoreGroups[groupId];
+        const arrowStyle = collapsed ? ' style="transform:rotate(-90deg)"' : '';
+        html += `<div class="store-group-header" data-group="${esc(groupId)}" onclick="toggleStoreGroup('${groupId}')">
+            <i class="bi bi-chevron-down store-toggle"${arrowStyle}></i>
             <span class="store-name">${icon} ${esc(storeName)}</span>
             <span class="store-count">${groups[key].length}</span>
             <div class="store-line"></div>
         </div>`;
-        html += groups[key].sort((a, b) => a.artikel.localeCompare(b.artikel)).map(item => renderTile(item)).join('');
+        const tilesHtml = groups[key].sort((a, b) => a.artikel.localeCompare(b.artikel)).map(item => renderTile(item)).join('');
+        html += `<div class="store-group-tiles" id="store-group-${esc(groupId)}"${collapsed ? ' style="display:none"' : ''}>${tilesHtml}</div>`;
     });
     return html;
 }

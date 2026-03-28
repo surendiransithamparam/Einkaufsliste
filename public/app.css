@@ -559,6 +559,12 @@ input:focus, select:focus {
     color: var(--gray-400);
     transition: transform 0.15s;
 }
+.store-group-tiles {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.6rem;
+}
 .store-group-header:first-child {
     margin-top: 0;
 }
@@ -817,6 +823,7 @@ input:focus, select:focus {
     .btn-nav.desktop-only { display: none; }
     .tile-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.5rem; }
     .gekauft-grid.open { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.5rem; }
+    .store-group-tiles { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.5rem; }
     .tile { padding: 0.6rem 0.75rem; }
 
     /* Sidebar: collapsed on mobile */
