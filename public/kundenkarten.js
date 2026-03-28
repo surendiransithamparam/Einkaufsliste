@@ -294,8 +294,10 @@ function stopScan() {
     const container = document.getElementById('scannerContainer');
     if (container) container.style.display = 'none';
     if (html5QrScanner) {
-        html5QrScanner.stop().catch(() => {});
-        html5QrScanner.clear();
+        try {
+            html5QrScanner.stop().catch(() => {});
+            html5QrScanner.clear();
+        } catch (e) { /* Scanner cleanup fehlgeschlagen – ignorieren */ }
         html5QrScanner = null;
     }
 }
@@ -320,19 +322,24 @@ async function saveKarte() {
 
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/kundenkarten/${id}` : '/api/kundenkarten';
-    const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, kartennummer, notiz, barcodeFormat })
-    });
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, kartennummer, notiz, barcodeFormat })
+        });
 
-    if (res.ok) {
-        toast(id ? 'Karte aktualisiert' : 'Karte hinzugefügt');
-        closeKarteModal();
-        loadKarten();
-    } else {
-        const data = await res.json().catch(() => null);
-        errEl.textContent = data?.error || 'Fehler beim Speichern.';
+        if (res.ok) {
+            closeKarteModal();
+            toast(id ? 'Karte aktualisiert' : 'Karte hinzugefügt');
+            loadKarten();
+        } else {
+            const data = await res.json().catch(() => null);
+            errEl.textContent = data?.error || 'Fehler beim Speichern.';
+            errEl.style.display = '';
+        }
+    } catch (e) {
+        errEl.textContent = 'Netzwerkfehler beim Speichern.';
         errEl.style.display = '';
     }
 }
